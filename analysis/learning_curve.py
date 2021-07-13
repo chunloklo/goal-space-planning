@@ -7,12 +7,12 @@ sys.path.append(os.getcwd())
 
 from src.analysis.learning_curve import plotBest
 from src.experiment import ExperimentModel
-from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParameterEquals, find
+from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParametersEqual, find
 from PyExpUtils.utils.arrays import first
 
 def getBest(results):
-    best = first(results)
 
+    best = first(results)
     for r in results:
         a = r.load()[0]
         b = best.load()[0]
@@ -27,7 +27,7 @@ def generatePlot(ax, exp_paths, bounds):
     for exp_path in exp_paths:
         exp = ExperimentModel.load(exp_path)
 
-        results = loadResults(exp, 'return_summary.npy')
+        results = loadResults(exp, 'return.csv')
         # optionally force epsilon to be 0.15
         # results = whereParameterEquals(results, 'epsilon', 0.15)
 
@@ -37,7 +37,10 @@ def generatePlot(ax, exp_paths, bounds):
 
         alg = exp.agent
 
-        b = plotBest(best, ax, label=alg, color=colors[alg], dashed=False)
+#         b = plotBest(best, ax, label=alg, color=colors[alg], dashed=False)
+
+
+        b = plotBest(best, ax, label=alg, color='red', dashed=False)
         bounds.append(b)
 
 
