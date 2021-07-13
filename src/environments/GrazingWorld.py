@@ -10,9 +10,9 @@ class GrazingWorld(BaseEnvironment):
     """
     The board is a nxn matrix, with (using NumPy matrix indexing):
         [n-1, 0] as the start at bottom-left
-        [0, 0] goal, occasional reward: 50, otherwise 0
-        [0, n-1] goal, occasional reward: 40, otherwise 0
-        [n-1,n-1] goal, always gives reward of 1
+        [2, 2] goal, occasional reward: 50, otherwise 0
+        [2, n-3] goal, occasional reward: 40, otherwise 0
+        [n-3,n-3] goal, always gives reward of 1
 
     Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
     """
