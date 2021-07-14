@@ -31,14 +31,14 @@ class GrazingWorld(BaseEnvironment):
             1:{
                 "position" : (2,2),
                 "reward" : 50,
-                "current_reward":0,
+                "current_reward":50,
                 "reward_sequence_length": 0,
                 "iterator" : 0
             },
             2:{
                 "position" : (2,size-3),
                 "reward" : 40,
-                "current_reward":0,
+                "current_reward":40,
                 "reward_sequence_length": 0,
                 "iterator" : 0
             },
