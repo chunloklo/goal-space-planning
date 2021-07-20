@@ -18,7 +18,7 @@ class OneStepWrapper(BaseAgent):
 
         return self.a
 
-    def step(self, r, sp):
+    def step(self, r, sp, t=False):
         xp = self.rep.encode(sp)
 
         ap = self.agent.update(self.x, self.a, xp, r, self.gamma)
@@ -29,9 +29,12 @@ class OneStepWrapper(BaseAgent):
 
         return ap
 
-    def end(self, r):
+    def end(self, r, term):
         gamma = 0
 
         self.agent.update(self.x, self.a, self.x, r, gamma)
+
+        if term and self.agent.__str__() == 'DynaQ_Tabular':
+            self.agent.agent_end(self.x, self.a, r, gamma)
 
         # reset agent here if necessary (e.g. to clear traces)

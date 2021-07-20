@@ -16,7 +16,7 @@ class GrazingWorld(BaseEnvironment):
 
     Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
     """
-    def __init__(self, seed:int, size=10, reward_sequence_length=5):
+    def __init__(self, seed:int, size=10, reward_sequence_length=50):
         self.shape = (size, size)
         self.reward_sequence_length = reward_sequence_length
 
@@ -63,7 +63,6 @@ class GrazingWorld(BaseEnvironment):
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
 
-
     def start(self):
         return self.current_state
 
@@ -80,7 +79,6 @@ class GrazingWorld(BaseEnvironment):
         else:
             return self.step_penalty
             
-
     # if iterator reached the end of sequence, generate new sequence and flip reward amount for both goals with not fixed rewards
     def update_goals(self):
         for i in range(1,3):
@@ -97,6 +95,7 @@ class GrazingWorld(BaseEnvironment):
 
         self.current_state = self._limit_coordinates(np.array(s), np.array(a)).astype(int)
         self.current_state = self.start_state if is_done else self.current_state
+        
         return self.current_state, is_done
 
     def step(self, a):
@@ -104,6 +103,7 @@ class GrazingWorld(BaseEnvironment):
         s = self.current_state
         sp, t = self.next_state(s, self.action_encoding[a])
         r = self.rewards(s, t)
+
         return (r, sp, t)
 
     def _limit_coordinates(self, s, a):
@@ -140,6 +140,3 @@ class GrazingWorld(BaseEnvironment):
             self.goals[terminal_state]["current_reward"] = self.goals[terminal_state]["reward"]
         else:
             self.goals[terminal_state]["current_reward"] = 0
-
-
-

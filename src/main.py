@@ -40,20 +40,17 @@ for run in range(runs):
     for episode in range(exp.episodes):
         glue.total_reward = 0
         glue.runEpisode(max_steps)
-
-        if agent.__str__()!="Q_Tabular":
+        if agent.FA()!="Tabular":
             # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
             if np.isnan(np.sum(agent.w)):
                 collector.fillRest(np.nan, exp.episodes)
                 broke = True
                 break
-
         collector.collect('return', glue.total_reward)
-
     collector.reset()
+
     if broke:
         break
-
 
 # import matplotlib.pyplot as plt
 # from src.utils.plotting import plot
@@ -81,5 +78,4 @@ for key in collector.all_data:
         # num=1000 makes sure final array is of length 1000
         # percent=0.1 makes sure final array is 10% of the original length (only one of `num` or `percent` can be specified)
         datum = downsample(datum, num=500, method='window')
-
         saveResults(exp, inner_idx, key, datum, precision=2)

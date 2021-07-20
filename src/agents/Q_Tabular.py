@@ -17,6 +17,9 @@ class Q_Tabular:
         # create initial weights
         self.Q = np.zeros((int(features/actions), actions))
 
+    def FA(self):
+        return "Tabular"
+
     def __str__(self):
         return "Q_Tabular"
 
