@@ -1,11 +1,18 @@
-# rl-template
+# Dyna with Options
+## Template based on https://github.com/andnp/rl-control-template
 
-## Setting up your own repo
+---
+## Description of the GrazingWorld Environment
 
-This repository is a github template repository.
-This means that you can click the green `Use this template` button on the github page for this repo to start a new repo that is a copy of this one.
-The difference between a template and a clone is that changes made in a template repository are not forwarded to the child repositories.
+![Grazing World Ascii Art](/images/asciiart.png "Grazing World")
 
+10x10 matrix, where
+* each timestep incurs -0.1 reward
+* each episode ends when an agent takes any action in any of the three goal states - and is teleported back to S
+* if the agent takes an action that would lead it into the [W]all, the agent remains in the state where they selected that action. Similarly, if the agent fell off the grid.
+* G1 starts off giving out a reward of 0 for a number of timesteps determined by a number sampled from a Poisson distribution with mean=50 by default for now. After that many timesteps, the rewards switches to +50 for a number of timesteps sampled from the same distribution.
+* The same is true for G2, except its non-zero reward is +40.
+* G1 always gives a reward of +1.
 
 ---
 ## Setting up repo
@@ -26,7 +33,6 @@ Or you need to set up a virtual environment:
 ```
 virtualenv -p python3 env
 ```
-
 
 ---
 ## Step-by-step example
@@ -84,7 +90,7 @@ This template repo depends on a few other shared libraries to make code-splittin
 The documentation and source code can be found at the following links.
 * [RLGlue](https://github.com/andnp/rlglue) - my own minimal implementation of RLGlue
 * [PyExpUtils](https://github.com/andnp/pyexputils) - a library containing the experiment running framework
-* [PyFixedReps](https://github.com/andnp/pyfixedreps) - a few fixed representation algorithms implemented in python (e.g. tile-coding, rbfs, etc.)
+* [PyFixedReps](https://github.com/gabormihucz/PyFixedReps) - a few fixed representation algorithms implemented in python (e.g. tile-coding, rbfs, etc.)
 
 
 ---
