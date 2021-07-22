@@ -25,16 +25,14 @@ broke = False
 for run in range(runs):
     # set random seeds accordingly
     np.random.seed(run)
-
     inner_idx = exp.numPermutations() * run + idx
     Problem = getProblem(exp.problem)
     problem = Problem(exp, inner_idx)
-
     agent = problem.getAgent()
     env = problem.getEnvironment()
     wrapper = OneStepWrapper(agent, problem.getGamma(), problem.rep)
     glue = RlGlue(wrapper, env)
-
+    print(run)
     # Run the experiment
     rewards = []
     for episode in range(exp.episodes):

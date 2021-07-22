@@ -62,7 +62,6 @@ class GrazingWorld(BaseEnvironment):
         self.start_state = (self.shape[0]-1, 0)
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
-
     def start(self):
         return self.current_state
 
@@ -91,11 +90,10 @@ class GrazingWorld(BaseEnvironment):
     # get the next state and termination status
     def next_state(self, s, a):
         # list of terminal state positions (top left, right, and bottom right)    
-        is_done = tuple(s) in self.terminal_state_positions   
-
+        is_done = tuple(s) in self.terminal_state_positions      
         self.current_state = self._limit_coordinates(np.array(s), np.array(a)).astype(int)
         self.current_state = self.start_state if is_done else self.current_state
-        
+
         return self.current_state, is_done
 
     def step(self, a):
