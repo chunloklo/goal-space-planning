@@ -96,9 +96,7 @@ class PrioritizedSweep:
 
             self.Q[x,a] = self.Q[x,a] + self.alpha * (r + gamma * max_q - self.Q[x, a])
 
-            if xp == -1:
-                break
-            else:
+            if xp != -1:
                 for S_Bar, A_Bar in self.inverse_model[xp]:
                     _, R_Bar = self.model[x][a]
                     P = abs(R_Bar + gamma * np.max(self.Q[xp,:]) - self.Q[S_Bar, A_Bar])
