@@ -4,7 +4,7 @@ from PyExpUtils.utils.random import argmax, choice
 import random
 
 
-class DynaQ_Tabular:
+class DynaQ_Tab_Sample:
     def __init__(self, features: int, actions: int, params: Dict, seed: int):
         self.features = features
         self.actions = actions
@@ -52,7 +52,19 @@ class DynaQ_Tabular:
         """
         if x not in self.model:
             self.model[x] = {}
-        self.model[x][a] = (xp,r)
+        # if we are not at a goal state, just store xp and r
+        if xp !=-1:
+            self.model[x][a] = (xp,r)
+        # only need to calculate probabilities for last state
+        else:
+            # if model[x] is empty, set total_times to 1, otherwise increase it by 1 and set a = -1
+            if not self.model[x]:
+                self.model[x]["goal_state"] = None
+                self.model[x]["actions"] = set()
+            self.model[x]["actions"].add(a)
+            # if xp and r have been encountered before, increase count by 1, else add 1
+            if (xp,r) not in self.model[x]:
+                self.model[x][(xp,r)] = None
 
     def planning_step(self,gamma):
         """performs planning, i.e. indirect RL.
@@ -61,19 +73,33 @@ class DynaQ_Tabular:
             Nothing
         """
 
+        # distribution model: k=1, sample according to probability
+        # sample model: keep track of encountered xp's and r's, and sample from them according to an _arbitrary_ distribution
+        # expectation model: xp and r are chosen according to the expectation of the distribution
         for i in range(self.planning_steps):
             x = choice(np.array(list(self.model.keys())), self.random)
-            a = choice(np.array(list(self.model[x].keys())), self.random) 
-            xp, r = self.model[x][a]
+            
+            # if in terminal state: get rewards and associated probabilities to be able to sample accordingly
+            if "goal_state" in self.model[x]:
+                actions = list(self.model[x]["actions"])
+                a = choice(np.array(actions ), self.random) 
+                xpr_pairs = [ k for k in self.model[x].keys() if k!="goal_state" and k!= "actions" ]
+                
+                sampled_xpr_pairs = random.choice(xpr_pairs) # sample just weighted by probs
+                
+                xp,r = sampled_xpr_pairs
+            # if not in terminal state just get xp and r
+            else:
+                actions = list(self.model[x].keys()) 
+                a = choice(np.array(actions ), self.random)
+                xp,r = self.model[x][a]       
+
             if xp ==-1:
                 max_q = 0
             else:
                 max_q = np.max(self.Q[xp,:])
-            
+
             self.Q[x,a] = self.Q[x,a] + self.alpha * (r + gamma * max_q - self.Q[x, a])
-            
-            # if self.Q[x,a]>50:
-            #     print(self.Q[x,a])
             
 
     def agent_end(self, x, a, r, gamma):
