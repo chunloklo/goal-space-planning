@@ -18,6 +18,7 @@ class BaseProblem:
 
         self.features = 0
         self.actions = 0
+        self.options = None
 
     def getEnvironment(self):
         return self.env
@@ -30,5 +31,5 @@ class BaseProblem:
 
     def getAgent(self):
         Agent = getAgent(self.exp.agent)
-        self.agent = Agent(self.features, self.actions, self.params, self.seed)
+        self.agent = Agent(self.features, self.actions, self.params, self.seed, self.options)
         return self.agent

@@ -3,12 +3,12 @@ import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 
 class Q_Tabular:
-    def __init__(self, features: int, actions: int, params: Dict, seed: int):
+    def __init__(self, features: int, actions: int, params: Dict, seed: int, options):
         self.features = features
         self.actions = actions
         self.params = params
-
         self.random = np.random.RandomState(seed)
+        self.options = options
 
         # define parameter contract
         self.alpha = params['alpha']

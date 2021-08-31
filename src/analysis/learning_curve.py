@@ -36,8 +36,9 @@ def plotBest(best, ax, window=1, smoothing=0, color=None, label=None, alpha=0.4,
     if type(dashed) != list:
         dashed = [dashed] * mean.shape[1]
 
+
     for i in range(mean.shape[1]):
-        lineplot(ax, mean[:, i], stderr=ste[:, i], smoothing=smoothing, window=window, color=color, label=label[i] + params, alpha=alpha, alphaMain=alphaMain, dashed=dashed[i])
+        lineplot(ax, mean[:, i], stderr=ste[:, i], smoothing=smoothing, window=window, color=colors[label[i]], label=label[i] + params, alpha=alpha, alphaMain=alphaMain, dashed=dashed[i])
 
 def lineplot(ax, mean, window=1, smoothing=0, stderr=None, color=None, label=None, alpha=0.4, alphaMain=1, dashed=None):
     if dashed:
@@ -53,6 +54,8 @@ def lineplot(ax, mean, window=1, smoothing=0, stderr=None, color=None, label=Non
 
     mean = np.array(list(smoothingAverage(mean, smoothing)))
 
+
+
     ax.plot(mean, linestyle=dashes, label=label, color=color, alpha=alphaMain, linewidth=2)
     if stderr is not None:
         stderr = np.array(list(smoothingAverage(stderr, smoothing)))
@@ -60,3 +63,13 @@ def lineplot(ax, mean, window=1, smoothing=0, stderr=None, color=None, label=Non
         ax.fill_between(range(mean.shape[0]), low_ci, high_ci, color=color, alpha=alpha * alphaMain)
 
     ax.legend()
+
+colors={
+    "Q_Tabular": 'red',
+    "Dyna_Tab_Dist": 'blue',
+    "Dyna_Tab": 'yellow',
+    "Dynaqp_Tab": 'green',
+    "Q_Linear": 'red',
+    "Option_Q_Tab": 'cyan',
+    "Dyna_Optionqp_Tab": 'purple'
+}

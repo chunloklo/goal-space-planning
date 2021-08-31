@@ -1,10 +1,8 @@
 from typing import Dict
 import numpy as np
 from PyExpUtils.utils.random import argmax, choice
-import random
 
-
-class DynaQ_Tab_Dist:
+class Dyna_Linear_Dist:
     def __init__(self, features: int, actions: int, params: Dict, seed: int):
         self.features = features
         self.actions = actions
@@ -16,32 +14,50 @@ class DynaQ_Tab_Dist:
         self.alpha = params['alpha']
         self.epsilon = params['epsilon']
         self.planning_steps = params['planning_steps']
-
         self.gamma = params['gamma']
 
         self.a = -1
         self.x = -1
 
-        self.Q = np.zeros((int(features/actions), actions))
+        self.F = np.zeros((actions, actions))
+        self.b = np.zeros(features)
+
+        # create initial weights
+        self.w = np.zeros((actions, features))
         self.model = {}
 
     def FA(self):
-        return "Tabular"
+        return "Linear"
 
     def __str__(self):
-        return "DynaQ_Tabular"
+        return "Dyna_Linear_Dist"
+
 
     def selectAction(self, x):
         p = self.random.rand()
         if p < self.epsilon:
             return choice(np.arange(self.actions), self.random)
-        return argmax(self.Q[x,:])
+
+        return argmax(self.w.dot(x))
 
     def update(self, x, a, xp, r, gamma):
+        q_a = self.w[a].dot(x)
         ap = self.selectAction(xp)
-        self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a])   
+        qp_ap = max(self.w.dot(xp))
+
+        g = r + gamma * qp_ap
+        delta = g - q_a
+
+        self.w[a] += self.alpha * delta * x
+
+        self.F += self.alpha*(xp-self.F@x).dot(x)
+        self.b += self.alpha*(r-self.b.dot(x))*x
+
+        temp =xp
+
         self.update_model(x,a,xp,r)  
         self.planning_step(gamma)
+
         return ap
 
     def update_model(self, x, a, xp, r):
@@ -86,7 +102,10 @@ class DynaQ_Tab_Dist:
         # sample model: keep track of encountered xp's and r's, and sample from them according to an _arbitrary_ distribution
         # expectation model: xp and r are chosen according to the expectation of the distribution
         for i in range(self.planning_steps):
-            x = choice(np.array(list(self.model.keys())), self.random)
+            x = np.random.rand(self.actions, self.features)
+            xp = self.F@x
+            r = self.b.dot(x)
+            self.w += self.alpha * (r + gamma * self.w.dot(xp) - self.w.dot(x))*x
             
             # if in terminal state: get rewards and associated probabilities to be able to sample accordingly
             if "total_times" in self.model[x]:
@@ -110,11 +129,17 @@ class DynaQ_Tab_Dist:
             if xp ==-1:
                 max_q = 0
             else:
-                max_q = np.max(self.Q[xp,:])
+                max_q = max(self.w.dot(xp))
 
-            self.Q[x,a] = self.Q[x,a] + self.alpha * (r + gamma * max_q - self.Q[x, a])
+            self.w[a] = self.w[a] + self.alpha * (r + gamma * max_q - self.Q[x, a])
 
+        q_a = self.w[a].dot(x)
+        qp_ap = max(self.w.dot(xp))
 
+        g = r + gamma * qp_ap
+        delta = g - q_a
+
+        self.w[a] += self.alpha * delta * x
 
 
             

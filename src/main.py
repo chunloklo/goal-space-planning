@@ -1,22 +1,46 @@
+import json
 import numpy as np
 import sys
-import os
+import os, time
 sys.path.append(os.getcwd())
+import logging
+
 
 from RlGlue import RlGlue
 from src.experiment import ExperimentModel
 from src.problems.registry import getProblem
 from PyExpUtils.utils.Collector import Collector
 from src.utils.rlglue import OneStepWrapper
+from src.utils.json_handling import get_sorted_dict, get_param_iterable
+
+
+t_start = time.time()
 
 if len(sys.argv) < 3:
     print('run again with:')
     print('python3 src/main.py <runs> <path/to/description.json> <idx>')
     exit(1)
 
-runs = int(sys.argv[1])
-exp = ExperimentModel.load(sys.argv[2])
-idx = int(sys.argv[3])
+# new stuff for parallel
+json_file = sys.argv[1]
+idx = int(sys.argv[2])
+# Get experiment
+d = get_sorted_dict(json_file)
+experiments = get_param_iterable(d)
+experiment = experiments[ idx % len(experiments)]
+
+
+exp = ExperimentModel.load(json_file)
+
+# new stuff end
+
+# # commenting out, but used to be there
+# exp = ExperimentModel.load(sys.argv[2])
+# idx = int(sys.argv[3])
+# uncommenting end
+
+runs = exp.runs
+
 
 max_steps = exp.max_steps
 
@@ -25,6 +49,7 @@ broke = False
 for run in range(runs):
     # set random seeds accordingly
     np.random.seed(run)
+    print("run:", run)
     inner_idx = exp.numPermutations() * run + idx
     Problem = getProblem(exp.problem)
     problem = Problem(exp, inner_idx)
@@ -32,7 +57,7 @@ for run in range(runs):
     env = problem.getEnvironment()
     wrapper = OneStepWrapper(agent, problem.getGamma(), problem.rep)
     glue = RlGlue(wrapper, env)
-    print(run)
+    # print("run:",run)
     # Run the experiment
     rewards = []
     for episode in range(exp.episodes):
@@ -77,3 +102,5 @@ for key in collector.all_data:
         # percent=0.1 makes sure final array is 10% of the original length (only one of `num` or `percent` can be specified)
         datum = downsample(datum, num=500, method='window')
         saveResults(exp, inner_idx, key, datum, precision=2)
+
+logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")

@@ -11,6 +11,8 @@ class OneStepWrapper(BaseAgent):
         self.a = None
         self.x = None
 
+        self.options = self.agent.options
+
     def start(self, s):
         self.s = s
         self.x = self.rep.encode(s)
@@ -29,11 +31,13 @@ class OneStepWrapper(BaseAgent):
 
         return ap
 
+    def state_encoding(self, s):
+        return self.rep.encode(s)
+
     def end(self, r, term):
         gamma = 0
-
             
-        if term and self.agent.__str__() == 'Q_Tabular':
+        if term and 'Q' in self.agent.__str__():
             self.agent.update(self.x, self.a, self.x, r, gamma)
         else:
             self.agent.agent_end(self.x, self.a, r, gamma)

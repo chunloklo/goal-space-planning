@@ -4,7 +4,7 @@ from PyExpUtils.utils.random import argmax, choice
 import random
 
 
-class DynaQ_Tab_Exp:
+class Dyna_Tab_Dist:
     def __init__(self, features: int, actions: int, params: Dict, seed: int):
         self.features = features
         self.actions = actions
@@ -76,37 +76,47 @@ class DynaQ_Tab_Exp:
         
     def planning_step(self,gamma):
         """performs planning, i.e. indirect RL.
+
         Returns:
             Nothing
         """
+
+
         # distribution model: k=1, sample according to probability
         # sample model: keep track of encountered xp's and r's, and sample from them according to an _arbitrary_ distribution
         # expectation model: xp and r are chosen according to the expectation of the distribution
         for i in range(self.planning_steps):
             x = choice(np.array(list(self.model.keys())), self.random)
             
-            # if in terminal state: get rewards and associated probabilities to calculate expectation
+            # if in terminal state: get rewards and associated probabilities to be able to sample accordingly
             if "total_times" in self.model[x]:
                 actions = list(self.model[x]["actions"])
                 a = choice(np.array(actions ), self.random) 
                 xp_r_probs = [ (k, v["prob"]) for k,v in self.model[x].items() if k!="total_times" and k!= "actions" ]
-                xp = xp_r_probs[0][0][0] # -1
 
                 # calculate expectation if there are more than one (xp,r) tuples
-                if len(xp_r_probs) > 1:
-                    r = sum(xp_r_probs[i][0][1]*xp_r_probs[i][1] for i in range(len(xp_r_probs))) 
+                xp_r_pairs = [xp_r_probs[i][0] for i in range(len(xp_r_probs)) ]
+                probs = [xp_r_probs[i][1] for i in range(len(xp_r_probs)) ]
+                sampled_xpr_pairs = random.choices(xp_r_pairs, weights=probs, k=1 ) # sample just weighted by probs
+                xp,r = sampled_xpr_pairs[0]
+
+
             # if not in terminal state just get xp and r
             else:
+                
                 actions = list(self.model[x].keys()) 
                 a = choice(np.array(actions ), self.random)
                 xp,r = self.model[x][a]       
-
             if xp ==-1:
                 max_q = 0
             else:
                 max_q = np.max(self.Q[xp,:])
 
             self.Q[x,a] = self.Q[x,a] + self.alpha * (r + gamma * max_q - self.Q[x, a])
+
+
+
+
             
     def agent_end(self, x, a, r, gamma):
         # Model Update step

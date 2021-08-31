@@ -31,15 +31,15 @@ class GrazingWorld(BaseEnvironment):
             1:{
                 "position" : (2,2),
                 "reward" : 50,
-                "current_reward":50,
-                "reward_sequence_length": 0,
-                "iterator" : 0
+                "current_reward":0,
+                "reward_sequence_length": np.random.poisson(lam=self.reward_sequence_length),
+                "iterator" : int(self.reward_sequence_length/2)
             },
             2:{
                 "position" : (2,size-3),
                 "reward" : 40,
-                "current_reward":40,
-                "reward_sequence_length": 0,
+                "current_reward":0,
+                "reward_sequence_length": np.random.poisson(lam=self.reward_sequence_length),
                 "iterator" : 0
             },
             3:{
@@ -87,6 +87,13 @@ class GrazingWorld(BaseEnvironment):
             else:
                 self.goals[i]["iterator"] += 1
 
+    def gen_reward_sequence(self,terminal_state, previous_terminal_reward):
+        self.goals[terminal_state]["reward_sequence_length"] =  np.random.poisson(lam=self.reward_sequence_length)
+        if previous_terminal_reward == 0:
+            self.goals[terminal_state]["current_reward"] = self.goals[terminal_state]["reward"]
+        else:
+            self.goals[terminal_state]["current_reward"] = 0
+
     # get the next state and termination status
     def next_state(self, s, a):
         # list of terminal state positions (top left, right, and bottom right)    
@@ -132,9 +139,3 @@ class GrazingWorld(BaseEnvironment):
             coord = s
         return coord
 
-    def gen_reward_sequence(self,terminal_state, previous_terminal_reward):
-        self.goals[terminal_state]["reward_sequence_length"] =  np.random.poisson(lam=self.reward_sequence_length)
-        if previous_terminal_reward == 0:
-            self.goals[terminal_state]["current_reward"] = self.goals[terminal_state]["reward"]
-        else:
-            self.goals[terminal_state]["current_reward"] = 0

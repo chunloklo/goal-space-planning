@@ -1,0 +1,2 @@
+python src/main.py experiments/Graze/Tabular/Q.json 0
+python src/main.py experiments/Graze/Tabular/Dyna/Dynaqp_Tab.json 0
