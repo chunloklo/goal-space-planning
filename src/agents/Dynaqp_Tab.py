@@ -5,7 +5,7 @@ import random
 
 
 class Dynaqp_Tab:
-    def __init__(self, features: int, actions: int, params: Dict, seed: int, options):
+    def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
         self.features = features
         self.num_actions = actions
         self.params = params
