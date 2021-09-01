@@ -4,9 +4,10 @@
     "episodes": 100,
     "runs": 30,
     "metaParameters": {
-
-        "alpha": 0.8,
-        "epsilon": 0.1,
+        "options_given": 0,
+        "alpha": 0.9,
+        "epsilon": 0.9,
         "gamma" : 1.0
+        
     }
 }
