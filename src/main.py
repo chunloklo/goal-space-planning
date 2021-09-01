@@ -10,7 +10,7 @@ from RlGlue import RlGlue
 from src.experiment import ExperimentModel
 from src.problems.registry import getProblem
 from PyExpUtils.utils.Collector import Collector
-from src.utils.rlglue import OneStepWrapper
+from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 
 
@@ -41,7 +41,6 @@ exp = ExperimentModel.load(json_file)
 
 runs = exp.runs
 
-
 max_steps = exp.max_steps
 
 collector = Collector()
@@ -55,7 +54,11 @@ for run in range(runs):
     problem = Problem(exp, inner_idx)
     agent = problem.getAgent()
     env = problem.getEnvironment()
-    wrapper = OneStepWrapper(agent, problem.getGamma(), problem.rep)
+    if "Option" in agent.__str__():
+        wrapper = OptionOneStepWrapper(agent, problem.getGamma(), problem.rep)
+    else:
+        wrapper = OneStepWrapper(agent, problem.getGamma(), problem.rep)
+
     glue = RlGlue(wrapper, env)
     # print("run:",run)
     # Run the experiment

@@ -19,6 +19,8 @@ class Dynaqp_Tab:
         self.epsilon = params['epsilon']
         self.planning_steps = params['planning_steps']
 
+
+
         self.gamma = params['gamma']
         self.kappa = params['kappa']
         self.tau = np.zeros(((int(features/self.num_actions), self.num_actions)))

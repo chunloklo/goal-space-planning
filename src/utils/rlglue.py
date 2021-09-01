@@ -14,20 +14,23 @@ class OneStepWrapper(BaseAgent):
 
         self.options = self.agent.options
 
+    def __str__(self):
+        return self.agent.__str__()
+
     def start(self, s):
         self.s = s
         self.x = self.rep.encode(s)
-        _, self.a = self.agent.selectAction(self.x)
+        self.a = self.agent.selectAction(self.x)
 
         return self.a
 
     def step(self, r, sp, t=False):
         xp = self.rep.encode(sp)
 
-        op, ap = self.agent.update(self.x, self.o, self.a, xp, r, self.gamma)
+        ap = self.agent.update(self.x, self.a, xp, r, self.gamma)
 
         self.s = sp
-        self.o = op
+        #self.o = op
         self.a = ap
         self.x = xp
 
@@ -40,9 +43,35 @@ class OneStepWrapper(BaseAgent):
         gamma = 0
             
         if term and 'Q' in self.agent.__str__():
-            self.agent.update(self.x, self.o, self.a, self.x, r, gamma)
+            self.agent.update(self.x, self.a, self.x, r, gamma)
         else:
             self.agent.agent_end(self.x, self.a, r, gamma)
 
 
         # reset agent here if necessary (e.g. to clear traces)
+
+class OptionOneStepWrapper(OneStepWrapper):
+    def start(self, s):
+        self.s = s
+        self.x = self.rep.encode(s)
+        self.o, self.a = self.agent.selectAction(self.x)
+        return self.o, self.a
+
+    def step(self, r, sp, t=False):
+        xp = self.rep.encode(sp)
+
+        op, ap = self.agent.update(self.x, self.o, self.a, xp, r, self.gamma)
+
+        self.s = sp
+        self.o = op
+        self.a = ap
+        self.x = xp
+
+        return ap
+    def end(self, r, term):
+        gamma = 0
+            
+        if term and 'Q' in self.agent.__str__():
+            self.agent.update(self.x, self.o, self.a, self.x, r, gamma)
+        else:
+            self.agent.agent_end(self.x, self.a, r, gamma)
