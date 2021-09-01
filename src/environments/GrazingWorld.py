@@ -17,6 +17,7 @@ class GrazingWorld(BaseEnvironment):
     Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
     """
     def __init__(self, seed:int, size=10, reward_sequence_length=500):
+        self.size = size
         self.shape = (size, size)
         self.reward_sequence_length = reward_sequence_length
 
@@ -68,6 +69,9 @@ class GrazingWorld(BaseEnvironment):
     # give all actions for a given state
     def actions(self, s):
         return [UP, RIGHT, DOWN, LEFT]
+
+    def state_encoding(self,position):
+        return self.size*position[0]+position[1]
 
     # give the rewards associated with a given state, action, next state tuple
     def rewards(self, s, terminal):

@@ -71,5 +71,7 @@ colors={
     "Dynaqp_Tab": 'green',
     "Q_Linear": 'red',
     "Option_Q_Tab": 'cyan',
-    "Dyna_Optionqp_Tab": 'purple'
+    "Dyna_Optionqp_Tab": 'purple',
+    "Option_Given_Q_Tab": 'magenta',
+    "Dyna_Option_Givenqp_Tab": 'orange',
 }

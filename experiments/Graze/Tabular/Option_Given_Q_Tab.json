@@ -1,5 +1,5 @@
 {
-    "agent": "Option_Q_Tab",
+    "agent": "Option_Given_Q_Tab",
     "problem": "GrazingWorld",
     "episodes": 100,
     "runs": 30,

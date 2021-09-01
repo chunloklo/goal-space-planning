@@ -2,7 +2,7 @@ from typing import Dict
 import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 
-class Option_Q_Tab:
+class Option_Given_Q_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
         self.env = env
         self.features = features
@@ -18,11 +18,6 @@ class Option_Q_Tab:
         # define parameter contract
         self.alpha = params['alpha']
         self.epsilon = params['epsilon']
-
-        if params['options_given'] == 0:
-            self.options_given = False
-        else:
-            self.options_given = True
 
         # create initial weights
         self.Q = np.zeros((self.num_states, self.num_actions+self.num_options))
@@ -49,7 +44,7 @@ class Option_Q_Tab:
             o = argmax(self.Q[x,:])
 
         if o>= self.num_actions:
-            a = argmax(self.option_Qs[(self.num_actions+self.num_options)-o-1][x,:])
+            a, t = self.options[(self.num_actions+self.num_options)-o-1].step(x)
         else:
             a=o
       
@@ -57,10 +52,7 @@ class Option_Q_Tab:
 
     def update(self, x, o, a, xp, r, gamma):
         op, ap = self.selectAction(xp)
-        self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a]) 
-        if o!=None:
-            if o>= self.num_actions:
-                Q_opt = self.option_Qs[(self.num_actions+self.num_options)-o-1]
-                Q_opt[x,a] += self.alpha * (r + gamma*np.max(Q_opt[xp,:]) - Q_opt[x,a]) 
+        #self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a]) 
+        self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,o]) 
         return op, ap
 

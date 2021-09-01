@@ -2,7 +2,7 @@ from src.problems.BaseProblem import BaseProblem
 from src.environments.MazeWorld import MazeWorld as MWEnv
 from PyFixedReps.TileCoder import TileCoder
 from PyFixedReps.Tabular import Tabular
-from src.utils.options import load_option
+#from src.utils.options import load_option
 
 class MazeWorld(BaseProblem):
     def __init__(self, exp, idx):

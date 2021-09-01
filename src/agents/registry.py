@@ -8,7 +8,10 @@ from agents.PrioritizedSweep import PrioritizedSweep
 
 # Tabular Agents with Options
 from agents.Option_Q_Tab import Option_Q_Tab
+from agents.Option_Given_Q_Tab import Option_Given_Q_Tab
+
 from agents.Dyna_Optionqp_Tab import Dyna_Optionqp_Tab
+from agents.Dyna_Option_Givenqp_Tab import Dyna_Option_Givenqp_Tab
 
 # Linear Agents with Primitive Actions
 from agents.Q_Linear import Q_Linear
@@ -33,10 +36,12 @@ def getAgent(name):
     elif name == 'Dyna_Linear_Dist':
         return Dyna_Linear_Dist  
     elif name == 'Option_Q_Tab':
-        return Option_Q_Tab   
+        return Option_Q_Tab
+    elif name == 'Option_Given_Q_Tab':
+        return Option_Given_Q_Tab
     elif name == 'Dyna_Optionqp_Tab':
-        return Dyna_Optionqp_Tab           
-
-        
+        return Dyna_Optionqp_Tab
+    elif name == 'Dyna_Option_Givenqp_Tab':
+        return Dyna_Option_Givenqp_Tab
     else:
         raise NotImplementedError()

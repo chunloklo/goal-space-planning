@@ -10,7 +10,7 @@ class GrazingWorld(BaseProblem):
         self.env = GWEnv(self.seed)
         self.actions = 4
         self.options = [load_option('GrazingO1'), load_option('GrazingO2'),load_option('GrazingO3')]
-
+        #self.options = None
         self.rep = Tabular(self.env.shape, self.actions)
 
         self.features = self.rep.features()

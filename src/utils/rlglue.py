@@ -8,6 +8,7 @@ class OneStepWrapper(BaseAgent):
         self.rep = rep
 
         self.s = None
+        self.o = None
         self.a = None
         self.x = None
 
@@ -16,16 +17,17 @@ class OneStepWrapper(BaseAgent):
     def start(self, s):
         self.s = s
         self.x = self.rep.encode(s)
-        self.a = self.agent.selectAction(self.x)
+        _, self.a = self.agent.selectAction(self.x)
 
         return self.a
 
     def step(self, r, sp, t=False):
         xp = self.rep.encode(sp)
 
-        ap = self.agent.update(self.x, self.a, xp, r, self.gamma)
+        op, ap = self.agent.update(self.x, self.o, self.a, xp, r, self.gamma)
 
         self.s = sp
+        self.o = op
         self.a = ap
         self.x = xp
 
@@ -38,7 +40,7 @@ class OneStepWrapper(BaseAgent):
         gamma = 0
             
         if term and 'Q' in self.agent.__str__():
-            self.agent.update(self.x, self.a, self.x, r, gamma)
+            self.agent.update(self.x, self.o, self.a, self.x, r, gamma)
         else:
             self.agent.agent_end(self.x, self.a, r, gamma)
 

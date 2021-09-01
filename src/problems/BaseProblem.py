@@ -12,7 +12,7 @@ class BaseProblem:
         self.agent = None
         self.env = None
         self.rep = None
-        self.gamma = None
+        self.gamma = self.params
 
         self.seed = exp.getRun(idx)
 
@@ -31,5 +31,5 @@ class BaseProblem:
 
     def getAgent(self):
         Agent = getAgent(self.exp.agent)
-        self.agent = Agent(self.features, self.actions, self.params, self.seed, self.options)
+        self.agent = Agent(self.features, self.actions, self.params, self.seed, self.options, self.env)
         return self.agent

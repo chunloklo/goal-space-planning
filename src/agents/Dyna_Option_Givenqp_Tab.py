@@ -4,7 +4,7 @@ from PyExpUtils.utils.random import argmax, choice
 import random
 
 
-class Dyna_Optionqp_Tab:
+class Dyna_Option_Givenqp_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
         self.env = env
         self.features = features
@@ -53,7 +53,7 @@ class Dyna_Optionqp_Tab:
             o = argmax(self.Q[x,:])
 
         if o>= self.num_actions:
-            a = argmax(self.option_Qs[(self.num_actions+self.num_options)-o-1][x,:])
+            a, t = self.options[(self.num_actions+self.num_options)-o-1].step(x)
         else:
             a=o
         return o,a
@@ -62,10 +62,8 @@ class Dyna_Optionqp_Tab:
         op, ap = self.selectAction(xp)
         self.tau += 1
         self.tau[x, a] = 0
-        self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a]) 
-        if o!=None and o >= self.num_actions:
-            Q_opt = self.option_Qs[(self.num_actions+self.num_options)-o-1]
-            Q_opt[x,a] += self.alpha * (r + gamma*np.max(Q_opt[xp,:]) - Q_opt[x,a]) 
+        #self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a]) 
+        self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,o]) 
         self.update_model(x,a,xp,r)  
         self.planning_step(gamma)
 
