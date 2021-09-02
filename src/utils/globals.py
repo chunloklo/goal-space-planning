@@ -1,0 +1,2 @@
+global collector
+collector = None

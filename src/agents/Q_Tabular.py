@@ -32,5 +32,5 @@ class Q_Tabular:
 
     def update(self, x, a, xp, r, gamma):
         ap = self.selectAction(xp)
-        self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a])      
+        self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a])   
         return ap

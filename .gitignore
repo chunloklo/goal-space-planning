@@ -2,6 +2,7 @@
 results/
 results.tar
 .tmp/
+visualizations/
 
 # ignore python caches
 env/

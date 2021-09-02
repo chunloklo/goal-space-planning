@@ -4,7 +4,7 @@ import sys
 import os, time
 sys.path.append(os.getcwd())
 import logging
-
+from utils import globals
 
 from RlGlue import RlGlue
 from src.experiment import ExperimentModel
@@ -42,8 +42,7 @@ exp = ExperimentModel.load(json_file)
 runs = exp.runs
 
 max_steps = exp.max_steps
-
-collector = Collector()
+globals.collector = Collector()
 broke = False
 for run in range(runs):
     # set random seeds accordingly
@@ -69,11 +68,12 @@ for run in range(runs):
         if agent.FA()!="Tabular":
             # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
             if np.isnan(np.sum(agent.w)):
-                collector.fillRest(np.nan, exp.episodes)
+                globals.collector.fillRest(np.nan, exp.episodes)
                 broke = True
                 break
-        collector.collect('return', glue.total_reward)
-    collector.reset()
+        globals.collector.collect('return', glue.total_reward)
+        globals.collector.collect('Q', np.copy(agent.Q))   
+    globals.collector.reset()
 
     if broke:
         break
@@ -89,21 +89,24 @@ for run in range(runs):
 # plt.show()
 # exit()
 
-from PyExpUtils.results.backends.csv import saveResults
+from PyExpUtils.results.backends import csv
+from PyExpUtils.results.backends import numpy
 from PyExpUtils.utils.arrays import downsample
 
-for key in collector.all_data:
-    data = collector.all_data[key]
+for key in globals.collector.all_data:
+    data = globals.collector.all_data[key]
     for run, datum in enumerate(data):
         inner_idx = exp.numPermutations() * run + idx
+        # print(len(datum))
 
         # heavily downsample the data to reduce storage costs
         # we don't need all of the data-points for plotting anyways
-        # method='window' returns a window average
+        # method='window' returns a window average, this also reduces the dimensions to 0...
         # method='subsample' returns evenly spaced samples from array
         # num=1000 makes sure final array is of length 1000
         # percent=0.1 makes sure final array is 10% of the original length (only one of `num` or `percent` can be specified)
-        datum = downsample(datum, num=500, method='window')
-        saveResults(exp, inner_idx, key, datum, precision=2)
+        datum = downsample(datum, num=500, method='subsample')
+        # print(datum[0])
+        numpy.saveResults(exp, inner_idx, key, datum)
 
 logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")
