@@ -1,5 +1,6 @@
 import numpy as np
 from RlGlue import BaseEnvironment
+from utils import globals
 
 UP = 0
 RIGHT = 1
@@ -76,8 +77,12 @@ class GrazingWorld(BaseEnvironment):
     # give the rewards associated with a given state, action, next state tuple
     def rewards(self, s, terminal):
         if terminal:
+            rewards = [self.goals[i]["current_reward"] for i in range(1,4)]
+            globals.collector.collect('goal_rewards', rewards)  
+
             for i in range(1,4):
                 if self.goals[i]["position"]==tuple(s):
+                    globals.collector.collect('end_goal', i)  
                     return self.goals[i]["current_reward"]
         else:
             return self.step_penalty

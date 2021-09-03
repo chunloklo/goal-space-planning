@@ -11,6 +11,7 @@ from src.experiment import ExperimentModel
 from src.problems.registry import getProblem
 from PyExpUtils.utils.Collector import Collector
 from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
+from src.utils import rlglue
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 
 
@@ -53,10 +54,21 @@ for run in range(runs):
     problem = Problem(exp, inner_idx)
     agent = problem.getAgent()
     env = problem.getEnvironment()
-    if "Option" in agent.__str__():
-        wrapper = OptionOneStepWrapper(agent, problem.getGamma(), problem.rep)
-    else:
-        wrapper = OneStepWrapper(agent, problem.getGamma(), problem.rep)
+    try:
+        wrapper_class = agent.wrapper_class
+        if (wrapper_class == rlglue.OptionFullExecuteWrapper or 
+            wrapper_class == rlglue.OptionOneStepWrapper or 
+            wrapper_class == rlglue.OneStepWrapper):
+            wrapper = wrapper_class(agent, problem.getGamma(), problem.rep)
+        else:
+            raise NotImplementedError(f"wrapper class {wrapper_class} has not been implemented")
+    
+    except AttributeError:
+        print("main.py: Agent does not have a wrapper class stated, defaulting to parsing by strings")
+        if "Option" in agent.__str__():
+            wrapper = OptionOneStepWrapper(agent, problem.getGamma(), problem.rep)
+        else:
+            wrapper = OneStepWrapper(agent, problem.getGamma(), problem.rep)
 
     glue = RlGlue(wrapper, env)
     # print("run:",run)
@@ -99,14 +111,17 @@ for key in globals.collector.all_data:
         inner_idx = exp.numPermutations() * run + idx
         # print(len(datum))
 
-        # heavily downsample the data to reduce storage costs
-        # we don't need all of the data-points for plotting anyways
-        # method='window' returns a window average, this also reduces the dimensions to 0...
-        # method='subsample' returns evenly spaced samples from array
-        # num=1000 makes sure final array is of length 1000
-        # percent=0.1 makes sure final array is 10% of the original length (only one of `num` or `percent` can be specified)
-        datum = downsample(datum, num=500, method='subsample')
-        # print(datum[0])
-        numpy.saveResults(exp, inner_idx, key, datum)
+        if (key == 'return'):
+            # heavily downsample the data to reduce storage costs
+            # we don't need all of the data-points for plotting anyways
+            # method='window' returns a window average, this also reduces the dimensions to 0...
+            # method='subsample' returns evenly spaced samples from array
+            # num=1000 makes sure final array is of length 1000
+            # percent=0.1 makes sure final array is 10% of the original length (only one of `num` or `percent` can be specified)
+            datum = downsample(datum, num=500, method='window')
+            csv.saveResults(exp, inner_idx, key, datum, precision=2)
+        else:
+            datum = downsample(datum, num=500, method='subsample')
+            numpy.saveResults(exp, inner_idx, key, datum)
 
 logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")

@@ -1,0 +1,15 @@
+{
+    "agent": "Dynaqp_Tab",
+    "problem": "GrazingWorld",
+    "episodes": 100,
+    "runs": 1,
+    "metaParameters": {
+        "alpha": 0.6,
+        "epsilon": 0.8,
+        "gamma": 1.0,
+        "kappa": 0.001,
+        "planning_steps": [
+            5
+        ]
+    }
+}

@@ -1,9 +1,11 @@
 from typing import Dict
 import numpy as np
 from PyExpUtils.utils.random import argmax, choice
+from src.utils import rlglue
 
 class Q_Tabular:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
+        self.wrapper_class = rlglue.OneStepWrapper
         self.features = features
         self.num_actions = actions
         self.actions = list(range(self.num_actions))

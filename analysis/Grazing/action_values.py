@@ -1,3 +1,4 @@
+from genericpath import isdir
 import os
 import sys
 import glob
@@ -13,7 +14,7 @@ from src.analysis.learning_curve import plotBest
 from src.experiment import ExperimentModel
 from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParametersEqual, find
 from PyExpUtils.utils.arrays import first
-
+from tqdm import tqdm
 
 def _get_corner_loc(offsetx: int, offsety: int, loc_type: str):
     if (loc_type == 'center'):
@@ -74,7 +75,7 @@ def _plot_init(ax):
                 }
                 text_location = get_text_location(i ,j ,a)
                 # 'p' is just placeholder text
-                texts[i][j].append(ax.text(text_location[0], text_location[1], 'p', fontdict = font))
+                texts[i][j].append(ax.text(text_location[0], text_location[1], 'p', fontdict = font, va='center', ha='center'))
 
                 # placeholder color
                 color = "blue"
@@ -93,29 +94,52 @@ def generatePlot(ax, exp_paths, bounds):
     for exp_path in exp_paths:
         exp = ExperimentModel.load(exp_path)
 
+        save_path = exp_path.replace('experiments', 'visualizations')
+        save_folder = os.path.splitext(save_path)[0]
+        save_file = save_folder + '/action_values.mp4'
+
+        if (not os.path.isdir(save_folder)):
+            os.makedirs(save_folder)
+
         results = loadResults(exp, 'Q.npy')
         data = None
         for r in results:
             data = r.load()
 
-        print(data.shape)
+        # Using a simple way of determining whether options are used.
+        # Note that this might not work in the future if we do something separate, but it works for now
+        hasOptions = data.shape[-1] > 4
 
         min_val = np.min(data)
         max_val = np.max(data)
 
         # fig = plt.figure()
-        fig, ax = plt.subplots(1, figsize=(16, 16))
+        if hasOptions:
+            fig, axes = plt.subplots(1, 2, figsize=(32, 16))
+            ax = axes[0]
+            ax_options = axes[1]
+            
+        else:
+            fig, axes = plt.subplots(1, figsize=(16, 16))
+            ax = axes
 
         colormap = cm.get_cmap('viridis')
 
         ax.set_xlim(0, 10)
         ax.set_ylim(0, 10)
         ax.invert_yaxis()
-
         texts, patches = _plot_init(ax)
+        
 
+        if hasOptions:
+            ax_options.set_xlim(0, 10)
+            ax_options.set_ylim(0, 10)
+            ax_options.invert_yaxis()
+            texts_options, patches_options = _plot_init(ax_options)
+
+        pbar = tqdm(total=data.shape[0])
         def draw_func(i):
-        # for now lets get the last one
+            pbar.update(i - pbar.n)
             q_values = data[i, :, :]
 
             # titles.append(ax.set_title(f"frame: {i}"))
@@ -128,10 +152,17 @@ def generatePlot(ax, exp_paths, bounds):
                         scaled_value = scale_value(q_value[a], min_val, max_val)
                         patches[i][j][a].set_facecolor(colormap(scaled_value))
                         texts[i][j][a].set_text(round(q_value[a], 2))
+
+                    if hasOptions:
+                        for a in range(3):
+                            scaled_value = scale_value(q_value[a + 4], min_val, max_val)
+                            patches_options[i][j][a].set_facecolor(colormap(scaled_value))
+                            texts_options[i][j][a].set_text(round(q_value[a + 4], 2))
             return
 
-        animation = FuncAnimation(fig, draw_func, frames=range(0, data.shape[0], 1))
-        animation.save('visualizations/option_q_action_values.mp4')
+        animation = FuncAnimation(fig, draw_func, frames=range(0, data.shape[0], 2))
+        animation.save(save_file)
+        pbar.close()
         # plt.show()
 
 if __name__ == "__main__":

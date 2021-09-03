@@ -55,7 +55,7 @@ class OptionOneStepWrapper(OneStepWrapper):
         self.s = s
         self.x = self.rep.encode(s)
         self.o, self.a = self.agent.selectAction(self.x)
-        return self.o, self.a
+        return self.a
 
     def step(self, r, sp, t=False):
         xp = self.rep.encode(sp)
@@ -68,6 +68,53 @@ class OptionOneStepWrapper(OneStepWrapper):
         self.x = xp
 
         return ap
+    def end(self, r, term):
+        gamma = 0
+            
+        if term and 'Q' in self.agent.__str__():
+            self.agent.update(self.x, self.o, self.a, self.x, r, gamma)
+        else:
+            self.agent.agent_end(self.x, self.a, r, gamma)
+
+class OptionFullExecuteWrapper(OneStepWrapper):
+    def start(self, s):
+        self.s = s
+        self.x = self.rep.encode(s)
+        self.o = self.agent.selectAction(self.x)
+
+        action = self._get_action(self.x, self.o)
+        return action
+
+    def _get_action(self, x, o) -> int:
+        if (self.agent.is_option(o)):
+            action, t = self.agent.get_action(x, o)
+            return action
+        return o
+
+    def step(self, r, sp, t=False):
+        xp = self.rep.encode(sp)
+
+        if (self.agent.is_option(self.o)):
+            # execute the option and don't update the agent
+            action, t = self.agent.get_action(xp, self.o)
+            if t == False:
+                # Option has not terminated yet, keep giving the action
+                return action
+            
+        op = self.agent.update(self.x, self.o, xp, r, self.gamma)
+
+        self.s = sp
+        self.o = op
+        self.x = xp
+
+        # [2021-09-03 clo] Whenever _get_action is called, the action chosen is always taken
+        # This is perhaps not good if the option can start at one of its termination states,
+        # because that would mean that the beginning action will always execute.
+        # However, dealing with this will likely involve dealing with an infinite loop of selecting actions,
+        # which we avoid for now. The same issue occurs in the start function.
+        action = self._get_action(self.x, self.o)
+        return action
+
     def end(self, r, term):
         gamma = 0
             

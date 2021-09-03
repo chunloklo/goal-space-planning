@@ -5,4 +5,5 @@ git+https://github.com/gabormihucz/PyFixedReps@master
 matplotlib>=2.2.3
 pylint>=2.0.0
 mypy>=0.770
+tqdm>=4.62.2
 git+https://github.com/numpy/numpy-stubs
