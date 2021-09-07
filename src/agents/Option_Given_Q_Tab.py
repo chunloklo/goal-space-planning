@@ -38,6 +38,21 @@ class Option_Given_Q_Tab:
     def __str__(self):
         return "Option_Q_Tabular"
 
+    def is_option(self, o):
+        if o>= self.num_actions:
+            return True
+        else:
+            return False
+
+    # Returns the option/action
+    def get_action(self, x, o):
+        if o>= self.num_actions:
+            a, t = self.options[(self.num_actions+self.num_options)-o-1].step(x)
+            return a, t
+        else:
+            return o, False
+
+
     def selectAction(self, x):
         p = self.random.rand()
         if p < self.epsilon:
