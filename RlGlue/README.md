@@ -1,0 +1,1 @@
+This module is taken from https://github.com/andnp/RlGlue version 0.4 hash fa690743839212e1e5cc68f20fe4bc0c24c9dcb2 with modifications to rl_glue.py

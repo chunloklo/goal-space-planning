@@ -1,9 +1,18 @@
-git+https://github.com/andnp/RlGlue@0.2#egg=RlGlue
+#git+https://github.com/andnp/RlGlue@0.2#egg=RlGlue
 git+https://github.com/andnp/PyExpUtils@2.3#egg=PyExpUtils
-git+https://github.com/gabormihucz/PyFixedReps@master
+#git+https://github.com/gabormihucz/PyFixedReps@master
 
+#RlGlue Requirements
+numpy>=1.19.5
+
+#PyFixedReps Requirements
+numba>=0.52.0
+numpy
+
+# Source Requirements
 matplotlib>=2.2.3
 pylint>=2.0.0
 mypy>=0.770
 tqdm>=4.62.2
+dill>=0.3.4
 git+https://github.com/numpy/numpy-stubs

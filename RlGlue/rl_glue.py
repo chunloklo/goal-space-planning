@@ -3,7 +3,6 @@ class RlGlue:
         self.environment = env
         self.agent = agent
         self.last_action = None
-        self.last_option = None
         self.last_state = None
         self.total_reward = 0.0
         self.num_steps = 0
@@ -14,10 +13,7 @@ class RlGlue:
         s = self.environment.start()
         obs = self.observationChannel(s)
         self.last_state = obs
-        if "Option" in self.agent.__str__():
-            self.last_option, self.last_action = self.agent.start(obs)
-        else:
-            self.last_action = self.agent.start(obs)
+        self.last_action = self.agent.start(obs)
 
         return (obs, self.last_action)
 

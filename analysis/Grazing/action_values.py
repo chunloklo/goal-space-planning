@@ -88,6 +88,7 @@ def _plot_init(ax):
 
 def scale_value(value: float, min_val:float, max_val:float):
     percentage = (value + min_val) / (max_val - min_val)
+    percentage = np.cbrt(percentage)
     return percentage
 
 def generatePlot(ax, exp_paths, bounds):
