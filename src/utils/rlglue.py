@@ -119,6 +119,6 @@ class OptionFullExecuteWrapper(OneStepWrapper):
         gamma = 0
             
         if term and 'Q' in self.agent.__str__():
-            self.agent.update(self.x, self.o, self.a, self.x, r, gamma)
+            self.agent.update(self.x, self.o, self.x, r, gamma)
         else:
             self.agent.agent_end(self.x, self.a, r, gamma)

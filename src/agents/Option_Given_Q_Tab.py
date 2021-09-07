@@ -65,11 +65,11 @@ class Option_Given_Q_Tab:
         else:
             a=o
       
-        return o,a
+        return o
 
-    def update(self, x, o, a, xp, r, gamma):
-        op, ap = self.selectAction(xp)
+    def update(self, x, o, xp, r, gamma):
+        op = self.selectAction(xp)
         #self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a]) 
         self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,o]) 
-        return op, ap
+        return op
 
