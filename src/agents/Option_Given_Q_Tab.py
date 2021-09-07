@@ -5,7 +5,7 @@ from src.utils import rlglue
 
 class Option_Given_Q_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
-        self.wrapper_class = rlglue.OptionOneStepWrapper
+        self.wrapper_class = rlglue.OptionFullExecuteWrapper
         self.env = env
         self.features = features
         self.num_actions = actions
