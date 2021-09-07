@@ -78,8 +78,8 @@ for path in experiment_paths:
     res_path = first(paths)
 
     data = []
-    raise NotImplementedError("Don't forget to change the expected result file")
-    data_path = f'{res_path}/TODO-CHANGE-ME.csv'
+    #raise NotImplementedError("Don't forget to change the expected result file")
+    data_path = f'{res_path}/results.csv'
     if os.path.exists(data_path):
         f = open(data_path, 'r')
         data = f.readlines()
