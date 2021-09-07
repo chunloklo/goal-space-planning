@@ -26,13 +26,14 @@ cwd = os.getcwd()
 def getJobScript(parallel):
     return f"""#!/bin/bash
 cd {cwd}
+module load StdEnv/2020
+module load llvm/9
 . ~/env/bin/activate
 
 export MPLBACKEND=TKAgg
 export OMP_NUM_THREADS=1
 {parallel}
     """
-
 # --------------------------
 # Get command-line arguments
 # --------------------------
