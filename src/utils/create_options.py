@@ -15,6 +15,16 @@ LEFT = 3
 def create_options(env, option_name):
 
     # option 1 - go to goal state 1, i.e. the state that gives reward 50 or 0
+    term_set = [22,27,77]
+
+    def policy_selection(policy, state):
+        return policy[state]
+
+    def termination_condition(termination_set, state):
+
+        if state in termination_set:
+            return True
+        return False
 
     if "Grazing" in option_name:
 
@@ -33,16 +43,11 @@ def create_options(env, option_name):
             
         }
 
-        term_set = [22,27,77]
+        
 
-        def policy_selection(policy, state):
-            return policy[state]
 
-        def termination_condition(termination_set, state):
 
-            if state in termination_set:
-                return True
-            return False
+
 
 
         option1 = QOption([x for x in range(env.nS)], policy_option_1,
