@@ -3,7 +3,7 @@ git+https://github.com/andnp/PyExpUtils@2.3#egg=PyExpUtils
 #git+https://github.com/gabormihucz/PyFixedReps@master
 
 #RlGlue Requirements
-numpy>=1.19.5
+
 
 #PyFixedReps Requirements
 numba>=0.52.0

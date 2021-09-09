@@ -23,9 +23,9 @@ if len(sys.argv) < 3:
     exit(1)
 
 # new stuff for parallel
-runs = sys.argv[1]
-json_file = sys.argv[2]
-idx = int(sys.argv[3])
+#runs = sys.argv[1]
+json_file = sys.argv[1]
+idx = int(sys.argv[2])
 # Get experiment
 d = get_sorted_dict(json_file)
 experiments = get_param_iterable(d)
