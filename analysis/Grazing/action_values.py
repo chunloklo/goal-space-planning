@@ -54,6 +54,10 @@ def get_text_location(offsetx:int, offsety:int, action: int):
     return (x, y)
 
 def _plot_init(ax):
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.invert_yaxis()
+
     texts = []
     patches = []
     for i in range(10):
@@ -87,25 +91,28 @@ def _plot_init(ax):
 
 
 def scale_value(value: float, min_val:float, max_val:float):
-    percentage = (value + min_val) / (max_val - min_val)
+    percentage = (value - min_val) / (max_val - min_val)
     percentage = np.cbrt(percentage)
     return percentage
 
-def generatePlot(ax, exp_paths, bounds):
+def load_experiment_data(exp_path, file_name):
+    exp = ExperimentModel.load(exp_path)
+    results = loadResults(exp, file_name)
+    data = None
+    for r in results:
+        data = r.load()
+    return data
+
+def generatePlot(exp_paths, file_name, anim_file_name):
     for exp_path in exp_paths:
-        exp = ExperimentModel.load(exp_path)
+        data = load_experiment_data(exp_path, file_name)
 
         save_path = exp_path.replace('experiments', 'visualizations')
         save_folder = os.path.splitext(save_path)[0]
-        save_file = save_folder + '/action_values.mp4'
+        save_file = save_folder + f'/{anim_file_name}'
 
         if (not os.path.isdir(save_folder)):
             os.makedirs(save_folder)
-
-        results = loadResults(exp, 'Q.npy')
-        data = None
-        for r in results:
-            data = r.load()
 
         # Using a simple way of determining whether options are used.
         # Note that this might not work in the future if we do something separate, but it works for now
@@ -113,6 +120,7 @@ def generatePlot(ax, exp_paths, bounds):
 
         min_val = np.min(data)
         max_val = np.max(data)
+        print(f'min: {min_val} max: {max_val}')
 
         # fig = plt.figure()
         if hasOptions:
@@ -126,9 +134,6 @@ def generatePlot(ax, exp_paths, bounds):
 
         colormap = cm.get_cmap('viridis')
 
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.invert_yaxis()
         texts, patches = _plot_init(ax)
         
 
@@ -161,27 +166,13 @@ def generatePlot(ax, exp_paths, bounds):
                             texts_options[i][j][a].set_text(round(q_value[a + 4], 2))
             return
 
-        animation = FuncAnimation(fig, draw_func, frames=range(0, data.shape[0], 2))
+        animation = FuncAnimation(fig, draw_func, frames=range(0, data.shape[0], 5))
         animation.save(save_file)
         pbar.close()
         # plt.show()
 
 if __name__ == "__main__":
-    # f, axes = plt.subplots(1)
-    axes = None
-    bounds = []
-
     exp_paths = sys.argv[1:]
+    generatePlot(exp_paths, 'Q.npy', 'action_values.mp4')
 
-    generatePlot(axes, exp_paths, bounds)
-
-    # plt.show()
     exit()
-
-    save_path = 'experiments/exp/plots'
-    os.makedirs(save_path, exist_ok=True)
-
-    width = 8
-    height = (24/5)
-    f.set_size_inches((width, height), forward=False)
-    plt.savefig(f'{save_path}/learning-curve.png', dpi=100)

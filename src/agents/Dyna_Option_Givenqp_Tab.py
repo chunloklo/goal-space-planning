@@ -88,9 +88,6 @@ class Dyna_Option_Givenqp_Tab:
         
         if x not in self.model:
             self.model[x] = {o:(xp,r)}
-            for action in self.actions:
-                if action != o:
-                    self.model[x][action] = (x, 0)
         else:
             self.model[x][o] = (xp,r)
             
