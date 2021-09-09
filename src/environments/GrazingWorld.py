@@ -33,16 +33,16 @@ class GrazingWorld(BaseEnvironment):
             1:{
                 "position" : (2,2),
                 "reward" : 50,
-                "current_reward":50,
-                # "reward_sequence_length": np.random.poisson(lam=self.reward_sequence_length),
-                # "iterator" : int(self.reward_sequence_length/2)
+                "current_reward":0,
+                "reward_sequence_length": np.random.poisson(lam=self.reward_sequence_length),
+                "iterator" : int(self.reward_sequence_length/2)
             },
             2:{
                 "position" : (2,size-3),
                 "reward" : 30,
-                "current_reward":30,
-                # "reward_sequence_length": np.random.poisson(lam=self.reward_sequence_length),
-                # "iterator" : 0
+                "current_reward":0,
+                "reward_sequence_length": np.random.poisson(lam=self.reward_sequence_length),
+                "iterator" : 0
             },
             3:{
                 "position" : (size-3,size-3),
@@ -113,7 +113,7 @@ class GrazingWorld(BaseEnvironment):
         return self.current_state, is_done
 
     def step(self, a):
-        # self.update_goals()
+        self.update_goals()
         s = self.current_state
         sp, t = self.next_state(s, self.action_encoding[a])
         r = self.rewards(s, t)
