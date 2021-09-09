@@ -13,6 +13,8 @@ from agents.Option_Given_Q_Tab import Option_Given_Q_Tab
 from agents.Dyna_Optionqp_Tab import Dyna_Optionqp_Tab
 from agents.Dyna_Option_Givenqp_Tab import Dyna_Option_Givenqp_Tab
 
+from agents.DynaQP_OptionIntra_Tab import DynaQP_OptionIntra_Tab
+
 # Linear Agents with Primitive Actions
 from agents.Q_Linear import Q_Linear
 from agents.Dyna_Linear_Dist import Dyna_Linear_Dist
@@ -43,5 +45,7 @@ def getAgent(name):
         return Dyna_Optionqp_Tab
     elif name == 'Dyna_Option_Givenqp_Tab':
         return Dyna_Option_Givenqp_Tab
+    elif name == 'DynaQP_OptionIntra_Tab':
+        return DynaQP_OptionIntra_Tab
     else:
         raise NotImplementedError()

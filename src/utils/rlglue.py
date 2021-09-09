@@ -70,11 +70,7 @@ class OptionOneStepWrapper(OneStepWrapper):
         return ap
     def end(self, r, term):
         gamma = 0
-            
-        if term and 'Q' in self.agent.__str__():
-            self.agent.update(self.x, self.o, self.a, self.x, r, gamma)
-        else:
-            self.agent.agent_end(self.x, self.a, r, gamma)
+        self.agent.agent_end(self.x, self.o, self.a, r, gamma)
 
 class OptionFullExecuteWrapper(OneStepWrapper):
     def start(self, s):
