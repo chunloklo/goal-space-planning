@@ -65,7 +65,7 @@ class DynaQP_OptionIntra_Tab:
         else:
             return o, False
 
-    def selectAction(self, x) -> tuple[int, int]:
+    def selectAction(self, x) :
         p = self.random.rand()
         if p < self.epsilon:
             o = choice(np.arange(self.num_actions+self.num_options), self.random)
