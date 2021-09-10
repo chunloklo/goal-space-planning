@@ -19,6 +19,9 @@ from agents.DynaQP_OptionIntra_Tab import DynaQP_OptionIntra_Tab
 from agents.Q_Linear import Q_Linear
 from agents.Dyna_Linear_Dist import Dyna_Linear_Dist
 
+# Option Planning
+from agents.OptionPlanning_Tab import OptionPlanning_Tab
+
 
 def getAgent(name):
     if name == 'SARSA':
@@ -47,5 +50,7 @@ def getAgent(name):
         return Dyna_Option_Givenqp_Tab
     elif name == 'DynaQP_OptionIntra_Tab':
         return DynaQP_OptionIntra_Tab
+    elif name == 'OptionPlanning_Tab':
+        return OptionPlanning_Tab
     else:
         raise NotImplementedError()

@@ -60,9 +60,6 @@ class Dynaqp_Tab:
         
         if x not in self.model:
             self.model[x] = {a:(xp,r)}
-            for action in self.actions:
-                if action != a:
-                    self.model[x][action] = (x, 0)
         else:
             self.model[x][a] = (xp,r)
             
