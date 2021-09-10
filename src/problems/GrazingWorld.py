@@ -14,4 +14,4 @@ class GrazingWorld(BaseProblem):
         self.rep = Tabular(self.env.shape, self.actions)
 
         self.features = self.rep.features()
-        self.gamma = 0.95
+        self.gamma = 1
