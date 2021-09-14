@@ -6,6 +6,8 @@ class OneStepWrapper(BaseAgent):
         self.agent = agent
         self.gamma = gamma
         self.rep = rep
+        self.exploration_phase = self.agent.params["exploration_phase"]
+        
 
         self.s = None
         self.o = None
@@ -13,6 +15,9 @@ class OneStepWrapper(BaseAgent):
         self.x = None
 
         self.options = self.agent.options
+
+    def set_epsilon(self):
+        self.agent.epsilon = self.agent.params["epsilon"]
 
     def __str__(self):
         return self.agent.__str__()
@@ -41,13 +46,11 @@ class OneStepWrapper(BaseAgent):
 
     def end(self, r, term):
         gamma = 0
-            
+
         if term and 'Q' in self.agent.__str__():
             self.agent.update(self.x, self.a, self.x, r, gamma)
         else:
             self.agent.agent_end(self.x, self.a, r, gamma)
-
-
         # reset agent here if necessary (e.g. to clear traces)
 
 class OptionOneStepWrapper(OneStepWrapper):

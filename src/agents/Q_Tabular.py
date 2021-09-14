@@ -15,8 +15,7 @@ class Q_Tabular:
 
         # define parameter contract
         self.alpha = params['alpha']
-        self.epsilon = params['epsilon']
-
+        self.epsilon = 1
         # create initial weights
         self.Q = np.zeros((int(features/actions), actions))
 

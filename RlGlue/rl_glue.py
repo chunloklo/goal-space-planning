@@ -7,6 +7,7 @@ class RlGlue:
         self.total_reward = 0.0
         self.num_steps = 0
         self.num_episodes = 0
+        self.exploration_counter = 0
 
 
     def start(self):
@@ -16,6 +17,11 @@ class RlGlue:
         self.last_action = self.agent.start(obs)
 
         return (obs, self.last_action)
+
+    def exploration_phase_mgmt(self):
+        if self.exploration_counter == self.agent.exploration_phase:
+            self.agent.set_epsilon()
+        self.exploration_counter +=1
 
     def step(self):
         # if self.last_action >= self.environment.nA:
@@ -29,7 +35,9 @@ class RlGlue:
         self.total_reward += reward
 
         if term:
+            self.exploration_phase_mgmt()
             self.agent.end(reward,term)
+
             roat = (reward, obs, None, term)
         else:
             self.last_action = self.agent.step(reward, obs)     
