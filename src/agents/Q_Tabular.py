@@ -35,3 +35,6 @@ class Q_Tabular:
         ap = self.selectAction(xp)
         self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a])   
         return ap
+
+    def agent_end(self,x,a, r, gamma):
+        self.Q[x, a] = self.Q[x,a] + self.alpha * (r  - self.Q[x,a])   

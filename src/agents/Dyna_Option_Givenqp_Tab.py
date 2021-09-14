@@ -73,7 +73,10 @@ class Dyna_Option_Givenqp_Tab:
         op = self.selectAction(xp)
         self.tau += 1
         self.tau[x, o] = 0
-        self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,o]) 
+        # Direct RL
+        max_q = 0 if xp == -1 else np.max(self.Q[xp,:])
+        self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma*max_q - self.Q[x,o]) 
+
         self.update_model(x,o,xp,r)  
         self.planning_step(gamma)
 
@@ -116,8 +119,5 @@ class Dyna_Option_Givenqp_Tab:
             #     print(x,a)
             
 
-    def agent_end(self, x, a, r, gamma):
-        # Model Update step
-        self.update_model(x,a, -1, r)
-        # Planning
-        self.planning_step(gamma)
+    def agent_end(self, x, o, r, gamma):
+        self.update(x, o, -1, r, gamma)

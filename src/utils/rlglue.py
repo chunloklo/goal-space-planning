@@ -44,13 +44,10 @@ class OneStepWrapper(BaseAgent):
     def state_encoding(self, s):
         return self.rep.encode(s)
 
-    def end(self, r, term):
+    def end(self, r):
         gamma = 0
 
-        if term and 'Q' in self.agent.__str__():
-            self.agent.update(self.x, self.a, self.x, r, gamma)
-        else:
-            self.agent.agent_end(self.x, self.a, r, gamma)
+        self.agent.agent_end(self.x, self.a, r, gamma)  
         # reset agent here if necessary (e.g. to clear traces)
 
 class OptionOneStepWrapper(OneStepWrapper):
@@ -71,7 +68,7 @@ class OptionOneStepWrapper(OneStepWrapper):
         self.x = xp
 
         return ap
-    def end(self, r, term):
+    def end(self, r):
         gamma = 0
         self.agent.agent_end(self.x, self.o, self.a, r, gamma)
 
@@ -114,10 +111,7 @@ class OptionFullExecuteWrapper(OneStepWrapper):
         action = self._get_action(self.x, self.o)
         return action
 
-    def end(self, r, term):
+    def end(self, r):
         gamma = 0
             
-        if term and 'Q' in self.agent.__str__():
-            self.agent.update(self.x, self.o, self.x, r, gamma)
-        else:
-            self.agent.agent_end(self.x, self.a, r, gamma)
+        self.agent.agent_end(self.x, self.o, r, gamma)

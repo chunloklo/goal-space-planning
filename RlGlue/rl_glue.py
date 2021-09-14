@@ -36,7 +36,7 @@ class RlGlue:
 
         if term:
             self.exploration_phase_mgmt()
-            self.agent.end(reward,term)
+            self.agent.end(reward)
 
             roat = (reward, obs, None, term)
         else:

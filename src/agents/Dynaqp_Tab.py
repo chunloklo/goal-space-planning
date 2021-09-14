@@ -46,7 +46,8 @@ class Dynaqp_Tab:
         ap = self.selectAction(xp)
         self.tau += 1
         self.tau[x, a] = 0
-        self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,a])   
+        max_q = 0 if xp == -1 else np.max(self.Q[xp,:])
+        self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*max_q - self.Q[x,a]) 
         self.update_model(x,a,xp,r)  
         self.planning_step(gamma)
         return ap
@@ -90,7 +91,5 @@ class Dynaqp_Tab:
             
 
     def agent_end(self, x, a, r, gamma):
-        # Model Update step
-        self.update_model(x,a, -1, r)
-        # Planning
-        self.planning_step(gamma)
+        self.update(x, a, -1, r, gamma)
+

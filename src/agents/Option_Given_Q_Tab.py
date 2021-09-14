@@ -73,3 +73,6 @@ class Option_Given_Q_Tab:
         self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma*np.max(self.Q[xp,:]) - self.Q[x,o]) 
         return op
 
+    def agent_end(self,x,o, r, gamma):
+        self.Q[x, o] = self.Q[x,o] + self.alpha * (r  - self.Q[x,o])  
+
