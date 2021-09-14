@@ -1,6 +1,7 @@
 import numpy as np
 from RlGlue import BaseEnvironment
 from utils import globals
+import random
 
 UP = 0
 RIGHT = 1
@@ -17,11 +18,11 @@ class GrazingWorld(BaseEnvironment):
 
     Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
     """
-    def __init__(self, seed:int, size=10, reward_sequence_length=500):
+    def __init__(self, seed:int, size=10, reward_sequence_length=10):
+        random.seed(1)
         self.size = size
         self.shape = (size, size)
         self.reward_sequence_length = reward_sequence_length
-
         """
         dictionary to keep track of goals
             position: position on the grid
@@ -33,15 +34,15 @@ class GrazingWorld(BaseEnvironment):
             1:{
                 "position" : (2,2),
                 "reward" : 50,
-                "current_reward":0,
-                "reward_sequence_length": np.random.poisson(lam=self.reward_sequence_length),
+                "current_reward":50,
+                "reward_sequence_length": self.reward_sequence_length,
                 "iterator" : int(self.reward_sequence_length/2)
             },
             2:{
                 "position" : (2,size-3),
-                "reward" : 30,
-                "current_reward":0,
-                "reward_sequence_length": np.random.poisson(lam=self.reward_sequence_length),
+                "reward" : 40,
+                "current_reward":40,
+                "reward_sequence_length": self.reward_sequence_length,
                 "iterator" : 0
             },
             3:{
@@ -64,6 +65,7 @@ class GrazingWorld(BaseEnvironment):
         self.start_state = (self.shape[0]-1, 0)
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
+        
     def start(self):
         return self.current_state
 
@@ -97,7 +99,7 @@ class GrazingWorld(BaseEnvironment):
                 self.goals[i]["iterator"] += 1
 
     def gen_reward_sequence(self,terminal_state, previous_terminal_reward):
-        self.goals[terminal_state]["reward_sequence_length"] =  np.random.poisson(lam=self.reward_sequence_length)
+        #self.goals[terminal_state]["reward_sequence_length"] =  np.random.poisson(lam=self.reward_sequence_length)
         if previous_terminal_reward == 0:
             self.goals[terminal_state]["current_reward"] = self.goals[terminal_state]["reward"]
         else:
@@ -113,10 +115,12 @@ class GrazingWorld(BaseEnvironment):
         return self.current_state, is_done
 
     def step(self, a):
-        self.update_goals()
         s = self.current_state
         sp, t = self.next_state(s, self.action_encoding[a])
         r = self.rewards(s, t)
+        if t:
+            self.update_goals()
+
 
         return (r, sp, t)
 

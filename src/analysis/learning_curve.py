@@ -78,4 +78,6 @@ colors={
     "Dyna_Optionqp_Tab": 'purple',
     "Option_Given_Q_Tab": 'magenta',
     "Dyna_Option_Givenqp_Tab": 'orange',
+    "DynaQP_OptionIntra_Tab": 'purple',
+    "OptionPlanning_Tab": 'cyan'
 }

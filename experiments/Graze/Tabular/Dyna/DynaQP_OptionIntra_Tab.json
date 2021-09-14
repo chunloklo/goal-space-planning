@@ -9,6 +9,7 @@
         "gamma": 1.0,
         "kappa": 0.001,
         "planning_steps": [10,50,100],
-        "model_planning_steps": [10,50,100]
+        "model_planning_steps": [10,50,100],
+        "reward_sequence_length" : 10
     }
 }
