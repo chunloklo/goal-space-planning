@@ -40,8 +40,8 @@ To get set-up on compute canada:
 ```bash
 ssh $cedar
 # You should replace this github url with your repo that is a copy of the template repo
-git clone https://github.com/andnp/rl-control-template.git
-cd rl-control-template
+git clone git@gitlab.com:GaborMihucz/dyna-options.git
+cd dyna-options
 
 # build virtual environment
 virtualenv -p python3 env

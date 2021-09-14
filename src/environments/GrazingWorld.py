@@ -51,6 +51,12 @@ class GrazingWorld(BaseEnvironment):
             }
         }
 
+        self.step_to_goals = {
+            1: 13,
+            2: 18,
+            3: 9
+        }
+
         self.action_encoding = {
             0:(-1,0),
             1:(0,1),
@@ -81,6 +87,8 @@ class GrazingWorld(BaseEnvironment):
         if terminal:
             rewards = [self.goals[i]["current_reward"] for i in range(1,4)]
             globals.collector.collect('goal_rewards', rewards)  
+            best_goal_num = np.argmax(rewards) + 1
+            globals.collector.collect('max_return', self.goals[best_goal_num]["current_reward"] + self.step_to_goals[best_goal_num] * self.step_penalty)  
 
             for i in range(1,4):
                 if self.goals[i]["position"]==tuple(s):
