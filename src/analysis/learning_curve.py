@@ -33,7 +33,6 @@ def plotBest(best, ax, window=1, smoothing=0, color=None, label=None, alpha=0.4,
     if len(mean.shape) == 1:
         mean = np.reshape(mean, (-1, 1))
         ste = np.reshape(ste, (-1, 1))
-
     if type(label) != list:
         label = [label] * mean.shape[1]
 

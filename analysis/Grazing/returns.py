@@ -16,16 +16,43 @@ from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whe
 from PyExpUtils.utils.arrays import first
 from tqdm import tqdm
 
+import os
+import sys
+import glob
+import numpy as np
+import matplotlib.pyplot as plt
+sys.path.append(os.getcwd())
+
+from src.analysis.learning_curve import plotBest
+from src.experiment import ExperimentModel
+from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParametersEqual, find
+from PyExpUtils.utils.arrays import first
+
+def getBest(results):
+
+    best = first(results)
+    for r in results:
+        a = r.load()[0]
+        b = best.load()[0]
+        am = np.mean(a)
+        bm = np.mean(b)
+        if am > bm:
+            best = r
+
+    return best
+
+
 def get_experiment(exp):
     max_returns_results = loadResults(exp, 'max_return.npy')
     return_results = loadResults(exp, 'return.csv')
 
     # Find some way of getting the best result instead when plotting experiments
     print("This script only plots the first configuration in the experiment")
-    returns = first(return_results)
+    first_returns = first(return_results)
+    best_returns = getBest(return_results)
     max_returns = first(max_returns_results)
 
-    return returns, max_returns
+    return best_returns, max_returns
 
 def plot_mean_std(ax, data, label, color, dashed):
     means = np.mean(data, axis=0)
@@ -36,13 +63,18 @@ def plot_mean_std(ax, data, label, color, dashed):
 def generatePlot(exp_paths):
     for exp_path in exp_paths:
         exp = ExperimentModel.load(exp_path)
-        returns, max_returns = get_experiment(exp)
+        best, max_returns = get_experiment(exp)
+
+        print('best parameters:', exp_path)
+        print(best.params)
 
         fig, ax = plt.subplots()
 
         alg = exp.agent
-        data = returns.load()
-        plot_mean_std(ax, data, label=alg, color='red', dashed=False)
+        data = best.load()
+        #plot_mean_std(ax, data, label=alg, color='red', dashed=False)
+
+        plotBest(best, ax, label=alg, color='red', dashed=False)
 
         ax.plot(max_returns.load(), label='max returns')
 
