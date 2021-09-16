@@ -21,7 +21,7 @@ t_start = time.time()
 
 if len(sys.argv) < 3:
     print('run again with:')
-    print('python3 src/main.py <runs> <path/to/description.json> <idx>')
+    print('python3 src/main.py <path/to/description.json> <idx>')
     exit(1)
 
 # new stuff for parallel
