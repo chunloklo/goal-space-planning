@@ -10,7 +10,6 @@ class OneStepWrapper(BaseAgent):
         
 
         self.s = None
-        self.o = None
         self.a = None
         self.x = None
 
@@ -35,7 +34,6 @@ class OneStepWrapper(BaseAgent):
         ap = self.agent.update(self.x, self.a, xp, r, self.gamma)
 
         self.s = sp
-        #self.o = op
         self.a = ap
         self.x = xp
 

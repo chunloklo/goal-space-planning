@@ -23,7 +23,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 sys.path.append(os.getcwd())
 
-from src.analysis.learning_curve import plotBest
+from src.analysis.learning_curve import plotBest, plotIndividualAndMean
 from src.experiment import ExperimentModel
 from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParametersEqual, find
 from PyExpUtils.utils.arrays import first
@@ -48,7 +48,6 @@ def get_experiment(exp):
 
     # Find some way of getting the best result instead when plotting experiments
     print("This script only plots the first configuration in the experiment")
-    first_returns = first(return_results)
     best_returns = getBest(return_results)
     max_returns = first(max_returns_results)
 
@@ -72,9 +71,9 @@ def generatePlot(exp_paths):
 
         alg = exp.agent
         data = best.load()
-        #plot_mean_std(ax, data, label=alg, color='red', dashed=False)
 
         plotBest(best, ax, label=alg, color='red', dashed=False)
+        # plotIndividualAndMean(best, ax, label=alg, color='red', dashed=False)
 
         ax.plot(max_returns.load(), label='max returns')
 

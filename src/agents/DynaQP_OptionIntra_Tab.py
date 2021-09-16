@@ -27,7 +27,10 @@ class DynaQP_OptionIntra_Tab:
         self.gamma = params['gamma']
         self.kappa = params['kappa']
 
-        self.tau = np.zeros(((int(features/self.num_actions + self.num_options), self.num_actions + self.num_options)))
+        # Whether to plan with all action-consistent options when planning
+        self.all_option_planning_update = params['all_option_planning_update']
+        
+        self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
         self.a = -1
         self.x = -1
 
@@ -159,40 +162,47 @@ class DynaQP_OptionIntra_Tab:
             action_consistent_options = self._get_action_consistent_options(x, visited_actions)
             available_actions = visited_actions + action_consistent_options
 
-            a = choice(np.array(available_actions), self.random) 
-            if (a < self.num_actions):
-                xp, r = self.visit_history[x][a]
-                discount = gamma
-
-                if (xp == -1):
-                    max_q = 0
-                else:
-                    max_q = np.max(self.Q[xp,:])
+            
+            if self.all_option_planning_update:
+                update_options = available_actions
             else:
-                r = self.option_r[x, a - self.num_actions]
-                discount = self.option_discount[x, a - self.num_actions]
-                norm = np.linalg.norm(self.option_transition_probability[x, a - self.num_actions])
-                if (norm != 0):
-                    prob = self.option_transition_probability[x, a - self.num_actions] / norm
-                    # +1 here accounts for the terminal state
-                    xp = self.random.choice(self.num_states + 1, p=prob)
-                    if (xp == self.num_states):
+                update_options = [choice(np.array(available_actions), self.random)]
+
+
+            for o in update_options: 
+                if (o < self.num_actions):
+                    xp, r = self.visit_history[x][o]
+                    discount = gamma
+
+                    if (xp == -1):
                         max_q = 0
                     else:
                         max_q = np.max(self.Q[xp,:])
                 else:
-                    # Since the update will likely not be useful anyways, so its better to not assume any transition probability and just do a plain update.
-                    max_q = 0
-            
-            r += self.kappa * np.sqrt(self.tau[x, a])
+                    r = self.option_r[x, o - self.num_actions]
+                    discount = self.option_discount[x, o - self.num_actions]
+                    norm = np.linalg.norm(self.option_transition_probability[x, o - self.num_actions])
+                    if (norm != 0):
+                        prob = self.option_transition_probability[x, o - self.num_actions] / norm
+                        # +1 here accounts for the terminal state
+                        xp = self.random.choice(self.num_states + 1, p=prob)
+                        if (xp == self.num_states):
+                            max_q = 0
+                        else:
+                            max_q = np.max(self.Q[xp,:])
+                    else:
+                        # Since the update will likely not be useful anyways, so its better to not assume any transition probability and just do a plain update.
+                        max_q = 0
+                
+                r += self.kappa * np.sqrt(self.tau[x, o])
 
-            self.Q[x,a] = self.Q[x,a] + self.alpha * (r + discount * max_q - self.Q[x, a])
+                self.Q[x,o] = self.Q[x,o] + self.alpha * (r + discount * max_q - self.Q[x, o])
 
         for _ in range(self.model_planning_steps):
             # Improving option model!
-            a = choice(np.array(visited_actions), self.random) 
-            xp, r = self.visit_history[x][a]
-            self.update_model(x, a, xp, r, gamma)
+            o = choice(np.array(visited_actions), self.random) 
+            xp, r = self.visit_history[x][o]
+            self.update_model(x, o, xp, r, gamma)
 
     def agent_end(self, x, o, a, r, gamma):
         self.update(x, o, a, -1, r, gamma)

@@ -14,6 +14,8 @@ from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils import rlglue
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 
+# Logging info level logs for visibility.
+logging.basicConfig(level=logging.INFO)
 
 t_start = time.time()
 

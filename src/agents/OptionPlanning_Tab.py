@@ -8,7 +8,7 @@ from utils import globals
 # Dyna but instead of doing Q Planning we do option planning
 class OptionPlanning_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
-        self.wrapper_class = rlglue.OptionOneStepWrapper
+        self.wrapper_class = rlglue.OneStepWrapper
 
         self.env = env
         self.features = features
@@ -28,7 +28,7 @@ class OptionPlanning_Tab:
         self.gamma = params['gamma']
         self.kappa = params['kappa']
 
-        self.tau = np.zeros(((int(features/self.num_actions + self.num_options), self.num_actions + self.num_options)))
+        self.tau = np.zeros((self.num_states, self.num_actions))
         self.a = -1
         self.x = -1
 
@@ -69,24 +69,18 @@ class OptionPlanning_Tab:
     def selectAction(self, x):
         p = self.random.rand()
         if p < self.epsilon:
-            o = choice(np.arange(self.num_actions+self.num_options), self.random)
+            a = choice(np.arange(self.num_actions), self.random)
         else:
-            o = argmax(self.Q[x,:])
+            a = argmax(self.Q[x,:])
+        return a
 
-        if o>= self.num_actions:
-            a, t = self._get_option_info(x, o)
-        else:
-            a=o
-    
-        return o,a
-
-    def update(self, x, o, a, xp, r, gamma):
+    def update(self, x, a, xp, r, gamma):
         # not strictly needed because the option action pair shouldn't be used in termination,
         # but it prevents some unneeded computation that could error out with weird indexing.
-        oa_pair = self.selectAction(xp) if xp != -1 else (-1, -1)
+        action = self.selectAction(xp) if xp != -1 else (-1, -1)
 
         self.tau += 1
-        self.tau[x, o] = 0
+        self.tau[x, a] = 0
 
         # Direct RL
         max_q = 0 if xp == -1 else np.max(self.Q[xp,:])
@@ -96,7 +90,7 @@ class OptionPlanning_Tab:
         self.update_model(x,a,xp,r, gamma)  
         self.planning_step(gamma)
 
-        return oa_pair
+        return action
 
     def update_model(self, x, a, xp, r, gamma):
         """updates the model 
@@ -150,7 +144,15 @@ class OptionPlanning_Tab:
             a = choice(np.array(visited_actions), self.random) 
             action_consistent_options = self._get_action_consistent_options(x, visited_actions)
 
-            option_values = []
+            # Getting the value of the action
+            xp, r = self.visit_history[x][a]
+            if (xp == -1):
+                max_q = 0
+            else:
+                max_q = np.max(self.Q[xp,:])
+
+            option_values = [r + gamma * max_q]
+
             for o in action_consistent_options:
                 r = self.option_r[x, o - self.num_actions]
                 discount = self.option_discount[x, o - self.num_actions]
@@ -169,38 +171,15 @@ class OptionPlanning_Tab:
 
                 option_value = r + discount * max_q 
                 option_values.append(option_value)
+
+            
+            exp_bonus = self.kappa * np.sqrt(self.tau[x, a])
+            # print(self.kappa * np.sqrt(self.tau[x, a]))
+            # exp_bonus = 0
+            # print(np.max(option_values))
                 
             if (len(option_values) > 0):
-                self.Q[x,a] = self.Q[x,a] + self.alpha * (np.max(option_values)- self.Q[x, a])
-
-            # a = choice(np.array(action_consistent_options), self.random) 
-            # if (a < self.num_actions):
-            #     xp, r = self.visit_history[x][a]
-            #     discount = gamma
-
-            #     if (xp == -1):
-            #         max_q = 0
-            #     else:
-            #         max_q = np.max(self.Q[xp,:])
-            # else:
-            #     r = self.option_r[x, a - self.num_actions]
-            #     discount = self.option_discount[x, a - self.num_actions]
-            #     norm = np.linalg.norm(self.option_transition_probability[x, a - self.num_actions])
-            #     if (norm != 0):
-            #         prob = self.option_transition_probability[x, a - self.num_actions] / norm
-            #         # +1 here accounts for the terminal state
-            #         xp = self.random.choice(self.num_states + 1, p=prob)
-            #         if (xp == self.num_states):
-            #             max_q = 0
-            #         else:
-            #             max_q = np.max(self.Q[xp,:])
-            #     else:
-            #         # Since the update will likely not be useful anyways, so its better to not assume any transition probability and just do a plain update.
-            #         max_q = 0
-            
-            # r += self.kappa * np.sqrt(self.tau[x, a])
-
-            # self.Q[x,a] = self.Q[x,a] + self.alpha * (r + discount * max_q - self.Q[x, a])
+                self.Q[x,a] = self.Q[x,a] + self.alpha * (np.max(option_values) + exp_bonus - self.Q[x, a])
 
         for _ in range(self.model_planning_steps):
             # Improving option model!
@@ -208,8 +187,8 @@ class OptionPlanning_Tab:
             xp, r = self.visit_history[x][a]
             self.update_model(x, a, xp, r, gamma)
 
-    def agent_end(self, x, o, a, r, gamma):
-        self.update(x, o, a, -1, r, gamma)
+    def agent_end(self, x, a, r, gamma):
+        self.update(x, a, -1, r, gamma)
                 # Debug logging for each model component
         globals.collector.collect('model_r', np.copy(self.option_r))  
         globals.collector.collect('model_discount', np.copy(self.option_discount))  

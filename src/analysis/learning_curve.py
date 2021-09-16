@@ -50,6 +50,22 @@ def plotBest(best, ax, window=1, smoothing=0, color=None, label=None, alpha=0.4,
     for i in range(mean.shape[1]):
         lineplot(ax, mean[:, i], stderr=ste[:, i], smoothing=smoothing, window=window, color=colors[label[i]], label=label[i] + params, alpha=alpha, alphaMain=alphaMain, dashed=dashed[i])
 
+def plotIndividualAndMean(best, ax, window=1, smoothing=0, color=None, label=None, alpha=0.4, alphaMain=1, labelParams=None, dashed=False):
+    label = label if label is not None else best.exp.agent
+
+    params = ''
+    if labelParams is not None:
+        l = [f'{key}-{best.params[key]}' for key in labelParams]
+        params = ' ' + ' '.join(l)
+
+    mean = best.mean()
+    data = best.load()
+
+    for i in range(data.shape[0]):
+        lineplot(ax, data[i, :], smoothing=smoothing, window=window, color=colors[label], alphaMain=0.1, dashed=dashed)
+
+    lineplot(ax, mean, smoothing=smoothing, window=window, color=colors[label], label=label + params, alpha=alpha, alphaMain=alphaMain, dashed=dashed)
+
 def lineplot(ax, mean, window=1, smoothing=0, stderr=None, color=None, label=None, alpha=0.4, alphaMain=1, dashed=None):
     if dashed:
         dashes = ':'
@@ -72,7 +88,8 @@ def lineplot(ax, mean, window=1, smoothing=0, stderr=None, color=None, label=Non
         (low_ci, high_ci) = confidenceInterval(mean, stderr)
         ax.fill_between(range(mean.shape[0]), low_ci, high_ci, color=color, alpha=alpha * alphaMain)
 
-    ax.legend()
+    if (label != None):
+        ax.legend()
 
 colors={
     "Q_Tabular": 'red',
@@ -85,5 +102,5 @@ colors={
     "Option_Given_Q_Tab": 'magenta',
     "Dyna_Option_Givenqp_Tab": 'orange',
     "DynaQP_OptionIntra_Tab": 'purple',
-    "OptionPlanning_Tab": 'cyan'
+    "OptionPlanning_Tab": '#66CCEE'
 }
