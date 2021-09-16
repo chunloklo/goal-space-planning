@@ -56,7 +56,7 @@ def get_experiment(exp):
 
 def plot_mean_std(ax, data, label, color, dashed):
     means = np.mean(data, axis=0)
-    ste = np.std(data, axis=0) / data.shape[0]
+    ste = np.std(data, axis=0) / np.sqrt(data.shape[0])
     lineplot(ax, means, stderr=ste, label=label, color=color, dashed=dashed)
 
 

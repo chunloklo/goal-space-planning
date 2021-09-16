@@ -1,65 +1,77 @@
-import os
-import sys
-import glob
 import numpy as np
-import matplotlib.pyplot as plt
-sys.path.append(os.getcwd())
+from typing import Any, Dict, Optional
+from PyExpUtils.results.backends.backend import ResultList, DuckResult
+from PyExpUtils.results.results import getBest
 
-from src.analysis.learning_curve import plotBest
-from src.experiment import ExperimentModel
-from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParametersEqual, find
-from PyExpUtils.utils.arrays import first
+def confidenceInterval(mean, stderr, mult):
+    return (mean - mult * stderr, mean + mult * stderr)
 
-def getBest(results):
+def buildOptions(options: Optional[Dict[str, Any]]):
+    options = options if options is not None else {}
+    out_options = {}
 
-    best = first(results)
-    for r in results:
-        a = r.load()[0]
-        b = best.load()[0]
-        am = np.mean(a)
-        bm = np.mean(b)
-        if am > bm:
-            best = r
+    if options.get('dashed'):
+        out_options['style'] = '--'
+    elif options.get('dotted'):
+        out_options['style'] = ':'
+    else:
+        out_options['style'] = None
 
-    return best
+    out_options['alpha_main'] = options.get('alpha_main', 1.0)
+    out_options['alpha'] = options.get('alpha', 0.4) * out_options['alpha_main']
+    out_options['color'] = options.get('color')
+    out_options['ci_mult'] = options.get('ci_mult', 1.0)
+    out_options['label'] = options.get('label')
+    out_options['width'] = options.get('width', 0.75)
+    out_options['legend'] = options.get('legend', True)
+    out_options['x_label'] = options.get('x_label')
+    out_options['y_label'] = options.get('y_label')
 
-def generatePlot(ax, exp_paths, bounds):
-    for exp_path in exp_paths:
-        exp = ExperimentModel.load(exp_path)
+    return out_options
 
-        results = loadResults(exp, 'return.csv')
-        # optionally force epsilon to be 0.15
-        # results = whereParameterEquals(results, 'epsilon', 0.15)
+def lineplot(ax, mean, stderr: Optional[np.ndarray] = None, options: Optional[Dict[str, Any]] = None):
+    o = buildOptions(options)
 
-        best = getBest(results)
-        print('best parameters:', exp_path)
-        print(best.params)
+    p, = ax.plot(mean, label=o['label'], linestyle=o['style'], color=o['color'], alpha=o['alpha_main'], linewidth=o['width'])
 
-        alg = exp.agent
+    color = p.get_color()
+    if stderr is not None:
+        (lo, hi) = confidenceInterval(mean, stderr, o['ci_mult'])
+        ax.fill_between(range(len(mean)), lo, hi, color=color, alpha=o['alpha'])
 
-#         b = plotBest(best, ax, label=alg, color=colors[alg], dashed=False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
+    if o['legend']:
+        ax.legend(frameon=False)
 
-        b = plotBest(best, ax, label=alg, color='red', dashed=False)
-        bounds.append(b)
+    if o['x_label']:
+        ax.set_xlabel(o['x_label'])
 
+    if o['y_label']:
+        ax.set_ylabel(o['y_label'])
 
-if __name__ == "__main__":
-    f, axes = plt.subplots(1)
+def plot(result: DuckResult, ax, options: Optional[Dict[str, Any]] = None):
+    if options is None: options = {}
 
-    bounds = []
+    label = options.get('label')
 
-    exp_paths = sys.argv[1:]
+    # if we don't have a label and that's because it wasn't specified
+    # then default to the agent's name
+    if not label and 'label' not in options:
+        label = result.exp.agent
+        options['label'] = label
 
-    generatePlot(axes, exp_paths, bounds)
+    # call through to the result's mean/stderr functions
+    mean = result.mean()
+    stderr = result.stderr()
 
-    plt.show()
-    exit()
+    return lineplot(ax, mean, stderr, options)
 
-    save_path = 'experiments/exp/plots'
-    os.makedirs(save_path, exist_ok=True)
+def plotBest(results: ResultList, ax, options: Optional[Dict[str, Any]] = None):
+    if options is None: options = {}
 
-    width = 8
-    height = (24/5)
-    f.set_size_inches((width, height), forward=False)
-    plt.savefig(f'{save_path}/learning-curve.png', dpi=100)
+    prefer = options.get('prefer', 'big')
+    best = getBest(results, prefer=prefer)
+
+    return plot(best, ax, options)
