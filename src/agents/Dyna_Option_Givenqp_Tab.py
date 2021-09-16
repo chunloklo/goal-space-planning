@@ -21,7 +21,7 @@ class Dyna_Option_Givenqp_Tab:
 
         # define parameter contract
         self.alpha = params['alpha']
-        self.epsilon = params['epsilon']
+        self.epsilon = 1
         self.planning_steps = params['planning_steps']
         self.gamma = params['gamma']
         self.kappa = params['kappa']
