@@ -1,22 +1,22 @@
 from RlGlue import BaseAgent
+import numpy as np
 
 # keeps a one step memory for TD based agents
 class OneStepWrapper(BaseAgent):
-    def __init__(self, agent, gamma, rep):
+    def __init__(self, agent, problem):
         self.agent = agent
-        self.gamma = gamma
-        self.rep = rep
+        self.gamma = problem.getGamma()
+        self.rep = problem.rep
         self.exploration_phase = self.agent.params["exploration_phase"]
-        
+        self.num_episodes_passed = 0
+        self.random = np.random.RandomState(problem.seed)
+        self.actions = problem.actions
 
         self.s = None
         self.a = None
         self.x = None
 
         self.options = self.agent.options
-
-    def set_epsilon(self):
-        self.agent.epsilon = self.agent.params["epsilon"]
 
     def __str__(self):
         return self.agent.__str__()
@@ -32,6 +32,9 @@ class OneStepWrapper(BaseAgent):
         xp = self.rep.encode(sp)
 
         ap = self.agent.update(self.x, self.a, xp, r, self.gamma)
+        
+        if (self.num_episodes_passed < self.exploration_phase):
+            ap = self.random.choice(self.actions)
 
         self.s = sp
         self.a = ap
@@ -43,8 +46,8 @@ class OneStepWrapper(BaseAgent):
         return self.rep.encode(s)
 
     def end(self, r):
+        self.num_episodes_passed += 1
         gamma = 0
-
         self.agent.agent_end(self.x, self.a, r, gamma)  
         # reset agent here if necessary (e.g. to clear traces)
 
@@ -60,6 +63,10 @@ class OptionOneStepWrapper(OneStepWrapper):
 
         op, ap = self.agent.update(self.x, self.o, self.a, xp, r, self.gamma)
 
+        if (self.num_episodes_passed < self.exploration_phase):
+            ap = self.random.choice(self.actions)
+            op = ap
+
         self.s = sp
         self.o = op
         self.a = ap
@@ -67,6 +74,7 @@ class OptionOneStepWrapper(OneStepWrapper):
 
         return ap
     def end(self, r):
+        self.num_episodes_passed += 1
         gamma = 0
         self.agent.agent_end(self.x, self.o, self.a, r, gamma)
 
@@ -88,13 +96,20 @@ class OptionFullExecuteWrapper(OneStepWrapper):
     def step(self, r, sp, t=False):
         xp = self.rep.encode(sp)
 
-        if (self.agent.is_option(self.o)):
-            # execute the option and don't update the agent
-            action, t = self.agent.get_action(xp, self.o)
-            if t == False:
-                # Option has not terminated yet, keep giving the action
-                return action
-            
+        # Exploration phase
+        if (self.num_episodes_passed < self.exploration_phase):
+            ap = self.random.choice(self.actions)
+            op = ap
+
+        else:
+            # Fully follow option phase
+            if (self.agent.is_option(self.o)):
+                # execute the option and don't update the agent
+                action, t = self.agent.get_action(xp, self.o)
+                if t == False:
+                    # Option has not terminated yet, keep giving the action
+                    return action
+                
         op = self.agent.update(self.x, self.o, xp, r, self.gamma)
 
         self.s = sp
@@ -110,6 +125,6 @@ class OptionFullExecuteWrapper(OneStepWrapper):
         return action
 
     def end(self, r):
-        gamma = 0
-            
+        self.num_episodes_passed += 1
+        gamma = 0  
         self.agent.agent_end(self.x, self.o, r, gamma)

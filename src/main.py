@@ -62,16 +62,16 @@ for run in range(runs):
         if (wrapper_class == rlglue.OptionFullExecuteWrapper or 
             wrapper_class == rlglue.OptionOneStepWrapper or 
             wrapper_class == rlglue.OneStepWrapper):
-            wrapper = wrapper_class(agent, problem.getGamma(), problem.rep)
+            wrapper = wrapper_class(agent, problem)
         else:
             raise NotImplementedError(f"wrapper class {wrapper_class} has not been implemented")
     
     except AttributeError:
         print("main.py: Agent does not have a wrapper class stated, defaulting to parsing by strings")
         if "Option" in agent.__str__():
-            wrapper = OptionOneStepWrapper(agent, problem.getGamma(), problem.rep)
+            wrapper = OptionOneStepWrapper(agent, problem)
         else:
-            wrapper = OneStepWrapper(agent, problem.getGamma(), problem.rep)
+            wrapper = OneStepWrapper(agent, problem)
 
     glue = RlGlue(wrapper, env)
     # print("run:",run)

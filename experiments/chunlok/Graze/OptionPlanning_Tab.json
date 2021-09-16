@@ -2,7 +2,7 @@
     "agent": "OptionPlanning_Tab",
     "problem": "GrazingWorld",
     "episodes": 240,
-    "runs": 1,
+    "runs": 10,
     "metaParameters": {
         "exploration_phase": 20,
         "planning_steps": 5,
@@ -10,9 +10,22 @@
         "reward_sequence_length": 80,
         "gamma": 1.0,
         "alpha": [
-            0.6
+            0.9,
+            0.8,
+            0.7,
+            0.6,
+            0.5
         ],
-        "epsilon": 0.6,
+        "epsilon": [
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8
+        ],
         "kappa": 0.001
     }
 }
