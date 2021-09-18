@@ -4,8 +4,8 @@ import sys
 import os, time
 sys.path.append(os.getcwd())
 import logging
-from utils import globals
-
+from utils import globals, analysis_utils
+from src.utils.formatting import create_file_name
 from RlGlue import RlGlue
 from src.experiment import ExperimentModel
 from src.problems.registry import getProblem
@@ -32,6 +32,27 @@ idx = int(sys.argv[2])
 d = get_sorted_dict(json_file)
 experiments = get_param_iterable(d)
 experiment = experiments[ idx % len(experiments)]
+
+print(d.keys())
+print("***********")
+print(experiments)
+print("***********")
+print(experiment)
+folder , filename = create_file_name(experiment)
+if not os.path.exists(folder):
+    time.sleep(2)
+    try:
+        os.makedirs(folder)
+    except:
+        pass
+
+
+output_file_name = folder + filename
+# Cut the run if already done
+if os.path.exists(output_file_name + '.pkl'):
+    print("Run Already Complete - Ending Run")
+    exit()
+
 
 
 exp = ExperimentModel.load(json_file)
@@ -104,13 +125,16 @@ for run in range(runs):
 # plt.show()
 # exit()
 
+
 from PyExpUtils.results.backends import csv
 from PyExpUtils.results.backends import numpy
 from PyExpUtils.utils.arrays import downsample
 
 for key in globals.collector.all_data:
+    print(key)
     data = globals.collector.all_data[key]
     for run, datum in enumerate(data):
+
         inner_idx = exp.numPermutations() * run + idx
         # print(len(datum))
 
@@ -123,8 +147,18 @@ for key in globals.collector.all_data:
             # percent=0.1 makes sure final array is 10% of the original length (only one of `num` or `percent` can be specified)
             datum = downsample(datum, num=500, method='window')
             csv.saveResults(exp, inner_idx, key, datum, precision=2)
+
+
+
         else:
             datum = downsample(datum, num=500, method='subsample')
             numpy.saveResults(exp, inner_idx, key, datum)
+
+datum = globals.collector.all_data['return']
+analysis_utils.pkl_saver({
+    'datum': datum
+},output_file_name + '.pkl')
+
+
 
 logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")

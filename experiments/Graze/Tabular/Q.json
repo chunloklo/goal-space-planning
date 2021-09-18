@@ -9,6 +9,6 @@
         "alpha": [0.9, 0.8, 0.7, 0.6, 0.5],
         "epsilon": [0.8],
         "gamma" : 1.0,
-        "reward_sequence_length" : [10,20,30,40]
+        "reward_sequence_length" : 20
     }
 }

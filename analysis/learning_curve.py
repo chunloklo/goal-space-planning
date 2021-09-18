@@ -1,65 +1,84 @@
-import os
-import sys
-import glob
-import numpy as np
-import matplotlib.pyplot as plt
+'''
+This code will produce the learning curve for different agents
+that are specified in the json files
+Status : Complete (not completed the key based best parameter selection part)
+'''
+import os, sys, time, copy
 sys.path.append(os.getcwd())
+import matplotlib.pyplot as plt
 
-from src.analysis.learning_curve import plotBest
-from src.experiment import ExperimentModel
-from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParametersEqual, find
-from PyExpUtils.utils.arrays import first
+from src.utils.json_handling import get_sorted_dict
+from utils import analysis_utils 
+from src.utils.formatting import create_folder
 
-def getBest(results):
-
-    best = first(results)
-    for r in results:
-        a = r.load()[0]
-        b = best.load()[0]
-        am = np.mean(a)
-        bm = np.mean(b)
-        if am > bm:
-            best = r
-
-    return best
-
-def generatePlot(ax, exp_paths, bounds):
-    for exp_path in exp_paths:
-        exp = ExperimentModel.load(exp_path)
-
-        results = loadResults(exp, 'return.csv')
-        # optionally force epsilon to be 0.15
-        # results = whereParameterEquals(results, 'epsilon', 0.15)
-
-        best = getBest(results)
-        print('best parameters:', exp_path)
-        print(best.params)
-
-        alg = exp.agent
-
-#         b = plotBest(best, ax, label=alg, color=colors[alg], dashed=False)
-
-
-        b = plotBest(best, ax, label=alg, color='red', dashed=False)
-        bounds.append(b)
-
-
-if __name__ == "__main__":
-    f, axes = plt.subplots(1)
-
-    bounds = []
-
-    exp_paths = sys.argv[1:]
-
-    generatePlot(axes, exp_paths, bounds)
-
-    plt.show()
+# read the arguments etc
+if len(sys.argv) < 2:
+    print("usage : python analysis/learning_curve.py legend(y/n) <list of json files>")
     exit()
 
-    save_path = 'experiments/exp/plots'
-    os.makedirs(save_path, exist_ok=True)
+assert sys.argv[1].lower() in ['y' ,'n'] , "[ERROR], Choose between y/n"
+show_legend = sys.argv[1].lower() == 'y'
+json_files = sys.argv[2:] # all the json files
 
-    width = 8
-    height = (24/5)
-    f.set_size_inches((width, height), forward=False)
-    plt.savefig(f'{save_path}/learning-curve.png', dpi=100)
+json_handles = [get_sorted_dict(j) for j in json_files]
+
+agent_colors={
+    "Q_Tabular": 'red',
+    "Dyna_Tab_Dist": 'blue',
+    "Dyna_Tab": 'yellow',
+    "Dynaqp_Tab": 'green',
+    "Q_Linear": 'red',
+    "Option_Q_Tab": 'cyan',
+    "Dyna_Optionqp_Tab": 'purple',
+    "Option_Given_Q_Tab": 'magenta',
+    "Dyna_Option_Givenqp_Tab": 'orange',
+    "DynaQP_OptionIntra_Tab": 'purple',
+    "OptionPlanning_Tab": '#66CCEE'
+}
+
+
+def confidence_interval(mean, stderr):
+    return (mean - stderr, mean + stderr)
+
+def  plot(ax , data, label = None , color = None):
+    mean = data['mean']
+
+    # mean = smoothen_runs(mean)
+    stderr = data['stderr']
+    if color is not None:
+        base, = ax.plot(mean, label = label, linewidth = 2, color = color)
+    else:
+        base, = ax.plot(mean, label=label, linewidth=2)
+    (low_ci, high_ci) = confidence_interval(mean, stderr)
+    ax.fill_between(range(mean.shape[0]), low_ci, high_ci, color = base.get_color(),  alpha = 0.4  )
+
+key_to_plot = 'return_data' # the key to plot the data
+
+fig, axs = plt.subplots(1, figsize = (6, 4 ), dpi = 300)
+for en, js in enumerate(json_handles):
+    run, param , data = analysis_utils.find_best(js, data = 'return')
+    agent = param['agent']
+    plot(axs, data = data[key_to_plot], label = f"{agent}", color = agent_colors[agent] )
+    #print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
+
+
+axs.set_ylim([-70, 70])
+axs.spines['top'].set_visible(False)
+if show_legend:
+    axs.set_title(f'{key_to_plot} accuracy')
+    axs.legend()
+
+axs.spines['right'].set_visible(False)
+axs.tick_params(axis='both', which='major', labelsize=8)
+axs.tick_params(axis='both', which='minor', labelsize=8)
+axs.set_rasterized(True)
+fig.tight_layout()
+
+foldername = './plots'
+create_folder(foldername)
+# plt.legend()
+get_experiment_name = input("Give the input for experiment name: ")
+plt.savefig(f'{foldername}/learning_curve_{get_experiment_name}.pdf', dpi = 300)
+plt.savefig(f'{foldername}/learning_curve_{get_experiment_name}.png', dpi = 300)
+
+

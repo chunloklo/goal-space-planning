@@ -22,18 +22,33 @@ def get_param_iterable(d):
     which contains all teh parameters once
     '''
     d_lists  = {}
+    nested_d_lists={}
+    nested_d_keys = []
     list_keys = []
+    nested_list_keys = []
     lists = []
+    nested_lists = []
     lists_non_keys = []
+    nested_lists_non_keys = []
     for k in d.keys():
         if isinstance( d[k] , list):
             d_lists[k] = d[k]
             list_keys.append(k)
             lists.append(d[k])
+        if isinstance( d[k] , dict):
+            for key in d[k].keys():
+                if isinstance( d[k][key] , list):
+                    nested_d_keys.append(k)
+                    nested_d_lists[key] = d[k][key]
+                    nested_list_keys.append(key)
+                    nested_lists.append(d[k][key])
+                else:
+                    nested_lists_non_keys.append(key)
         else:
             lists_non_keys.append(k)
      
     iterators = itertools.product(*lists)
+    nested_iterators = itertools.product(*nested_lists)
     all_parameters = []
     for it in iterators:
         temp = dict()
@@ -42,6 +57,9 @@ def get_param_iterable(d):
         for k in lists_non_keys:
             temp[k] = d[k]
         all_parameters.append(temp)
+
+
+
     return all_parameters
 
 

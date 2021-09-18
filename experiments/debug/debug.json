@@ -1,13 +1,13 @@
 {
-    "agent": "Dynaqp_Tab",
+    "agent": "Q_Tabular",
     "problem": "GrazingWorld",
     "episodes": 100,
     "runs": 10,
-    "metaParameters": {
-        "alpha": 0.8,
-        "epsilon": 0.1,
+    "metaParameters": [{
+        "exploration_phase": 5,
+        "alpha": 0.9,
+        "epsilon": 0.8,
         "gamma" : 1.0,
-        "kappa" : 0.001,
-        "planning_steps": 100
-    }
+        "reward_sequence_length" : 20
+    }]
 }

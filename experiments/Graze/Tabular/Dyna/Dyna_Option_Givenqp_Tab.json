@@ -11,7 +11,7 @@
         "gamma" : 1.0,
         "kappa" : 0.001,
         "planning_steps": [5,10,20],
-        "reward_sequence_length" : [10,20,30,40]
+        "reward_sequence_length" : 20
         
     }
 }
