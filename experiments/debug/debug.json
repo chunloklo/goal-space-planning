@@ -2,12 +2,14 @@
     "agent": "Q_Tabular",
     "problem": "GrazingWorld",
     "episodes": 100,
-    "runs": 10,
-    "metaParameters": [{
-        "exploration_phase": 5,
-        "alpha": 0.9,
-        "epsilon": 0.8,
-        "gamma" : 1.0,
-        "reward_sequence_length" : 20
-    }]
+    "seed": [0,1,2,3,4],
+    "metaParameters": {
+        
+        "exploration_phase": [5],
+        "alpha": [0.9],
+        "epsilon": [0.8],
+        "gamma" : [1.0],
+        "reward_sequence_length" : [10,20]
+        
+    }
 }

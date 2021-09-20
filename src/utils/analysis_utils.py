@@ -48,7 +48,6 @@ def load_different_runs(json_handle):
     # get the list of params
     iterable = get_param_iterable(json_handle)
     for i in iterable:
-        # print(i)
         folder, file = create_file_name(i)
         filename = folder + file + '.pkl'
         # load the file
@@ -78,6 +77,7 @@ def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
     # iterable of all params
     # print(iterable)
     for i in iterable:
+
         folder, file = create_file_name(i, 'processed')
         filename = folder + file + '.pcsd'
 

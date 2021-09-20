@@ -32,12 +32,8 @@ idx = int(sys.argv[2])
 d = get_sorted_dict(json_file)
 experiments = get_param_iterable(d)
 experiment = experiments[ idx % len(experiments)]
-
-print(d.keys())
-print("***********")
-print(experiments)
-print("***********")
 print(experiment)
+
 folder , filename = create_file_name(experiment)
 if not os.path.exists(folder):
     time.sleep(2)
@@ -54,65 +50,58 @@ if os.path.exists(output_file_name + '.pkl'):
     exit()
 
 
+seed = experiment['seed']
 
 exp = ExperimentModel.load(json_file)
-
-# new stuff end
-
-# # commenting out, but used to be there
-# exp = ExperimentModel.load(sys.argv[2])
-# idx = int(sys.argv[3])
-# uncommenting end
-
-runs = exp.runs
 
 max_steps = exp.max_steps
 globals.collector = Collector()
 broke = False
-for run in range(runs):
-    # set random seeds accordingly
-    np.random.seed(run)
-    print("run:", run)
-    inner_idx = exp.numPermutations() * run + idx
-    Problem = getProblem(exp.problem)
-    problem = Problem(exp, inner_idx)
-    agent = problem.getAgent()
-    env = problem.getEnvironment()
-    try:
-        wrapper_class = agent.wrapper_class
-        if (wrapper_class == rlglue.OptionFullExecuteWrapper or 
-            wrapper_class == rlglue.OptionOneStepWrapper or 
-            wrapper_class == rlglue.OneStepWrapper):
-            wrapper = wrapper_class(agent, problem)
-        else:
-            raise NotImplementedError(f"wrapper class {wrapper_class} has not been implemented")
-    
-    except AttributeError:
-        print("main.py: Agent does not have a wrapper class stated, defaulting to parsing by strings")
-        if "Option" in agent.__str__():
-            wrapper = OptionOneStepWrapper(agent, problem)
-        else:
-            wrapper = OneStepWrapper(agent, problem)
+# set random seeds accordingly
 
-    glue = RlGlue(wrapper, env)
-    # print("run:",run)
-    # Run the experiment
-    rewards = []
-    for episode in range(exp.episodes):
-        glue.total_reward = 0
-        glue.runEpisode(max_steps)
-        if agent.FA()!="Tabular":
-            # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
-            if np.isnan(np.sum(agent.w)):
-                globals.collector.fillRest(np.nan, exp.episodes)
-                broke = True
-                break
-        globals.collector.collect('return', glue.total_reward)
-        globals.collector.collect('Q', np.copy(agent.Q))   
-    globals.collector.reset()
 
-    if broke:
-        break
+np.random.seed(seed)
+print("run:", seed)
+inner_idx = exp.numPermutations() * seed + idx
+Problem = getProblem(exp.problem)
+problem = Problem(exp, inner_idx)
+agent = problem.getAgent()
+env = problem.getEnvironment()
+try:
+    wrapper_class = agent.wrapper_class
+    if (wrapper_class == rlglue.OptionFullExecuteWrapper or 
+        wrapper_class == rlglue.OptionOneStepWrapper or 
+        wrapper_class == rlglue.OneStepWrapper):
+        wrapper = wrapper_class(agent, problem)
+    else:
+        raise NotImplementedError(f"wrapper class {wrapper_class} has not been implemented")
+
+except AttributeError:
+    print("main.py: Agent does not have a wrapper class stated, defaulting to parsing by strings")
+    if "Option" in agent.__str__():
+        wrapper = OptionOneStepWrapper(agent, problem)
+    else:
+        wrapper = OneStepWrapper(agent, problem)
+
+glue = RlGlue(wrapper, env)
+# print("run:",run)
+# Run the experiment
+rewards = []
+for episode in range(exp.episodes):
+    glue.total_reward = 0
+    glue.runEpisode(max_steps)
+    if agent.FA()!="Tabular":
+        # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
+        if np.isnan(np.sum(agent.w)):
+            globals.collector.fillRest(np.nan, exp.episodes)
+            broke = True
+            break
+    globals.collector.collect('return', glue.total_reward)
+    globals.collector.collect('Q', np.copy(agent.Q))   
+globals.collector.reset()
+
+if broke:
+    exit(0)
 
 # import matplotlib.pyplot as plt
 # from src.utils.plotting import plot
@@ -131,7 +120,6 @@ from PyExpUtils.results.backends import numpy
 from PyExpUtils.utils.arrays import downsample
 
 for key in globals.collector.all_data:
-    print(key)
     data = globals.collector.all_data[key]
     for run, datum in enumerate(data):
 

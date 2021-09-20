@@ -21,9 +21,11 @@ json_handles = [get_sorted_dict(j) for j in json_files]
 
 def process_runs(runs):
     # get mean and std
+
     runs = runs.squeeze()
     mean = np.mean(runs, axis = 0)
     stderr = np.std(runs , axis = 0) / np.sqrt(runs.shape[0])
+
     return mean , stderr
 
 

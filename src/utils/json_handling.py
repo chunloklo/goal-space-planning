@@ -22,33 +22,29 @@ def get_param_iterable(d):
     which contains all teh parameters once
     '''
     d_lists  = {}
-    nested_d_lists={}
-    nested_d_keys = []
     list_keys = []
-    nested_list_keys = []
     lists = []
-    nested_lists = []
     lists_non_keys = []
-    nested_lists_non_keys = []
     for k in d.keys():
         if isinstance( d[k] , list):
+            
             d_lists[k] = d[k]
             list_keys.append(k)
             lists.append(d[k])
+
         if isinstance( d[k] , dict):
             for key in d[k].keys():
                 if isinstance( d[k][key] , list):
-                    nested_d_keys.append(k)
-                    nested_d_lists[key] = d[k][key]
-                    nested_list_keys.append(key)
-                    nested_lists.append(d[k][key])
+                    d_lists[key] = d[k][key]
+                    list_keys.append(key)
+                    lists.append(d[k][key])    
                 else:
-                    nested_lists_non_keys.append(key)
-        else:
+                    lists_non_keys.append(key)            
+        if not (isinstance(d[k], list) or isinstance(d[k], dict)):
             lists_non_keys.append(k)
      
     iterators = itertools.product(*lists)
-    nested_iterators = itertools.product(*nested_lists)
+    
     all_parameters = []
     for it in iterators:
         temp = dict()
@@ -57,9 +53,6 @@ def get_param_iterable(d):
         for k in lists_non_keys:
             temp[k] = d[k]
         all_parameters.append(temp)
-
-
-
     return all_parameters
 
 
@@ -81,8 +74,19 @@ def get_param_iterable_runs(d):
             d_lists[k] = d[k]
             list_keys.append(k)
             lists.append(d[k]) # append all the parameters
-        else:
+
+        if isinstance( d[k] , dict):
+            for key in d[k].keys():
+                if isinstance( d[k][key] , list):
+                    d_lists[key] = d[k][key]
+                    list_keys.append(key)
+                    lists.append(d[k][key])    
+                else:
+                    lists_non_keys.append(key)            
+        if isinstance(d[k], int) or isinstance(d[k], str):
             lists_non_keys.append(k)
+
+
 
     iterators = itertools.product(*lists) # iterate over all configurations of parameters
     all_parameters = []
@@ -94,4 +98,3 @@ def get_param_iterable_runs(d):
             temp[k] = d[k]
         all_parameters.append(temp)
     return all_parameters # returns all the parameters config, with things to average over 
-
