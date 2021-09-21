@@ -58,6 +58,7 @@ fig, axs = plt.subplots(1, figsize = (6, 4 ), dpi = 300)
 for en, js in enumerate(json_handles):
     run, param , data = analysis_utils.find_best(js, data = 'return')
     agent = param['agent']
+    print(param)
     plot(axs, data = data[key_to_plot], label = f"{agent}", color = agent_colors[agent] )
     #print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
 
