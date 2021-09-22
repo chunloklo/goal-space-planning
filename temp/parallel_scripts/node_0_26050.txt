@@ -1,2 +1,0 @@
-python src/main.py experiments/Graze/Tabular/Option_Q.json 0
-python src/main.py experiments/Graze/Tabular/Dyna/Dyna_Optionqp_Tab.json 0
