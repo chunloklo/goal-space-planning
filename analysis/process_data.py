@@ -28,8 +28,6 @@ def process_runs(runs):
 
     return mean , stderr
 
-
-
 # currentl doesnt not handle frames
 def process_data_interface(json_handles):
     for js in json_handles:
@@ -45,22 +43,19 @@ def process_data_interface(json_handles):
                 print("Processed")
 
             else:
-                return_data = analysis_utils.load_different_runs(i)
+                return_data, max_returns = analysis_utils.load_different_runs(i)
+                
                 mean_return_data, stderr_return_data = process_runs(return_data)
                 return_data = {
                     'mean' : mean_return_data,
                     'stderr' : stderr_return_data
+                    
                 }
-        
-
                 # save the things
                 analysis_utils.pkl_saver({
-                        'return_data' : return_data
-
+                        'return_data' : return_data,
+                        'max_returns': max_returns
                     }, filename)
-
-
-    # print(iterables)
 
 if __name__ == '__main__':
     process_data_interface(json_handles)

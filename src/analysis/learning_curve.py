@@ -23,12 +23,6 @@ def plotBest(best, ax, window=1, smoothing=0, color=None, label=None, alpha=0.4,
         l = [f'{key}-{best.params[key]}' for key in labelParams]
         params = ' ' + ' '.join(l)
 
-    # mean = best.load()[0]
-    # try:
-    #     ste = best.load()[1]
-    # except:
-    #     ste = [0]
-    #     pass
 
     mean = best.mean()
     try:

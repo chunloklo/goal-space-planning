@@ -103,49 +103,15 @@ globals.collector.reset()
 if broke:
     exit(0)
 
-# import matplotlib.pyplot as plt
-# from src.utils.plotting import plot
-# fig, ax1 = plt.subplots(1)
 
-# return_data = collector.getStats('return')
-# plot(ax1, return_data)
-# ax1.set_title('Return')
-
-# plt.show()
-# exit()
-
-
-from PyExpUtils.results.backends import csv
-from PyExpUtils.results.backends import numpy
-from PyExpUtils.utils.arrays import downsample
-
-for key in globals.collector.all_data:
-    data = globals.collector.all_data[key]
-    for run, datum in enumerate(data):
-
-        inner_idx = exp.numPermutations() * run + idx
-        # print(len(datum))
-
-        if (key == 'return'):
-            # heavily downsample the data to reduce storage costs
-            # we don't need all of the data-points for plotting anyways
-            # method='window' returns a window average, this also reduces the dimensions to 0...
-            # method='subsample' returns evenly spaced samples from array
-            # num=1000 makes sure final array is of length 1000
-            # percent=0.1 makes sure final array is 10% of the original length (only one of `num` or `percent` can be specified)
-            datum = downsample(datum, num=500, method='window')
-            csv.saveResults(exp, inner_idx, key, datum, precision=2)
-
-
-
-        else:
-            datum = downsample(datum, num=500, method='subsample')
-            numpy.saveResults(exp, inner_idx, key, datum)
 
 datum = globals.collector.all_data['return']
+max_return = globals.collector.all_data['max_return']
+
 analysis_utils.pkl_saver({
-    'datum': datum
-},output_file_name + '.pkl')
+    'datum': datum,
+    'max_return': max_return
+}, output_file_name + '.pkl')
 
 
 

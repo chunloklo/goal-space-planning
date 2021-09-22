@@ -45,6 +45,7 @@ def load_different_runs(json_handle):
     # valid_accuracies = []
     # losses = []
     return_data = []
+    max_returns = []
     # get the list of params
     iterable = get_param_iterable(json_handle)
     for i in iterable:
@@ -54,12 +55,14 @@ def load_different_runs(json_handle):
         try:
             arr = pkl_loader(filename)
             return_data.append( arr['datum'])
+            max_returns.append( arr['max_return'])
         except:
             print('Run not valid')
             pass
     return_data = np.array(return_data)
+    max_returns =  np.array(max_returns)
     # losses = np.array(losses)
-    return return_data
+    return return_data, max_returns
 
 
 def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
@@ -87,7 +90,7 @@ def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
         # load the data
         data_obj = pkl_loader(filename)
         return_data = data_obj['return_data']
-
+        max_returns = data_obj['max_returns']
         # data = torch.load(filename)
         mean = data_obj['return_data']['mean']
         stderr = data_obj['return_data']['stderr']
@@ -100,7 +103,7 @@ def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
             best_data['return_data'] = return_data
 
 
-    return best_run, best_params, best_data
+    return best_run, best_params, best_data, max_returns
 
 # FIXME fix this script for validatoin data
 def find_best_key(json_handle,data = 'return_data', key = None, metric = 'auc'):
@@ -116,7 +119,10 @@ def find_best_key(json_handle,data = 'return_data', key = None, metric = 'auc'):
     # get all the ke
     best_data = dict()
     if not isinstance(key, list):
-        keys = json_handle[key]
+        try:
+            keys = json_handle[key]
+        except:
+            keys = json_handle['metaParameters'][key]
         for k in keys:
             best_auc[k] = -np.inf
             best_params[k] = None

@@ -2,15 +2,15 @@
     "agent": "OptionPlanning_Tab",
     "problem": "GrazingWorld",
     "episodes": 100,
-    "runs": 30,
+    "seed": [0,1,2,3,4],
     "metaParameters": {
         "exploration_phase": [5,10,20],
-        "alpha": [0.9, 0.8, 0.7, 0.6, 0.5],
+        "alpha": [0.99,0.9, 0.8, 0.7, 0.6, 0.5],
         "epsilon": [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8],
-        "gamma": 1.0,
-        "kappa": 0.001,
+        "gamma": [1.0],
+        "kappa": [0.001],
         "planning_steps": [5,10,20],
         "model_planning_steps": [5,10,20],
-        "reward_sequence_length" : 30
+        "reward_sequence_length" : [10,20,30,40]
     }
 }
