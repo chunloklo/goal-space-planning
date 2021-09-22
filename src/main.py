@@ -32,7 +32,7 @@ idx = int(sys.argv[2])
 d = get_sorted_dict(json_file)
 experiments = get_param_iterable(d)
 experiment = experiments[ idx % len(experiments)]
-print(experiment)
+#print(experiment)
 
 folder , filename = create_file_name(experiment)
 if not os.path.exists(folder):
@@ -61,7 +61,7 @@ broke = False
 
 
 np.random.seed(seed)
-print("run:", seed)
+#print("run:", seed)
 inner_idx = exp.numPermutations() * seed + idx
 Problem = getProblem(exp.problem)
 problem = Problem(exp, inner_idx)
