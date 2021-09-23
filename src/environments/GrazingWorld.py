@@ -89,7 +89,6 @@ class GrazingWorld(BaseEnvironment):
             globals.collector.collect('goal_rewards', rewards)  
             best_goal_num = np.argmax(rewards) + 1
             globals.collector.collect('max_return', self.goals[best_goal_num]["current_reward"] + self.step_to_goals[best_goal_num] * self.step_penalty)  
-
             for i in range(1,4):
                 if self.goals[i]["position"]==tuple(s):
                     globals.collector.collect('end_goal', i)  
@@ -128,8 +127,6 @@ class GrazingWorld(BaseEnvironment):
         r = self.rewards(s, t)
         if t:
             self.update_goals()
-
-
         return (r, sp, t)
 
     def _limit_coordinates(self, s, a):

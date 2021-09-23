@@ -13,6 +13,7 @@ from PyExpUtils.utils.Collector import Collector
 from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils import rlglue
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
+import copy
 
 # Logging info level logs for visibility.
 logging.basicConfig(level=logging.INFO)
@@ -29,10 +30,32 @@ if len(sys.argv) < 3:
 json_file = sys.argv[1]
 idx = int(sys.argv[2])
 # Get experiment
-d = get_sorted_dict(json_file)
-experiments = get_param_iterable(d)
-experiment = experiments[ idx % len(experiments)]
-#print(experiment)
+# d = get_sorted_dict(json_file)
+# experiments = get_param_iterable(d)
+# experiment = experiments[ idx % len(experiments)]
+# seed = experiment['seed']
+
+exp = ExperimentModel.load(json_file)
+
+max_steps = exp.max_steps
+globals.collector = Collector()
+broke = False
+# set random seeds accordingly
+
+Problem = getProblem(exp.problem)
+problem = Problem(exp, idx)
+agent = problem.getAgent()
+env = problem.getEnvironment()
+
+experiment = copy.deepcopy(problem.params)
+experiment['agent'] = exp.agent
+experiment['problem'] = exp.problem
+experiment['episodes'] = exp.episodes
+seed = experiment['seed']
+np.random.seed(seed)
+
+#print("run:", seed)
+#inner_idx = exp.numPermutations() * seed + idx
 
 folder , filename = create_file_name(experiment)
 if not os.path.exists(folder):
@@ -50,23 +73,9 @@ if os.path.exists(output_file_name + '.pkl'):
     exit()
 
 
-seed = experiment['seed']
-
-exp = ExperimentModel.load(json_file)
-
-max_steps = exp.max_steps
-globals.collector = Collector()
-broke = False
-# set random seeds accordingly
 
 
-np.random.seed(seed)
-#print("run:", seed)
-inner_idx = exp.numPermutations() * seed + idx
-Problem = getProblem(exp.problem)
-problem = Problem(exp, inner_idx)
-agent = problem.getAgent()
-env = problem.getEnvironment()
+
 try:
     wrapper_class = agent.wrapper_class
     if (wrapper_class == rlglue.OptionFullExecuteWrapper or 
@@ -104,9 +113,9 @@ if broke:
     exit(0)
 
 
-
 datum = globals.collector.all_data['return']
 max_return = globals.collector.all_data['max_return']
+
 
 analysis_utils.pkl_saver({
     'datum': datum,

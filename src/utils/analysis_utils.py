@@ -91,6 +91,9 @@ def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
         data_obj = pkl_loader(filename)
         return_data = data_obj['return_data']
         max_returns = data_obj['max_returns']
+        # print(i)
+        # print(max_returns)
+        # print("\n")
         # data = torch.load(filename)
         mean = data_obj['return_data']['mean']
         stderr = data_obj['return_data']['stderr']
@@ -101,9 +104,10 @@ def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
             best_run['stderr'] = stderr
             best_params = i
             best_data['return_data'] = return_data
+            best_data['max_returns'] = max_returns
 
 
-    return best_run, best_params, best_data, max_returns
+    return best_run, best_params, best_data, best_data['max_returns']
 
 # FIXME fix this script for validatoin data
 def find_best_key(json_handle,data = 'return_data', key = None, metric = 'auc'):

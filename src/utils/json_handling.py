@@ -78,6 +78,9 @@ def get_param_iterable_runs(d):
         if isinstance( d[k] , dict):
             for key in d[k].keys():
                 if isinstance( d[k][key] , list):
+                    if key == 'seed' or key == 'foldno': # average over the seeds and fold_no
+                        lists_non_keys.append(key)
+                        continue
                     d_lists[key] = d[k][key]
                     list_keys.append(key)
                     lists.append(d[k][key])    
@@ -95,6 +98,9 @@ def get_param_iterable_runs(d):
         for i, k in enumerate(list_keys):
             temp[k] = it[i]
         for k in lists_non_keys:
-            temp[k] = d[k]
+            if k=='seed':
+                temp[k] = d['metaParameters'][k]
+            else:
+                temp[k] = d[k]
         all_parameters.append(temp)
     return all_parameters # returns all the parameters config, with things to average over 
