@@ -17,7 +17,7 @@ class Dynaqp_Tab:
 
         # define parameter contract
         self.alpha = params['alpha']
-        self.epsilon = 1
+        self.epsilon = params['epsilon']
         self.planning_steps = params['planning_steps']
 
 

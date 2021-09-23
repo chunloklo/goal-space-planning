@@ -19,7 +19,7 @@ class Option_Given_Q_Tab:
 
         # define parameter contract
         self.alpha = params['alpha']
-        self.epsilon = 1
+        self.epsilon = params['epsilon']
 
         # create initial weights
         self.Q = np.zeros((self.num_states, self.num_actions+self.num_options))
