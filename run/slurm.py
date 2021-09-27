@@ -24,7 +24,7 @@ parser.add_argument('--json', '-j', type = str ,nargs='+', help='Json Files', re
 parser.add_argument('--overwrite','-o', type = bool,   help= "If True, the experiment will overwrite past experiment", default = False)
 parser.add_argument('--days' , '-d', type = int, help = "Number of days to run the code", default = 0)
 # works only for upto 24 hours
-parser.add_argument("--hours", '-h', type = int, default = 0)
+parser.add_argument("--hours", '-hr', type = int, default = 0)
 parser.add_argument("--minutes", '-m', type = int, default = 30)
 
 
