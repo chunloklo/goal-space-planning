@@ -27,7 +27,8 @@ parser.add_argument('--days' , '-d', type = int, help = "Number of days to run t
 parser.add_argument("--hours", '-hr', type = int, default = 0)
 parser.add_argument("--minutes", '-m', type = int, default = 30)
 
-
+# email for started and completed messages
+parser.add_argument("--email", type = str)
 
 args = parser.parse_args()
 
@@ -94,6 +95,7 @@ for json_file in json_files:
             os.makedirs(foldername, exist_ok=True)
     slurm_files = [ f'./temp/slurm_scripts/slurm{i}.sh' for i in range(nodes)]
     cwd = os.getcwd()
+    email_str = f"$SBATCH --mail-user={args.email}\n#SBATCH --mail-type=ALL\n" if args.email is not None else ""
     for n in range(nodes):
         slurm_file = f"#!/bin/sh\n" \
                     f"#SBATCH --account={allocation_name}\n" \
@@ -101,6 +103,7 @@ for json_file in json_files:
                     f"#SBATCH --ntasks={args.cpus}\n" \
                     f"#SBATCH --mem={memory}G\n" \
                     f"#SBATCH --nodes=1\n" \
+                    f"{email_str}" \
                     f"source ~/env/bin/activate\n" \
                     f"cd {cwd}\n" \
                     f"export PYTHONPATH={cwd}:$PYTHONPATH\n" \
