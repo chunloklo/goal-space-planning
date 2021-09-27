@@ -14,9 +14,7 @@ from src.utils.json_handling import get_sorted_dict, get_param_iterable
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--allocation" ,"-a", type = str, default = 'rrg')
-# works only for upto 24 hours
 
-parser.add_argument("--time", '-t', type = int, default = 3)
 parser.add_argument("--cpus", '-c', type = int, default = 16)
 parser.add_argument("--memory", '-m', type = int, default = 32)
 parser.add_argument('--ntasks', '-n', type=int, default = 4) # number of tasks per CPU
@@ -25,6 +23,9 @@ parser.add_argument('--pythonfile','-p', type = str)
 parser.add_argument('--json', '-j', type = str ,nargs='+', help='Json Files', required=True) # the json configuration
 parser.add_argument('--overwrite','-o', type = bool,   help= "If True, the experiment will overwrite past experiment", default = False)
 parser.add_argument('--days' , '-d', type = int, help = "Number of days to run the code", default = 0)
+# works only for upto 24 hours
+parser.add_argument("--hours", '-h', type = int, default = 0)
+parser.add_argument("--minutes", '-m', type = int, default = 30)
 
 
 
@@ -43,7 +44,7 @@ for json_file in json_files:
     print(f"Experiments : {json_file} : {pending_experiments}")
     # by default use only one node
     allocation_name = args.allocation + '-whitem'
-    time_str = "{}-{}:59:00".format(str(args.days) , str(args.time - 1))
+    time_str = "{}-{}:{}:00".format(str(args.days) , str(args.time), str(args.minutes))
     cpus = args.cpus * args.ntasks
     memory = args.memory
 
@@ -100,7 +101,7 @@ for json_file in json_files:
                     f"#SBATCH --ntasks={args.cpus}\n" \
                     f"#SBATCH --mem={memory}G\n" \
                     f"#SBATCH --nodes=1\n" \
-                    f"source ~/cv/bin/activate\n" \
+                    f"source ~/env/bin/activate\n" \
                     f"cd {cwd}\n" \
                     f"export PYTHONPATH={cwd}:$PYTHONPATH\n" \
                     f"{parallel_commands[n]}"
