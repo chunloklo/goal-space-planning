@@ -44,7 +44,7 @@ for json_file in json_files:
     print(f"Experiments : {json_file} : {pending_experiments}")
     # by default use only one node
     allocation_name = args.allocation + '-whitem'
-    time_str = "{}-{}:{}:00".format(str(args.days) , str(args.time), str(args.minutes))
+    time_str = "{}-{}:{}:00".format(str(args.days) , str(args.hours), str(args.minutes))
     cpus = args.cpus * args.ntasks
     memory = args.memory
 
