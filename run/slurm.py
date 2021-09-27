@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--allocation" ,"-a", type = str, default = 'rrg')
 
 parser.add_argument("--cpus", '-c', type = int, default = 16)
-parser.add_argument("--memory", '-m', type = int, default = 32)
+parser.add_argument("--memory", '-mem', type = int, default = 32)
 parser.add_argument('--ntasks', '-n', type=int, default = 4) # number of tasks per CPU
 # parser.add_argument("--export", '-e', type = str, default = 'exports3.dat')
 parser.add_argument('--pythonfile','-p', type = str)
