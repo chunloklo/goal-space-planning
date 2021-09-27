@@ -7,7 +7,7 @@ import numpy as np
 
 from src.utils.json_handling import get_sorted_dict , get_param_iterable_runs
 from src.utils.formatting import create_file_name, create_folder
-from utils import analysis_utils
+from src.utils import analysis_utils
 
 # read the arguments etc
 if len(sys.argv) < 2:

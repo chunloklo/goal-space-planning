@@ -2,7 +2,7 @@
 Plotting Utilities for Python
 '''
 import numpy as np
-import torch
+# import torch
 import os, sys
 import pickle as pkl
 sys.path.append(os.getcwd())

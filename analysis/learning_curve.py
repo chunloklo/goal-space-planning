@@ -8,7 +8,7 @@ sys.path.append(os.getcwd())
 import matplotlib.pyplot as plt
 
 from src.utils.json_handling import get_sorted_dict
-from utils import analysis_utils 
+from src.utils import analysis_utils 
 from src.utils.formatting import create_folder
 
 # read the arguments etc
