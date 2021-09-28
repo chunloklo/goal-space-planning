@@ -1,8 +1,13 @@
+
+import sys
+import os
+sys.path.append(os.getcwd())
+
 from src.environments.MazeWorld import MazeWorld
 from src.environments.GrazingWorld import GrazingWorld
 from src.utils.options import load_option, save_option
 from src.utils.Option import QOption
-import sys
+
 
 
 # Defining actions

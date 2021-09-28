@@ -3,7 +3,7 @@ import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
 from src.utils import rlglue
-from utils import globals
+from src.utils import globals
 
 # Dyna but instead of doing Q Planning we do option planning
 class OptionPlanning_Tab:

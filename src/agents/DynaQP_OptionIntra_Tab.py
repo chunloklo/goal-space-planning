@@ -3,7 +3,7 @@ import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
 from src.utils import rlglue
-from utils import globals
+from src.utils import globals
 
 class DynaQP_OptionIntra_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):

@@ -1,6 +1,6 @@
 import numpy as np
 from RlGlue import BaseEnvironment
-from utils import globals
+from src.utils import globals
 import random
 
 UP = 0
