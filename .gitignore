@@ -3,6 +3,9 @@ results/
 results.tar
 .tmp/
 visualizations/
+temp/
+processed/
+plots/
 
 # ignore python caches
 env/

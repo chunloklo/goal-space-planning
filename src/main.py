@@ -112,7 +112,7 @@ globals.collector.reset()
 if broke:
     exit(0)
 
-
+# I'm pretty sure we need to subsample this especially once we have a larger dataset.
 datum = globals.collector.all_data['return']
 max_return = globals.collector.all_data['max_return']
 
