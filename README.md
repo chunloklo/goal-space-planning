@@ -199,6 +199,28 @@ It is more simple to make an experiment description `.json` that only contains o
 This will save the results in the results folder as specified above.
 
 ### Run parameter sweeps
+
+**Note:** When you are pulling from latest, make sure to regenerate the options with 
+```
+python src/utils/create_options.py <environment-name>
+```
+The pulled option will likely not work because of differences in library versions and cause an error when running.
+
+
+To run an entire sweep locally, you'll want to do the following:
+```
+python run/local.py -p src/main.py -j <path>/<to>/<experiment>/<json>
+```
+To run it on a cluster (like cedar), run the following
+```
+python run/slurm.py -p src/main.py -j <path>/<to>/<experiment>/<json> --email=<notification-email-address> -m=<minutes-to-run>
+```
+
+Check out `run/local.py` and `run/slurm.py` for more details on what arguments they take!
+
+*I'm not sure if this below works:*
+
+
 If you want to run a larger experiment (i.e. a parameter sweep), you'll want to run these on a cluster (like cedar).
 ```
 python scripts/slurm.py ./clusters/cedar.json src/main.py <path/where/results/are/saved> <num runs> <path/to/experiment.json>

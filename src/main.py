@@ -4,7 +4,7 @@ import sys
 import os, time
 sys.path.append(os.getcwd())
 import logging
-from utils import globals, analysis_utils
+from src.utils import globals, analysis_utils
 from src.utils.formatting import create_file_name
 from RlGlue import RlGlue
 from src.experiment import ExperimentModel
