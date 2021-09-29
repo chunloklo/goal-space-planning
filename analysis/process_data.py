@@ -35,7 +35,6 @@ def process_data_interface(json_handles):
         iterables = get_param_iterable_runs(js)
         
         for i in iterables:
-            print(i)
             folder, file = create_file_name(i, 'processed')
             create_folder(folder) # make the folder before saving the file
             filename = folder + file + '.pcsd'
