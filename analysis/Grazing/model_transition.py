@@ -72,8 +72,7 @@ def generatePlot(json_handle):
         pbar.update(i - pbar.n)
         q_values = data[i, :, :]
 
-        # titles.append(ax.set_title(f"frame: {i}"))
-        ax.set_title(f"frame: {i}")
+        ax.set_title(f"episode: {i}")
 
         for i in range(10):
             for j in range(10):

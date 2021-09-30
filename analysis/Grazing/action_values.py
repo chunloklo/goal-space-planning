@@ -31,13 +31,13 @@ def _get_corner_loc(offsetx: int, offsety: int, loc_type: str):
     if (loc_type == 'center'):
         return [0.5 + offsetx, 0.5 + offsety]
     if (loc_type == 'top_left'):
-        return [0.0 + offsetx, 1.0 + offsety]
-    if (loc_type == 'top_right'):
-        return [1.0 + offsetx, 1.0 + offsety]
-    if (loc_type == 'bottom_left'):
         return [0.0 + offsetx, 0.0 + offsety]
-    if (loc_type == 'bottom_right'):
+    if (loc_type == 'top_right'):
         return [1.0 + offsetx, 0.0 + offsety]
+    if (loc_type == 'bottom_left'):
+        return [0.0 + offsetx, 1.0 + offsety]
+    if (loc_type == 'bottom_right'):
+        return [1.0 + offsetx, 1.0 + offsety]
 
 # Returns a list of patch paths corresponding to each action in the q value
 def _get_q_value_patch_paths(offsetx: int, offsety: int) -> list:
@@ -52,37 +52,40 @@ def _get_q_value_patch_paths(offsetx: int, offsety: int) -> list:
     right_action_path = [center, bottom_right, top_right, center]
     left_action_path = [center, bottom_left, top_left, center]
 
-    action_path_map = [left_action_path, right_action_path, top_action_path, bottom_action_path]
+    action_path_map = [top_action_path, right_action_path, bottom_action_path, left_action_path]
 
     return action_path_map
+
+def get_action_offset(magnitude: float):
+    # UP RIGHT DOWN LEFT
+    return [[0.0, -magnitude], [magnitude, 0.0], [0.0, magnitude], [-magnitude, 0.0]]
 
 def get_text_location(offsetx:int, offsety:int, action: int):
     center = [0.5 + offsetx, 0.5 + offsety]
     text_offset_mag = 0.3
-    text_offset = [[-text_offset_mag, 0], [text_offset_mag, 0.0], [0.0, text_offset_mag], [0.0, -text_offset_mag]]
+    text_offset = get_action_offset(text_offset_mag)
     x = center[0] + text_offset[action][0]
     y = center[1] + text_offset[action][1]
     return (x, y)
 
-def _plot_init(ax):
+def _plot_init(ax, center_arrows: bool = False):
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 10)
     ax.invert_yaxis()
 
     texts = []
     patches = []
+    arrows = []
     for i in range(10):
         texts.append([])
         patches.append([])
+        arrows.append([])
         for j in range(10):
             texts[i].append([])
             patches[i].append([])
 
+            # Getting action triangle patches
             action_path_map = _get_q_value_patch_paths(i, j)
-                
-            
-            text_offset_mag = 0.3
-            text_offset = [[-text_offset_mag, 0], [text_offset_mag, 0.0], [0.0, text_offset_mag], [0.0, -text_offset_mag]]
 
             for a in range(4):
                 font = {
@@ -97,9 +100,18 @@ def _plot_init(ax):
                 path = action_path_map[a]
                 patch = ax.add_patch(PathPatch(Path(path), facecolor=color, ec='None'))
                 patches[i][j].append(patch)
+
+            # Getting default arrow. Making sure that this gets put on top of the patches
+            center = [0.5 + i, 0.5 + j]
+            if center_arrows:
+                arrow = ax.arrow(center[0], center[1], 0.25, 0.25, width=0.025)
+                arrows[i].append(arrow)
+
+    
+    if (center_arrows):
+        return texts, patches, arrows
     
     return texts, patches
-
 
 def scale_value(value: float, min_val:float, max_val:float):
     percentage = (value - min_val) / (max_val - min_val)
@@ -157,7 +169,7 @@ def generatePlot(json_handle):
 
     colormap = cm.get_cmap('viridis')
 
-    texts, patches = _plot_init(ax)
+    texts, patches, arrows = _plot_init(ax, center_arrows=True)
     
 
     if hasOptions:
@@ -166,7 +178,7 @@ def generatePlot(json_handle):
         ax_options.invert_yaxis()
         texts_options, patches_options = _plot_init(ax_options)
     
-    # max_frames = 50
+    # max_frames = 20
     # interval = 1
     max_frames = data.shape[0]
     interval = 10
@@ -178,15 +190,35 @@ def generatePlot(json_handle):
         pbar.update(i - pbar.n)
         q_values = data[i, :, :]
 
-        # titles.append(ax.set_title(f"frame: {i}"))
-        ax.set_title(f"frame: {i}")
+        ax.set_title(f"episode: {i}")
 
         for i in range(10):
             for j in range(10):
                 q_value = q_values[i + j * 10, :]
+
+                action = np.argmax(q_value)
+                arrow_magnitude = 0.0625
+                width = 0.025
+                center = [0.5 + i, 0.5 + j]
+                offset = get_action_offset(arrow_magnitude)
+
+                arrows[i][j].remove()
+
+                if (action < 4):
+                    offset = get_action_offset(arrow_magnitude)
+                    arrow = ax.arrow(center[0], center[1], offset[action][0], offset[action][1], width=width, facecolor='black')
+                    arrows[i][j] = arrow
+                else:
+                    option = action - 4
+                    offset = get_action_offset(arrow_magnitude)
+                    arrow = ax.arrow(center[0], center[1], offset[option][0], offset[option][1], width=width, facecolor='red')
+                    arrows[i][j] = arrow
+
                 for a in range(4):
                     scaled_value = scale_value(q_value[a], min_val, max_val)
                     patches[i][j][a].set_facecolor(colormap(scaled_value))
+                    # colors = ["red", "green", "blue", "orange"]
+                    # patches[i][j][a].set_facecolor(colors[a])
                     texts[i][j][a].set_text(round(q_value[a], 2))
 
                 if hasOptions:
