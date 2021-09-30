@@ -119,7 +119,11 @@ max_return = globals.collector.all_data['max_return']
 
 analysis_utils.pkl_saver({
     'datum': datum,
-    'max_return': max_return
+    'max_return': max_return,
+    # 'Q': globals.collector.all_data['Q'],
+    # 'model_r': globals.collector.all_data['model_r'],
+    # 'model_discount': globals.collector.all_data['model_discount'],
+    # 'model_transition': globals.collector.all_data['model_transition'],
 }, output_file_name + '.pkl')
 
 

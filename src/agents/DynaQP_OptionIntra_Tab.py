@@ -16,7 +16,7 @@ class DynaQP_OptionIntra_Tab:
         self.params = params
         self.num_states = self.env.nS
         self.options = options
-        self.num_options = len(self.env.terminal_state_positions)
+        self.num_options = len(options)
         self.random = np.random.RandomState(seed)
 
         # define parameter contract
@@ -141,12 +141,17 @@ class DynaQP_OptionIntra_Tab:
         action_consistent_options = []
         for o in range(self.num_actions, self.num_actions + self.num_options):
             a_o, t = self._get_option_info(x, o)
-            if (isinstance(a, int)):
-                if (a_o == a):
-                    action_consistent_options.append(o)
-            if (isinstance(a, list)):
-                if (a_o in a):
-                    action_consistent_options.append(o)
+            if (t):
+                action_consistent_options.append(o)
+            else:
+                if (isinstance(a, (int, np.integer))):
+                    if (a_o == a):
+                        action_consistent_options.append(o)
+                elif (isinstance(a, list)):
+                    if (a_o in a):
+                        action_consistent_options.append(o)
+                else:
+                    raise NotImplementedError(f'_get_action_consistent_option does not yet supports this type {type(a)}. Feel free to add support!')
         return action_consistent_options
 
     def planning_step(self,gamma):
@@ -155,19 +160,32 @@ class DynaQP_OptionIntra_Tab:
         Returns:
             Nothing
         """
+        
+        # Additional model planning steps!
+        for _ in range(self.model_planning_steps):
+            # resample the states
+            x = choice(np.array(list(self.visit_history.keys())), self.random)
+            visited_actions = list(self.visit_history[x].keys())
+
+            # Improving option model!
+            for o in visited_actions:
+                xp, r = self.visit_history[x][o]
+                self.update_model(x, o, xp, r, gamma)
 
         for _ in range(self.planning_steps):
             x = choice(np.array(list(self.visit_history.keys())), self.random)
             visited_actions = list(self.visit_history[x].keys())
-            action_consistent_options = self._get_action_consistent_options(x, visited_actions)
-            available_actions = visited_actions + action_consistent_options
-
             
             if self.all_option_planning_update:
-                update_options = available_actions
+                # Pick a random action, then update the action and matching options
+                action_to_update = choice(np.array(visited_actions), self.random)
+                action_consistent_options = self._get_action_consistent_options(x, action_to_update)
+                update_options = [action_to_update] + action_consistent_options
             else:
+                # Pick a random action/option within all eligable action/options
+                action_consistent_options = self._get_action_consistent_options(x, visited_actions)
+                available_actions = visited_actions + action_consistent_options
                 update_options = [choice(np.array(available_actions), self.random)]
-
 
             for o in update_options: 
                 if (o < self.num_actions):
@@ -181,7 +199,7 @@ class DynaQP_OptionIntra_Tab:
                 else:
                     r = self.option_r[x, o - self.num_actions]
                     discount = self.option_discount[x, o - self.num_actions]
-                    norm = np.linalg.norm(self.option_transition_probability[x, o - self.num_actions])
+                    norm = np.linalg.norm(self.option_transition_probability[x, o - self.num_actions], ord=1)
                     if (norm != 0):
                         prob = self.option_transition_probability[x, o - self.num_actions] / norm
                         # +1 here accounts for the terminal state
@@ -197,12 +215,6 @@ class DynaQP_OptionIntra_Tab:
                 r += self.kappa * np.sqrt(self.tau[x, o])
 
                 self.Q[x,o] = self.Q[x,o] + self.alpha * (r + discount * max_q - self.Q[x, o])
-
-        for _ in range(self.model_planning_steps):
-            # Improving option model!
-            o = choice(np.array(visited_actions), self.random) 
-            xp, r = self.visit_history[x][o]
-            self.update_model(x, o, xp, r, gamma)
 
     def agent_end(self, x, o, a, r, gamma):
         self.update(x, o, a, -1, r, gamma)

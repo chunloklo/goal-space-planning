@@ -38,26 +38,21 @@ def create_options(env, option_name):
             90: UP,    91: LEFT,  92: RIGHT,  93: RIGHT, 94: UP,    95: UP,    96: LEFT,   97: LEFT,  98: LEFT, 99: LEFT
             
         }
-
         
-        term_set_1 = [22,27,77]
+        term_set = [22,27,77]
 
-        def policy_selection_1(policy, state):
+        def policy_selection(policy, state):
             return policy[state]
 
-        def termination_condition_1(termination_set, state):
+        def termination_condition(termination_set, state):
 
             if state in termination_set:
                 return True
             return False
 
-
-
-
-
         option1 = QOption([x for x in range(env.nS)], policy_option_1,
-                        term_set_1, policy_selection_1,
-                        termination_condition_1, env.nA)
+                        term_set, policy_selection,
+                        termination_condition, env.nA)
 
         save_option('GrazingO1', option1)
 
@@ -77,19 +72,10 @@ def create_options(env, option_name):
             90: RIGHT, 91: RIGHT,  92: RIGHT,  93: RIGHT, 94: UP,    95: UP,    96: LEFT,   97: LEFT,  98: RIGHT, 99: UP
             
         }
-        term_set_2 = [22,27,77]
-
-        def policy_selection_2(policy, state):
-            return policy[state]
-
-        def termination_condition_2(termination_set, state):
-            if state in termination_set:
-                return True
-            return False
 
         option2 = QOption([x for x in range(env.nS)], policy_option_2,
-                        term_set_2, policy_selection_2,
-                        termination_condition_2, env.nA)
+                        term_set, policy_selection,
+                        termination_condition, env.nA)
 
 
         save_option('GrazingO2', option2)
@@ -113,21 +99,37 @@ def create_options(env, option_name):
             90: RIGHT, 91: RIGHT,  92: RIGHT,  93: RIGHT, 94: RIGHT, 95: RIGHT, 96: RIGHT,  97: UP,    98: LEFT,  99: LEFT
             
         }
-        term_set_3 = [22,27,77]
-
-        def policy_selection_3(policy, state):
-            return policy[state]
-
-        def termination_condition_3(termination_set, state):
-            if state in termination_set:
-                return True
-            return False
 
         option3 = QOption([x for x in range(env.nS)], policy_option_3,
-                        term_set_3, policy_selection_3,
-                        termination_condition_3, env.nA)
+                        term_set, policy_selection,
+                        termination_condition, env.nA)
 
         save_option('GrazingO3', option3)
+
+
+        # Option 4 lead to the middle of the gridworld
+
+        option_4_term_set = [44] + term_set
+
+        policy_option_4 = {
+
+            0:  RIGHT,  1: RIGHT,   2: RIGHT,   3: RIGHT,  4: DOWN,   5: LEFT,   6: LEFT, 7: LEFT,   8: LEFT,    9: LEFT,
+            10: DOWN,  11: UP,     12: UP,     13: UP,    14: DOWN,  15: LEFT,  16: UP,   17: UP,    18: UP,    19: DOWN,
+            20: DOWN,  21: UP,     22: UP,     23: UP,    24: DOWN,  25: LEFT,  26: UP,   27: UP,    28: UP,    29: DOWN,     
+            30: DOWN,  31: UP,     32: UP,     33: UP,    34: DOWN,  35: LEFT,  36: UP,   37: UP,    38: UP,    39: DOWN,    
+            40: RIGHT, 41: RIGHT,  42: RIGHT,  43: RIGHT, 44: UP,    45: LEFT, 46: LEFT,  47: LEFT,  48: LEFT,  49: LEFT,   
+            50: RIGHT, 51: RIGHT,  52: RIGHT,  53: RIGHT, 54: UP,    55: LEFT, 56: LEFT,  57: LEFT,  58: LEFT,  59: LEFT, 
+            60: RIGHT, 61: RIGHT,  62: RIGHT,  63: RIGHT, 64: UP,    65: LEFT, 66: LEFT,  67: LEFT,  68: LEFT,  69: LEFT,
+            70: RIGHT, 71: RIGHT,  72: RIGHT,  73: RIGHT, 74: UP,    75: LEFT, 76: LEFT,  77: UP,    78: LEFT,  79: LEFT, 
+            80: RIGHT, 81: RIGHT,  82: RIGHT,  83: RIGHT, 84: UP,    85: LEFT, 86: LEFT,  87: LEFT,  88: LEFT,  89: LEFT,  
+            90: RIGHT, 91: RIGHT,  92: RIGHT,  93: RIGHT, 94: UP,    95: LEFT, 96: LEFT,  97: LEFT,  98: LEFT,  99: LEFT
+        }
+
+        option4 = QOption([x for x in range(env.nS)], policy_option_4,
+                        option_4_term_set, policy_selection,
+                        termination_condition, env.nA)
+
+        save_option('GrazingO4', option4)
 
     elif "Maze" in option_name:
         policy_option_1 = {
@@ -145,20 +147,20 @@ def create_options(env, option_name):
             
         }
 
-        term_set_1 = [22,27,77]
+        term_set = [22,27,77]
 
-        def policy_selection_1(policy, state):
+        def policy_selection(policy, state):
             return policy[state]
 
-        def termination_condition_1(termination_set, state):
+        def termination_condition(termination_set, state):
 
             if state in termination_set:
                 return True
             return False
 
         option1 = QOption([x for x in range(env.nS)], policy_option_1,
-                        term_set_1, policy_selection_1,
-                        termination_condition_1, env.nA)
+                        term_set, policy_selection,
+                        termination_condition, env.nA)
 
         save_option('MazeO1', option1)
 

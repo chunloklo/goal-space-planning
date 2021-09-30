@@ -16,81 +16,92 @@ from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whe
 from PyExpUtils.utils.arrays import first
 from tqdm import tqdm
 
-from action_values import _plot_init, scale_value
+from action_values import _plot_init, scale_value, get_json_handle, load_experiment_data, get_experiment_name
 
-def generatePlot(ax, exp_paths, bounds):
-    for exp_path in exp_paths:
-        exp = ExperimentModel.load(exp_path)
+def generatePlot(json_handle):
+    data = load_experiment_data(json_handle)
 
-        save_path = exp_path.replace('experiments', 'visualizations')
-        save_folder = os.path.splitext(save_path)[0]
-        save_file = save_folder + '/model_transition.mp4'
+    # print(return_data)
+    # Processing data here so the dimensions are correct
+    data = data["model_transition"]
+    print(data.shape)
+    data = data[:, 0, :, :, :]
+    data = np.mean(data, axis=0)
+    print(data.shape)
 
-        if (not os.path.isdir(save_folder)):
-            os.makedirs(save_folder)
+    # asdasd
+    # data = load_experiment_data(exp_path, file_name)
+    experiment_name = get_experiment_name()
 
-        results = loadResults(exp, 'model_transition.npy')
-        data = None
-        for r in results:
-            data = r.load()
+    anim_file_name = f'{experiment_name}.mp4'
+    save_path = "./visualizations/"
+    save_folder = os.path.splitext(save_path)[0]
+    save_file = save_folder + f'/{anim_file_name}'
 
-        # Using a simple way of determining whether options are used.
-        # Note that this might not work in the future if we do something separate, but it works for now
-        # hasOptions = data.shape[-1] > 4
-        print(f'data shape: {data.shape}')
+    if (not os.path.isdir(save_folder)):
+        os.makedirs(save_folder)
 
-        min_val = np.min(data)
-        max_val = np.max(data)
 
-        print(f'min: {min_val} max: {max_val}')
+    min_val = np.min(data)
+    max_val = np.max(data)
+    print(f'min: {min_val} max: {max_val}')
 
-        fig, axes = plt.subplots(1, 3, figsize=(16 * 3, 16))
-        ax = axes[0]
+    colormap = cm.get_cmap('viridis')
 
-        colormap = cm.get_cmap('viridis')
+    num_options = 3
 
-        plot_texts = []
-        plot_patches = []
+    fig, axes = plt.subplots(1, num_options, figsize=(16 * num_options, 16))
+    ax = axes[0]
+    
+    plot_texts = []
+    plot_patches = []
 
-        for axis in axes:
-            texts, patches = _plot_init(axis)
-            plot_texts.append(texts)
-            plot_patches.append(patches)
+    for axis in axes:
+        texts, patches = _plot_init(axis)
+        plot_texts.append(texts)
+        plot_patches.append(patches)
 
-        pbar = tqdm(total=data.shape[0])
+    max_frames = 50
+    interval = 1
+    # max_frames = data.shape[0]
+    # interval = 10
+    frames = range(0, max_frames, interval)
+    pbar = tqdm(total=max_frames)
 
-        def draw_func(i):
-            pbar.update(i - pbar.n)
-            q_values = data[i, :, :]
+    def draw_func(i):
+        pbar.update(i - pbar.n)
+        q_values = data[i, :, :]
 
-            # titles.append(ax.set_title(f"frame: {i}"))
-            ax.set_title(f"frame: {i}")
+        # titles.append(ax.set_title(f"frame: {i}"))
+        ax.set_title(f"frame: {i}")
 
-            for i in range(10):
-                for j in range(10):
-                    q_value = q_values[i + j * 10, :]
-                    # print(q_values.shape)
-                    termination_positions = [22, 27, 77, 100]
-                    for o in range(3):
-                        for p in range(4):
-                            scaled_value = scale_value(q_value[o, termination_positions[p]], min_val, max_val)
-                            plot_patches[o][i][j][p].set_facecolor(colormap(scaled_value))
-                            plot_texts[o][i][j][p].set_text(round(q_value[o, termination_positions[p]], 2))
-            return
+        for i in range(10):
+            for j in range(10):
+                q_value = q_values[i + j * 10, :]
+                # print(q_values.shape)
+                termination_positions = [22, 34, 77, 100]
+                for o in range(num_options):
+                    for p in range(len(termination_positions)):
+                        scaled_value = scale_value(q_value[o, termination_positions[p]], min_val, max_val)
+                        plot_patches[o][i][j][p].set_facecolor(colormap(scaled_value))
+                        plot_texts[o][i][j][p].set_text(round(q_value[o, termination_positions[p]], 2))
+        return
 
-        animation = FuncAnimation(fig, draw_func, frames=range(0, data.shape[0], 10))
-        animation.save(save_file)
-        pbar.close()
-        # plt.show()
+    animation = FuncAnimation(fig, draw_func, frames=frames)
+    animation.save(save_file)
+    pbar.close()
 
 if __name__ == "__main__":
-    # f, axes = plt.subplots(1)
-    axes = None
-    bounds = []
 
-    exp_paths = sys.argv[1:]
+    # read the arguments etc
+    if len(sys.argv) < 2:
+        print("usage : python analysis/process_data.py <list of json files")
+        exit()
 
-    generatePlot(axes, exp_paths, bounds)
 
-    # plt.show()
+    json_handle = get_json_handle()
+
+    # Only use the first handle for now?
+    generatePlot(json_handle)
+
     exit()

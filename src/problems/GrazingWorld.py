@@ -15,3 +15,8 @@ class GrazingWorld(BaseProblem):
 
         self.features = self.rep.features()
         self.gamma = 1
+
+class GrazingWorldWithMiddleOption(GrazingWorld):
+    def __init__(self, exp, idx):
+        super().__init__(exp, idx)
+        self.options = [load_option('GrazingO1'), load_option('GrazingO2'),load_option('GrazingO3'), load_option('GrazingO4')]

@@ -1,6 +1,8 @@
-from genericpath import isdir
 import os
 import sys
+sys.path.append(os.getcwd())
+
+from genericpath import isdir
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,13 +10,22 @@ from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 from matplotlib import cm
 from matplotlib.animation import FuncAnimation
-sys.path.append(os.getcwd())
+
 
 from src.analysis.learning_curve import plotBest
 from src.experiment import ExperimentModel
 from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParametersEqual, find
 from PyExpUtils.utils.arrays import first
 from tqdm import tqdm
+
+# Mass taking imports from process_data for now
+import os, sys, time, copy
+sys.path.append(os.getcwd())
+import numpy as np
+
+from src.utils.json_handling import get_sorted_dict , get_param_iterable_runs
+from src.utils.formatting import create_file_name, create_folder
+from src.utils import analysis_utils
 
 def _get_corner_loc(offsetx: int, offsety: int, loc_type: str):
     if (loc_type == 'center'):
@@ -95,84 +106,136 @@ def scale_value(value: float, min_val:float, max_val:float):
     percentage = np.cbrt(percentage)
     return percentage
 
-def load_experiment_data(exp_path, file_name):
-    exp = ExperimentModel.load(exp_path)
-    results = loadResults(exp, file_name)
-    data = None
-    for r in results:
-        data = r.load()
-    return data
+def get_experiment_name():
+    experiment_name = input("Give the input for experiment name (extension will be appended): ")
 
-def generatePlot(exp_paths, file_name, anim_file_name):
-    for exp_path in exp_paths:
-        data = load_experiment_data(exp_path, file_name)
+    while (len(experiment_name) == 0):
+        experiment_name = input("Please enter an experiment name that is longer than 0 length: ")
+    return experiment_name
 
-        save_path = exp_path.replace('experiments', 'visualizations')
-        save_folder = os.path.splitext(save_path)[0]
-        save_file = save_folder + f'/{anim_file_name}'
+def generatePlot(json_handle):
+    data = load_experiment_data(json_handle)
 
-        if (not os.path.isdir(save_folder)):
-            os.makedirs(save_folder)
+    # print(return_data)
+    # Processing data here so the dimensions are correct
+    data = data["Q"]
+    data = data[:, 0, :, :, :]
+    data = np.mean(data, axis=0)
+    print(data.shape)
 
-        # Using a simple way of determining whether options are used.
-        # Note that this might not work in the future if we do something separate, but it works for now
-        hasOptions = data.shape[-1] > 4
+    # data = load_experiment_data(exp_path, file_name)
 
-        min_val = np.min(data)
-        max_val = np.max(data)
-        print(f'min: {min_val} max: {max_val}')
+    experiment_name = get_experiment_name()
 
-        # fig = plt.figure()
-        if hasOptions:
-            fig, axes = plt.subplots(1, 2, figsize=(32, 16))
-            ax = axes[0]
-            ax_options = axes[1]
-            
-        else:
-            fig, axes = plt.subplots(1, figsize=(16, 16))
-            ax = axes
+    anim_file_name = f'{experiment_name}_action_values.mp4'
+    save_path = "./visualizations/"
+    save_folder = os.path.splitext(save_path)[0]
+    save_file = save_folder + f'/{anim_file_name}'
 
-        colormap = cm.get_cmap('viridis')
+    if (not os.path.isdir(save_folder)):
+        os.makedirs(save_folder)
 
-        texts, patches = _plot_init(ax)
+    # Using a simple way of determining whether options are used.
+    # Note that this might not work in the future if we do something separate, but it works for now
+    hasOptions = data.shape[-1] > 4
+
+    num_options = data.shape[-1] - 4
+
+    min_val = np.min(data)
+    max_val = np.max(data)
+    print(f'min: {min_val} max: {max_val}')
+
+    # fig = plt.figure()
+    if hasOptions:
+        fig, axes = plt.subplots(1, 2, figsize=(32, 16))
+        ax = axes[0]
+        ax_options = axes[1]
         
+    else:
+        fig, axes = plt.subplots(1, figsize=(16, 16))
+        ax = axes
 
-        if hasOptions:
-            ax_options.set_xlim(0, 10)
-            ax_options.set_ylim(0, 10)
-            ax_options.invert_yaxis()
-            texts_options, patches_options = _plot_init(ax_options)
+    colormap = cm.get_cmap('viridis')
 
-        pbar = tqdm(total=data.shape[0])
-        def draw_func(i):
-            pbar.update(i - pbar.n)
-            q_values = data[i, :, :]
+    texts, patches = _plot_init(ax)
+    
 
-            # titles.append(ax.set_title(f"frame: {i}"))
-            ax.set_title(f"frame: {i}")
+    if hasOptions:
+        ax_options.set_xlim(0, 10)
+        ax_options.set_ylim(0, 10)
+        ax_options.invert_yaxis()
+        texts_options, patches_options = _plot_init(ax_options)
+    
+    # max_frames = 50
+    # interval = 1
+    max_frames = data.shape[0]
+    interval = 10
+    frames = range(0, max_frames, interval)
 
-            for i in range(10):
-                for j in range(10):
-                    q_value = q_values[i + j * 10, :]
-                    for a in range(4):
-                        scaled_value = scale_value(q_value[a], min_val, max_val)
-                        patches[i][j][a].set_facecolor(colormap(scaled_value))
-                        texts[i][j][a].set_text(round(q_value[a], 2))
+    print(f'Creating video till episode {max_frames} at interval {interval}')
+    pbar = tqdm(total=max_frames)
+    def draw_func(i):
+        pbar.update(i - pbar.n)
+        q_values = data[i, :, :]
 
-                    if hasOptions:
-                        for a in range(3):
-                            scaled_value = scale_value(q_value[a + 4], min_val, max_val)
-                            patches_options[i][j][a].set_facecolor(colormap(scaled_value))
-                            texts_options[i][j][a].set_text(round(q_value[a + 4], 2))
-            return
+        # titles.append(ax.set_title(f"frame: {i}"))
+        ax.set_title(f"frame: {i}")
 
-        animation = FuncAnimation(fig, draw_func, frames=range(0, data.shape[0], 5))
-        animation.save(save_file)
-        pbar.close()
-        # plt.show()
+        for i in range(10):
+            for j in range(10):
+                q_value = q_values[i + j * 10, :]
+                for a in range(4):
+                    scaled_value = scale_value(q_value[a], min_val, max_val)
+                    patches[i][j][a].set_facecolor(colormap(scaled_value))
+                    texts[i][j][a].set_text(round(q_value[a], 2))
+
+                if hasOptions:
+                    for a in range(num_options):
+                        scaled_value = scale_value(q_value[a + 4], min_val, max_val)
+                        patches_options[i][j][a].set_facecolor(colormap(scaled_value))
+                        texts_options[i][j][a].set_text(round(q_value[a + 4], 2))
+        return
+
+    animation = FuncAnimation(fig, draw_func, frames=frames)
+    animation.save(save_file)
+    pbar.close()
+    # plt.show()
+
+
+def get_json_handle():
+    json_files = sys.argv[1:] # all the json files
+    # convert all json files to dict
+    json_handles = [get_sorted_dict(j) for j in json_files]
+
+    # Logic for choosing which json handle
+    return json_handles[0]
+
+def load_experiment_data(json_handle, load_keys: list = None):
+    # if load_keys is None, then it loads all the keys
+    iterables = get_param_iterable_runs(json_handle)
+        
+    for i in iterables:
+        print(i)
+        return_data = analysis_utils.load_different_runs_all_data(i, load_keys)
+        print(return_data.keys())
+        # mean_return_data, stderr_return_data = process_runs(return_data)
+        pass
+
+    # Messy right now, but its okay
+    return return_data
+
 
 if __name__ == "__main__":
-    exp_paths = sys.argv[1:]
-    generatePlot(exp_paths, 'Q.npy', 'action_values.mp4')
+
+    # read the arguments etc
+    if len(sys.argv) < 2:
+        print("usage : python analysis/process_data.py <list of json files")
+        exit()
+
+
+    json_handle = get_json_handle()
+
+    # Only use the first handle for now?
+    generatePlot(json_handle)
 
     exit()
