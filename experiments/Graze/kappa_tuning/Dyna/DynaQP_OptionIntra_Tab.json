@@ -12,6 +12,6 @@
         "kappa": [0.1,0.01,0.001,0.0001],
         "planning_steps": [5,10,20],
         "model_planning_steps": [5,10,20],
-        "reward_sequence_length" :  [80]
+        "reward_sequence_length" :  [40]
     }
 }
