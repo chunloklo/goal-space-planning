@@ -23,8 +23,14 @@ def process_runs(runs):
     # get mean and std
 
     runs = runs.squeeze()
-    mean = np.mean(runs, axis = 0)
-    stderr = np.std(runs , axis = 0) / np.sqrt(runs.shape[0])
+    if (len(runs.shape) >= 2):
+        mean = np.mean(runs, axis = 0)
+
+        stderr = np.std(runs , axis = 0) / np.sqrt(runs.shape[0])
+    else:
+        print('Only one run. Mean is just that squeezed run')
+        mean = runs
+        stderr = np.zeros(mean.shape)
 
     return mean , stderr
 

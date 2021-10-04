@@ -33,7 +33,7 @@ def generatePlot(json_handle):
     # data = load_experiment_data(exp_path, file_name)
     experiment_name = get_experiment_name()
 
-    anim_file_name = f'{experiment_name}.mp4'
+    anim_file_name = f'{experiment_name}_model_transition.mp4'
     save_path = "./visualizations/"
     save_folder = os.path.splitext(save_path)[0]
     save_file = save_folder + f'/{anim_file_name}'
@@ -61,10 +61,13 @@ def generatePlot(json_handle):
         plot_texts.append(texts)
         plot_patches.append(patches)
 
-    max_frames = 50
-    interval = 1
-    # max_frames = data.shape[0]
-    # interval = 10
+    
+    print(data.shape)
+
+    # max_frames = 50
+    # interval = 1
+    max_frames = data.shape[0]
+    interval = 10
     frames = range(0, max_frames, interval)
     pbar = tqdm(total=max_frames)
 
@@ -78,7 +81,7 @@ def generatePlot(json_handle):
             for j in range(10):
                 q_value = q_values[i + j * 10, :]
                 # print(q_values.shape)
-                termination_positions = [22, 34, 77, 100]
+                termination_positions = [12, 17, 76, 100]
                 for o in range(num_options):
                     for p in range(len(termination_positions)):
                         scaled_value = scale_value(q_value[o, termination_positions[p]], min_val, max_val)

@@ -240,6 +240,7 @@ def get_json_handle():
     json_handles = [get_sorted_dict(j) for j in json_files]
 
     # Logic for choosing which json handle
+    print("grabbing only the first experiment for visualization")
     return json_handles[0]
 
 def load_experiment_data(json_handle, load_keys: list = None):

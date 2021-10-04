@@ -81,8 +81,8 @@ def load_different_runs(json_handle):
             arr = pkl_loader(filename)
             return_data.append( arr['datum'])
             max_returns.append( arr['max_return'])
-        except:
-            print('Run not valid')
+        except Exception as e:
+            print(f'Run not valid: {str(e)}')
             pass
     return_data = np.array(return_data)
     max_returns =  np.array(max_returns)

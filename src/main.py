@@ -127,6 +127,7 @@ analysis_utils.pkl_saver({
     # 'model_transition': globals.collector.all_data['model_transition'],
     # 'end_goal': globals.collector.all_data['end_goal'],
     # 'goal_rewards': globals.collector.all_data['goal_rewards'],
+    # 'action_selected': globals.collector.all_data['action_selected'],
 }, output_file_name + '.pkl')
 
 
