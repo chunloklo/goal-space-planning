@@ -10,6 +10,7 @@ import time
 import numpy as np
 from src.utils.run_utils import get_list_pending_experiments
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
+from src.utils.file_handling import get_files_recursively
 
 
 parser = argparse.ArgumentParser()
@@ -21,8 +22,11 @@ parser.add_argument('--end','-e', type = int,default = -1, help = "the ending in
 parser.add_argument('--cpus','-c', type = int,default = -1, help = "The number of CPU's to be used for parallel, otherwise uses all")
 
 args = parser.parse_args()
-json_files = args.json
+experiment_list = args.json
+json_files = get_files_recursively(experiment_list)
+
 pythoncommands = []
+print(json_files)
 for json_file in json_files:
     print(json_file)
     d = get_sorted_dict(json_file)

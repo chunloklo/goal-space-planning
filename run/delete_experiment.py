@@ -13,6 +13,7 @@ import numpy as np
 from src.utils.run_utils import get_list_pending_experiments
 from src.utils.json_handling import get_sorted_dict, get_param_iterable, get_param_iterable_runs
 from src.utils.formatting import create_file_name
+from src.utils.file_handling import get_files_recursively
 
 parser = argparse.ArgumentParser()
 
@@ -21,7 +22,8 @@ parser.add_argument('--processed', '-p',  action='store_true',default=False, hel
 parser.add_argument('--result', '-r',  action='store_true',default=False, help='Delete files from results folder')
 
 args = parser.parse_args()
-json_files = args.json
+experiment_list = args.json
+json_files = get_files_recursively(experiment_list)
 delete_pro = args.processed
 delete_result = args.result
 

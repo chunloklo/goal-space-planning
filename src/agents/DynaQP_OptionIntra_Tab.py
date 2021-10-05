@@ -76,6 +76,8 @@ class DynaQP_OptionIntra_Tab:
         return o,a
 
     def update(self, x, o, a, xp, r, gamma):
+        self.log_action_selected.append(o)
+
         # not strictly needed because the option action pair shouldn't be used in termination,
         # but it prevents some unneeded computation that could error out with weird indexing.
         oa_pair = self.selectAction(xp) if xp != self.termination_state_index else None
@@ -100,9 +102,6 @@ class DynaQP_OptionIntra_Tab:
 
         self.update_model(x,a,xp,r, gamma)  
         self.planning_step(gamma)
-
-        if (oa_pair != None):
-            self.log_action_selected.append(oa_pair[0])
 
         return oa_pair
 

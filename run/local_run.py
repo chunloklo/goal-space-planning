@@ -12,6 +12,7 @@ import time
 import numpy as np
 from src.utils.run_utils import get_list_pending_experiments
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
+from src.utils.file_handling import get_files_recursively
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--pythonfile', '-p', type=str)
@@ -21,7 +22,8 @@ parser.add_argument('--cpus', '-c', type=int, default=-1,
 
 
 args = parser.parse_args()
-json_files = args.json
+experiment_list = args.json
+json_files = get_files_recursively(experiment_list)
 pythoncommands = []
 num_commands = len(json_files)
 for json_file in json_files:

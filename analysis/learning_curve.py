@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from src.utils.json_handling import get_sorted_dict
 from src.utils import analysis_utils 
 from src.utils.formatting import create_folder
+from src.utils.file_handling import get_files_recursively
 
 # read the arguments etc
 if len(sys.argv) < 2:
@@ -19,6 +20,8 @@ if len(sys.argv) < 2:
 assert sys.argv[1].lower() in ['y' ,'n'] , "[ERROR], Choose between y/n"
 show_legend = sys.argv[1].lower() == 'y'
 json_files = sys.argv[2:] # all the json files
+
+json_files = get_files_recursively(json_files)
 
 json_handles = [get_sorted_dict(j) for j in json_files]
 

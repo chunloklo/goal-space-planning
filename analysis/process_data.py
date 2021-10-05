@@ -8,6 +8,7 @@ import numpy as np
 from src.utils.json_handling import get_sorted_dict , get_param_iterable_runs
 from src.utils.formatting import create_file_name, create_folder
 from src.utils import analysis_utils
+from src.utils.file_handling import get_files_recursively
 
 # read the arguments etc
 if len(sys.argv) < 2:
@@ -15,6 +16,7 @@ if len(sys.argv) < 2:
     exit()
 
 json_files = sys.argv[1:] # all the json files
+json_files = get_files_recursively(json_files)
 
 # convert all json files to dict
 json_handles = [get_sorted_dict(j) for j in json_files]
