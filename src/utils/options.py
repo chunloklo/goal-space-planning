@@ -27,7 +27,7 @@ def from_action_to_option_index(a: int, num_actions: int):
 def from_option_to_action_index(o: int, num_actions: int):
     return o + num_actions
 
-def get_option_info(x, o, options: list[QOption]):
+def get_option_info(x, o, options):
     if (o >= len(options)):
         raise Exception(f'tried to get info for option {o} when there are only {len(options)} options')
     return options[o].step(x)

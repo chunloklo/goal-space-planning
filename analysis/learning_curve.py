@@ -27,11 +27,11 @@ json_handles = [get_sorted_dict(j) for j in json_files]
 
 agent_colors={
     "Q_Tabular": 'red',
-    "Dyna_Tab_Dist": 'blue',
     "Dyna_Tab": 'yellow',
     "Dynaqp_Tab": 'green',
     "Q_Linear": 'red',
     "Option_Q_Tab": 'cyan',
+    "Q_OptionIntra_Tab": 'blue',
     "Dyna_Optionqp_Tab": 'purple',
     "Option_Given_Q_Tab": 'magenta',
     "Dyna_Option_Givenqp_Tab": 'orange',
