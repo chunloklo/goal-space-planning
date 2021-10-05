@@ -1,0 +1,14 @@
+{
+    "agent": "Q_Tabular",
+    "problem": "GrazingWorld",
+    "episodes": 50,  
+    "metaParameters": {
+        "seed": [0],
+        "exploration_phase": [20],
+        "no_reward_exploration": [true, false],
+        "alpha": [0.9],
+        "epsilon": [0.4],
+        "gamma" : [1.0],
+        "reward_sequence_length" : [40]
+    }
+}
