@@ -1,0 +1,17 @@
+{
+    "agent": "DynaQP_OptionIntra_Tab",
+    "problem": "GrazingWorld",
+    "episodes": 1000,
+    "metaParameters": {
+        "seed": [0],
+        "exploration_phase": [50],
+        "alpha": [0.9],
+        "epsilon": [0.5],
+        "all_option_planning_update": [true],
+        "gamma": [0.99],
+        "kappa": [0.001],
+        "planning_steps": [10],
+        "model_planning_steps": [5],
+        "reward_sequence_length" : [250]
+    }
+}

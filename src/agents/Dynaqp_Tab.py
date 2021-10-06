@@ -19,6 +19,8 @@ class Dynaqp_Tab:
         self.alpha = params['alpha']
         self.epsilon = params['epsilon']
         self.planning_steps = params['planning_steps']
+        # Whether to plan with current state.
+        self.plan_with_current_state = params.get('plan_with_current_state', False)
 
 
 
@@ -49,7 +51,10 @@ class Dynaqp_Tab:
         max_q = 0 if xp == -1 else np.max(self.Q[xp,:])
         self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*max_q - self.Q[x,a]) 
         self.update_model(x,a,xp,r)  
-        self.planning_step(gamma)
+        if (self.plan_with_current_state):
+            self.planning_with_current_state(gamma, x)
+        else:
+            self.planning_step(gamma)
         return ap
 
     def update_model(self, x, a, xp, r):
@@ -64,6 +69,24 @@ class Dynaqp_Tab:
         else:
             self.model[x][a] = (xp,r)
             
+
+    def planning_with_current_state(self, gamma, x):
+        for i in range(self.planning_steps):
+            a = choice(np.array(list(self.model[x].keys())), self.random) 
+            xp, r = self.model[x][a]
+            r+= self.kappa * np.sqrt(self.tau[x, a])
+
+            if xp ==-1:
+                max_q = 0
+            else:
+                max_q = np.max(self.Q[xp,:])
+            
+            self.Q[x,a] = self.Q[x,a] + self.alpha * (r + gamma * max_q - self.Q[x, a])
+            
+            # if self.Q[x,a]>50:
+            #     print(x,a)
+            #     print(self.Q[x,a])
+
 
     def planning_step(self,gamma):
         """performs planning, i.e. indirect RL.
