@@ -5,7 +5,6 @@ from agents.Dynaqp_Tab import Dynaqp_Tab
 
 # Tabular Agents with Options
 from agents.Option_Given_Q_Tab import Option_Given_Q_Tab
-from agents.Q_OptionIntra_Tab import Q_OptionIntra_Tab
 from agents.Dyna_Option_Givenqp_Tab import Dyna_Option_Givenqp_Tab
 from agents.DynaQP_OptionIntra_Tab import DynaQP_OptionIntra_Tab
 
@@ -18,8 +17,7 @@ def getAgent(name):
         return Q_Tabular
     elif name == 'Dynaqp_Tab':
         return Dynaqp_Tab
-    elif name == 'Q_OptionIntra_Tab':
-        return Q_OptionIntra_Tab
+
     elif name == 'Option_Given_Q_Tab':
         return Option_Given_Q_Tab
     elif name == 'Dyna_Option_Givenqp_Tab':
