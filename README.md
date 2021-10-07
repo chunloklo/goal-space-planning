@@ -310,3 +310,27 @@ print(exp.numPermutations())
   However, the underlying experiment framework, `PyExpUtils`, **does** have support for handling multi-threaded tasks.
   You will need to make a few modifications to `scripts/slurm.py` to change how many tasks are bundled into each job to account for using multiple threads.
   Talk to Andy if you need help!
+
+
+
+# Operational Things:
+
+## I have committed/uncommitted local changes and I want to pull in the latest remote changes and have it be the  base
+1. Suppose your repo is in the state of 
+    - A-B-(unfinished work)
+    - A-B-C
+2. The master branch is at the state of A-B-D
+3. And you want the end result to be either 
+    - A-B-D-(unfinished work)
+    - A-B-D-C-(unfinished work)
+
+### Steps:
+1. Commit all unfinished work, name the commit message however you want
+2. `git pull --rebase` (this will pull the latest and rebase)
+3. Resolve any conflicts that might have occurred from the rebase
+    1. Resolve merge conflicts within your editor of choice
+    2. `git add` the file after you resolved the conflicts
+    3. `git rebase --continue` to finish rebasing
+4. `git reset HEAD~` to uncommit your unfinished work
+
+Now, you should have your repo in a state where you have rebased onto the latest with your changes applied! (Hopefully)
