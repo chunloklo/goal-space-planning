@@ -32,7 +32,9 @@ class DynaQP_OptionIntra_Tab:
         self.all_option_planning_update = params['all_option_planning_update']
         
         # Whether to plan with current state.
-        self.plan_with_current_state = params.get('plan_with_current_state', 0) # 0 for random, 1 for current state, 2 for planning with distances
+        self.plan_with_current_state = params.get('plan_with_current_state', "random") # "random", "close", "current"
+        if self.plan_with_current_state != "random" and self.plan_with_current_state != "close" and self.plan_with_current_state != "current":
+            raise ValueError(f'plan_with_current_state with value {self.plan_with_current_state} is not supported')
         
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
         self.a = -1
