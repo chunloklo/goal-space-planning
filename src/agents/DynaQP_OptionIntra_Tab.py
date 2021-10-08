@@ -32,7 +32,7 @@ class DynaQP_OptionIntra_Tab:
         self.all_option_planning_update = params['all_option_planning_update']
         
         # Whether to plan with current state.
-        self.plan_with_current_state = params.get('plan_with_current_state', False)
+        self.plan_with_current_state = params.get('plan_with_current_state', 0) # 0 for random, 1 for current state, 2 for planning with distances
         
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
         self.a = -1
@@ -54,6 +54,8 @@ class DynaQP_OptionIntra_Tab:
         # The final +1 accounts for also tracking the transition probability into the terminal state
         self.termination_state_index = self.num_states
         self.option_transition_probability = np.zeros((self.num_states + 1, self.num_options, self.num_states + 1))
+
+        self.distance_from_goal = {}
 
         # logging temp vars
         self.log_action_selected = []
@@ -105,10 +107,8 @@ class DynaQP_OptionIntra_Tab:
 
         self.update_model(x,a,xp,r, gamma)  
 
-        if (self.plan_with_current_state):
-            self.current_state_planning(gamma, x)
-        else:
-            self.planning_step(gamma)
+
+        self.planning_step(gamma, x, self.plan_with_current_state)
 
         return oa_pair
 
@@ -118,7 +118,12 @@ class DynaQP_OptionIntra_Tab:
         Returns:
             Nothing
         """
-        
+        if self.plan_with_current_state == "close":
+            if x == self.env.state_encoding(self.env.start_state):
+                self.distance_from_goal[x] = 1
+            if xp != self.termination_state_index and (xp not in self.distance_from_goal or self.distance_from_goal[xp] > self.distance_from_goal[x] +1):
+                self.distance_from_goal[xp] = self.distance_from_goal[x] +1
+
         if x not in self.visit_history:
             self.visit_history[x] = {a:(xp,r)}
         else:
@@ -180,36 +185,10 @@ class DynaQP_OptionIntra_Tab:
         self.Q[x,o] = self.Q[x,o] + self.alpha * (r + discount * max_q - self.Q[x, o])
 
 
-    def current_state_planning(self, gamma, x):
-        # Additional model planning steps!
-        for _ in range(self.model_planning_steps):
-            # resample the states
-            x = choice(np.array(list(self.visit_history.keys())), self.random)
-            visited_actions = list(self.visit_history[x].keys())
 
-            # Improving option model!
-            # We're improving the model a ton here (updating all 4 actions). We could reduce this later but let's keep it high for now?
-            for a in visited_actions:
-                xp, r = self.visit_history[x][a]
-                self.update_model(x, a, xp, r, gamma)
 
-        visited_actions = list(self.visit_history[x].keys())
-        for _ in range(self.planning_steps):
-            if self.all_option_planning_update:
-                # Pick a random action, then update the action and matching options
-                action_to_update = choice(np.array(visited_actions), self.random)
-                action_consistent_options = options.get_action_consistent_options(x, action_to_update, self.options, convert_to_actions=True, num_actions=self.num_actions)
-                update_options = [action_to_update] + action_consistent_options
-            else:
-                # Pick a random action/option within all eligable action/options
-                action_consistent_options = options.get_action_consistent_options(x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
-                available_actions = visited_actions + action_consistent_options
-                update_options = [choice(np.array(available_actions), self.random)]
-            
-            for a in update_options: 
-                self._planning_update(gamma, x, a)
 
-    def planning_step(self,gamma):
+    def planning_step(self,gamma,current_x, plan_current_state):
         """performs planning, i.e. indirect RL.
 
         Returns:
@@ -228,8 +207,23 @@ class DynaQP_OptionIntra_Tab:
                 xp, r = self.visit_history[x][a]
                 self.update_model(x, a, xp, r, gamma)
 
+        if plan_current_state == "close":
+            visited_states, distances = [], []
+            for k in self.visit_history.keys():
+                visited_states.append(k)
+                distances.append(self.distance_from_goal[k])
+            normed_distances = [i/sum(distances) for i in distances]
+            # import pprint
+            # pp = pprint.PrettyPrinter(indent=4)
+            # pp.pprint(self.distance_from_goal)
+
         for _ in range(self.planning_steps):
-            x = choice(np.array(list(self.visit_history.keys())), self.random)
+            if plan_current_state=="random":
+                x = choice(np.array(list(self.visit_history.keys())), self.random)
+            elif plan_current_state =="current":
+                x = current_x
+            elif plan_current_state =="close":
+                x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
             visited_actions = list(self.visit_history[x].keys())
             
             if self.all_option_planning_update:
