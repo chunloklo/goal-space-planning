@@ -29,17 +29,13 @@ def check_experiment_not_done(experiment, list_of_done_experiments = None):
     '''
     Returns True if experiment is yet to be done
     '''
-    folder, file = create_file_name(experiment)
-    # print(file)
-    file_name_check = folder + file + '.dw'
-    if list_of_done_experiments is not None:
-        if file + '.dw' not in list_of_done_experiments:
-            return True
+    folder , filename = create_file_name(experiment)
+    output_file_name = folder + filename
+    # Cut the run if already done
+    if os.path.exists(output_file_name + '.pkl'):
         return False
-    # check ifn th efile exists
-    if not os.path.exists(file_name_check):
+    else:
         return True
-    return False
 
 def get_list_pending_experiments(experiments):
     '''
