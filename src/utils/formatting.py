@@ -4,6 +4,7 @@ This file will contain code pertaining to teh naming issues with difefrent varia
 import os
 import time
 import hashlib # need to start hasing filenames to shorten them
+import copy
 
 def hash_name(name):
     return hashlib.sha256(name.encode()).hexdigest()
@@ -46,12 +47,22 @@ def deseriazlie_dict_to_name(d):
     return file_name[:-1]
 
 
-
-def create_file_name(experiment, sub_folder = 'results'):
+# [2021-10-11 clo] old_compatibility_transform=True keeps the 'old' dictionary style when generating hashes
+# to avoid creating a new mapping since this change was made in the middle of an experiment.
+# We hopefully want to deprecate this soon since it forces structures into our param keys that are not necessary.
+def create_file_name(experiment: dict, sub_folder = 'results', old_compatibility_transform=True):
     '''
     We will make folder names with agent and problem and then appends the rest fo the config
     return the folder and filename
     '''
+    # Deeply copying the experiment dict since we are doing some modifications
+    experiment = copy.deepcopy(experiment)
+    if old_compatibility_transform:
+        metaParams = experiment['metaParameters']
+        del experiment['metaParameters']
+        for k in metaParams.keys():
+            experiment[k] = metaParams[k]
+
     folder = f"{experiment['agent']}/{experiment['problem']}"
     keys = list(experiment.keys())
     keys.remove("agent")

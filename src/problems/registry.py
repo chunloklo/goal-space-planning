@@ -1,6 +1,6 @@
 from environments.GrazingWorldSimple import GrazingWorldSimple
 from src.problems.MountainCar import MountainCar
-from src.problems.GrazingWorld import GrazingWorld, GrazingWorldWithMiddleOption, GrazingWorldSimpleProblem
+from src.problems.GrazingWorld import GrazingWorld, GrazingWorldWithMiddleOption, GrazingWorldSimpleProblem, GrazingWorldSimpleProblemDirectOptions
 from src.problems.MazeWorld import MazeWorld
 
 def getProblem(name):
@@ -11,6 +11,8 @@ def getProblem(name):
         return GrazingWorld
     elif name == 'GrazingWorldSimple':
         return GrazingWorldSimpleProblem
+    elif name == 'GrazingWorldSimpleProblemDirectOptions':
+        return GrazingWorldSimpleProblemDirectOptions
     elif name == 'GrazingWorldWithMiddleOption':
         return GrazingWorldWithMiddleOption
     elif name == 'MazeWorld':

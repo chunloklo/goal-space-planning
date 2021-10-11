@@ -14,6 +14,7 @@ from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils import rlglue
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 import copy
+from src.utils.run_utils import experiment_completed
 
 # Logging info level logs for visibility.
 logging.basicConfig(level=logging.INFO)
@@ -47,35 +48,23 @@ problem = Problem(exp, idx)
 agent = problem.getAgent()
 env = problem.getEnvironment()
 
-experiment = copy.deepcopy(problem.params)
-experiment['agent'] = exp.agent
-experiment['problem'] = exp.problem
-experiment['episodes'] = exp.episodes
-seed = experiment['seed']
+experiment = exp.getPermutation(idx)
+seed = experiment['metaParameters']['seed']
 np.random.seed(seed)
 
-#print("run:", seed)
-#inner_idx = exp.numPermutations() * seed + idx
+if experiment_completed(experiment):
+    print(f'Run Already Complete - Ending Run')
+    print(experiment)
+    exit()
 
 folder , filename = create_file_name(experiment)
+output_file_name = folder + filename
 if not os.path.exists(folder):
     time.sleep(2)
     try:
         os.makedirs(folder)
     except:
         pass
-
-
-output_file_name = folder + filename
-# Cut the run if already done
-if os.path.exists(output_file_name + '.pkl'):
-    print("Run Already Complete - Ending Run")
-    exit()
-
-
-
-
-
 try:
     wrapper_class = agent.wrapper_class
     if (wrapper_class == rlglue.OptionFullExecuteWrapper or 

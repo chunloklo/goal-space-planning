@@ -13,6 +13,7 @@ import numpy as np
 from src.utils.run_utils import get_list_pending_experiments
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 from src.utils.file_handling import get_files_recursively
+from src.experiment import ExperimentModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--allocation" ,"-a", type = str, default = 'rrg')
@@ -41,19 +42,11 @@ json_files = get_files_recursively(experiment_list)
 pythoncommands = []
 for json_file in json_files:
     print(json_file)
-    d = get_sorted_dict(json_file)
-    experiments = get_param_iterable(d)
+    exp = ExperimentModel.load(json_file)
     if not args.overwrite:
-        pending_experiments = get_list_pending_experiments(experiments)
+        pending_experiments = get_list_pending_experiments(exp)
     else:
         pending_experiments = list(range(len(experiments)))
-
-    # print(f"Experiments : {json_file} : {pending_experiments}")
-    # # by default use only one node
-
-    # time_str = "{}-{}:{}:00".format(str(args.days) , str(args.hours), str(args.minutes))
-    # cpus = args.cpus * args.ntasks
-
 
     num_commands = len(pending_experiments)
     # get the number of nodes that we want

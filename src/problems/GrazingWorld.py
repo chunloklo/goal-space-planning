@@ -27,3 +27,10 @@ class GrazingWorldSimpleProblem(GrazingWorld):
         self.options = [load_option('IdealGrazingO1'), load_option('IdealGrazingO2'),load_option('IdealGrazingO3'), load_option('IdealGrazingO4')]
         self.env = GWSimpleEnv(self.seed, reward_sequence_length=self.params['reward_sequence_length'])
         # Representation space is the same as normal GWEnv. No need to change it.
+
+class GrazingWorldSimpleProblemDirectOptions(GrazingWorld):
+    def __init__(self, exp, idx):
+        super().__init__(exp, idx)
+        self.options = [load_option('GrazingO1'), load_option('GrazingO2'),load_option('GrazingO3'), load_option('GrazingO4')]
+        self.env = GWSimpleEnv(self.seed, reward_sequence_length=self.params['reward_sequence_length'])
+        # Representation space is the same as normal GWEnv. No need to change it.

@@ -74,7 +74,7 @@ def load_different_runs(json_handle):
     # get the list of params
     iterable = get_param_iterable(json_handle)
     for i in iterable:
-        folder, file = create_file_name(i)
+        folder, file = create_file_name(i, old_compatibility_transform=False)
         filename = folder + file + '.pkl'
         # load the file
         try:

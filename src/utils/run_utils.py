@@ -1,65 +1,35 @@
 import os, sys
 from src.utils.formatting import create_file_name , get_folder_name
+from PyExpUtils.models.ExperimentDescription import ExperimentDescription
+from PyExpUtils.utils.dict import DictPath, flatKeys, get
 
-# def check_experiment_not_done(experiment):
-#     '''
-#     Returns True if experiment is yet to be done
-#     '''
-#     folder, file = create_file_name(experiment)
-#     file_name_check = folder+file + '.dw'
-#     # check ifn th efile exists
-#     if not os.path.exists(file_name_check):
-#         return True
-#     return False
-#
-# def get_list_pending_experiments(experiments):
-#     '''
-#     Inputs : <list> of expeirments
-#     Returns : Index of pending experiments
-#     '''
-#     # given a list of expeiments
-#     pending_experiments = []
-#     for idx, exp in enumerate(experiments):
-#         if check_experiment_not_done(exp):
-#             pending_experiments.append(idx)
-#     return pending_experiments
-
-
-def check_experiment_not_done(experiment, list_of_done_experiments = None):
+def experiment_completed(experiment):
     '''
     Returns True if experiment is yet to be done
     '''
-    folder , filename = create_file_name(experiment)
+    folder, filename = create_file_name(experiment)
     output_file_name = folder + filename
     # Cut the run if already done
     if os.path.exists(output_file_name + '.pkl'):
-        return False
-    else:
         return True
+    else:
+        return False
 
-def get_list_pending_experiments(experiments):
+def get_list_pending_experiments(expDescription: ExperimentDescription):
     '''
-    Inputs : <list> of expeirments
+    Inputs : ExperimentModel
     Returns : Index of pending experiments
     '''
     # given a list of expeiments
     pending_experiments = []
-    experiment_no = len(experiments)
-    # get folder name and the experiments in those
-    foldername = get_folder_name(experiments[0])
-    # load all files
+    experiment_no = expDescription.numPermutations()
+    print(experiment_no)
 
-    print(foldername)
-    # import time
-    list_of_done_experiments = None
-    if os.path.exists(foldername):
-        list_of_done_experiments = os.listdir(foldername)
-    # print(list_of_done_experiments)
-    # time.sleep(10)
-
-    for idx, exp in enumerate(experiments):
+    for idx in range(experiment_no):
+        exp = expDescription.getPermutation(idx)
         print(f'Checking [{idx}/{experiment_no}]\r' , end = "")
-        if check_experiment_not_done(exp, list_of_done_experiments):
+        if not experiment_completed(exp):
             pending_experiments.append(idx)
+    print('')
     return pending_experiments
 
