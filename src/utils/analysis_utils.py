@@ -106,7 +106,7 @@ def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
     # print(iterable)
     for i in iterable:
 
-        folder, file = create_file_name(i, 'processed')
+        folder, file = create_file_name(i, 'processed', old_compatibility_transform=False)
         filename = folder + file + '.pcsd'
 
         if not os.path.exists(filename):
