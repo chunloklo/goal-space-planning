@@ -33,7 +33,7 @@ for json_file in json_files:
     if not args.overwrite:
         pending_experiments = get_list_pending_experiments(exp)
     else:
-        pending_experiments = list(range(len(experiments)))
+        pending_experiments = list(range(len(exp)))
 
     # Filter all experiments with bigger than start
     pending_experiments_temp = []

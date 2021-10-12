@@ -46,7 +46,7 @@ for json_file in json_files:
     if not args.overwrite:
         pending_experiments = get_list_pending_experiments(exp)
     else:
-        pending_experiments = list(range(len(experiments)))
+        pending_experiments = list(range(len(exp)))
 
     num_commands = len(pending_experiments)
     # get the number of nodes that we want
