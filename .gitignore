@@ -1,5 +1,6 @@
 # ignore all results folders
 results/
+results_db/
 results.tar
 .tmp/
 visualizations/

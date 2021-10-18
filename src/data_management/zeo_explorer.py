@@ -11,7 +11,6 @@ def keys(btree):
     return list(btree.keys())
 
 if __name__ == "__main__":
-    globals.use_zodb = True
     address, stop = zeo_common.start_zeo_server()
     root = zeo_common.open_zeo_client()
     print('root should be your place!')

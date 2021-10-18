@@ -5,7 +5,7 @@ import os, time
 sys.path.append(os.getcwd())
 import logging
 from src.utils import globals, analysis_utils
-from src.utils.formatting import create_file_name
+from src.utils.formatting import create_file_name, pushup_metaParameters
 from RlGlue import RlGlue
 from src.experiment import ExperimentModel
 from src.problems.registry import getProblem
@@ -15,21 +15,23 @@ from src.utils import rlglue
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 import copy
 from src.utils.run_utils import experiment_completed
+from src.data_management import zeo_common
+import argparse
 
 # Logging info level logs for visibility.
 logging.basicConfig(level=logging.INFO)
 
 t_start = time.time()
 
-if len(sys.argv) < 3:
-    print('run again with:')
-    print('python3 src/main.py <path/to/description.json> <idx>')
-    exit(1)
+parser = argparse.ArgumentParser(description='Parallizable experiment run file')
+parser.add_argument('json_path', help='path to the json that describes the configs to run')
+parser.add_argument('idx', type = int, help='index of the json config for which to run')
+args = parser.parse_args()
 
 # new stuff for parallel
 #runs = sys.argv[1]
-json_file = sys.argv[1]
-idx = int(sys.argv[2])
+json_file = args.json_path
+idx = args.idx
 # Get experiment
 # d = get_sorted_dict(json_file)
 # experiments = get_param_iterable(d)
@@ -48,23 +50,33 @@ problem = Problem(exp, idx)
 agent = problem.getAgent()
 env = problem.getEnvironment()
 
-experiment = exp.getPermutation(idx)
-seed = experiment['metaParameters']['seed']
+exp_json = exp.getPermutation(idx)
+seed = exp_json['metaParameters']['seed']
 np.random.seed(seed)
+print(exp)
 
-if experiment_completed(experiment):
-    print(f'Run Already Complete - Ending Run')
-    print(experiment)
-    exit()
-
-folder , filename = create_file_name(experiment)
+experiment_old_format = pushup_metaParameters(exp_json)
+folder , filename = create_file_name(experiment_old_format)
 output_file_name = folder + filename
-if not os.path.exists(folder):
-    time.sleep(2)
-    try:
-        os.makedirs(folder)
-    except:
-        pass
+print(zeo_common.get_db_key(experiment_old_format))
+if zeo_common.use_zodb():
+    print('using zodb')
+    if zeo_common.zodb_check_exists(zeo_common.get_db_key(experiment_old_format)):
+        print("ZODB: Run Already Complete - Ending Run")
+        exit()
+else:
+    if experiment_completed(experiment_old_format):
+        print(f'Run Already Complete - Ending Run')
+        print(experiment_old_format)
+        exit()
+    else:
+        if not os.path.exists(folder):
+            time.sleep(2)
+            try:
+                os.makedirs(folder)
+            except:
+                pass
+
 try:
     wrapper_class = agent.wrapper_class
     if (wrapper_class == rlglue.OptionFullExecuteWrapper or 
@@ -106,7 +118,7 @@ datum = globals.collector.all_data['return']
 max_return = globals.collector.all_data['max_return']
 
 
-analysis_utils.pkl_saver({
+save_obj = {
     'datum': datum,
     'max_return': max_return,
     # Debug info. Comment me out if doing a big sweep I hope
@@ -117,8 +129,12 @@ analysis_utils.pkl_saver({
     # 'end_goal': globals.collector.all_data['end_goal'],
     # 'goal_rewards': globals.collector.all_data['goal_rewards'],
     # 'action_selected': globals.collector.all_data['action_selected'],
-}, output_file_name + '.pkl')
+}
 
-
+# We likely want to abstract this away from src/main
+if zeo_common.use_zodb():
+    zeo_common.zodb_saver(save_obj, zeo_common.get_db_key(experiment_old_format))
+else:
+    analysis_utils.pkl_saver(save_obj, output_file_name + '.pkl')
 
 logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")
