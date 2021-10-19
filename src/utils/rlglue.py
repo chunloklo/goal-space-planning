@@ -44,7 +44,7 @@ class OneStepWrapper(BaseAgent):
 
     def no_reward_if_exploring(self, reward: float) -> float:
         in_exploration_phase = self.num_episodes_passed < self.exploration_phase
-        if in_exploration_phase:
+        if in_exploration_phase and self.no_reward_exploration:
             return 0
 
         return reward

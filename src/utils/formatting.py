@@ -46,22 +46,24 @@ def deseriazlie_dict_to_name(d):
                 file_name += f"{k}_{d[k]}_"
     return file_name[:-1]
 
+# This method "pushes up" the metaParameters from
+# within a key to the high level dict. This is so 
+# we could transform a params dict between the new format
+# with metaParamaters as a key to the old format which 
+# didn't have the metaParameters key.
+def pushup_metaParameters(experiment):
+    experiment = copy.deepcopy(experiment)
+    metaParams = experiment['metaParameters']
+    del experiment['metaParameters']
+    for k in metaParams.keys():
+        experiment[k] = metaParams[k]
+    return experiment
 
-# [2021-10-11 clo] old_compatibility_transform=True keeps the 'old' dictionary style when generating hashes
-# to avoid creating a new mapping since this change was made in the middle of an experiment.
-# We hopefully want to deprecate this soon since it forces structures into our param keys that are not necessary.
-def create_file_name(experiment: dict, sub_folder = 'results', old_compatibility_transform=True):
+def create_file_name(experiment: dict, sub_folder = 'results'):
     '''
     We will make folder names with agent and problem and then appends the rest fo the config
     return the folder and filename
     '''
-    # Deeply copying the experiment dict since we are doing some modifications
-    experiment = copy.deepcopy(experiment)
-    if old_compatibility_transform:
-        metaParams = experiment['metaParameters']
-        del experiment['metaParameters']
-        for k in metaParams.keys():
-            experiment[k] = metaParams[k]
 
     folder = f"{experiment['agent']}/{experiment['problem']}"
     keys = list(experiment.keys())

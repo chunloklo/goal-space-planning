@@ -130,6 +130,7 @@ def generatePlot(json_handle):
 
     # print(return_data)
     # Processing data here so the dimensions are correct
+    print(data.keys())
     data = data["Q"]
     data = data[:, 0, :, :, :]
     data = np.mean(data, axis=0)
@@ -180,14 +181,15 @@ def generatePlot(json_handle):
     
     # max_frames = 20
     # interval = 1
-    max_frames = data.shape[0]
-    interval = 10
-    frames = range(0, max_frames, interval)
+    start_frame = 0
+    max_frame = 50
+    interval = 5
+    frames = range(start_frame, max_frame, interval)
 
-    print(f'Creating video till episode {max_frames} at interval {interval}')
-    pbar = tqdm(total=max_frames)
+    print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
+    pbar = tqdm(total=max_frame - start_frame)
     def draw_func(i):
-        pbar.update(i - pbar.n)
+        pbar.update(i - start_frame - pbar.n)
         q_values = data[i, :, :]
 
         ax.set_title(f"episode: {i}")
@@ -210,8 +212,13 @@ def generatePlot(json_handle):
                     arrows[i][j] = arrow
                 else:
                     option = action - 4
+
+                    from src.utils.options import load_option
+                    options = [load_option('GrazingO1'), load_option('GrazingO2'),load_option('GrazingO3'), load_option('GrazingO4')]
+                    action, _ = options[option].step(i + j * 10)
+
                     offset = get_action_offset(arrow_magnitude)
-                    arrow = ax.arrow(center[0], center[1], offset[option][0], offset[option][1], width=width, facecolor='red')
+                    arrow = ax.arrow(center[0], center[1], offset[action][0], offset[action][1], width=width, facecolor='red')
                     arrows[i][j] = arrow
 
                 for a in range(4):

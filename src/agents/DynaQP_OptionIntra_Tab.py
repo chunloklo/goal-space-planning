@@ -2,9 +2,11 @@ from typing import Dict, Union
 import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
+from PyFixedReps.Tabular import Tabular
 from src.utils import rlglue
 from src.utils import globals
-from src.utils import options
+from src.utils import options, param_utils
+from src.agents.components.models import DictModel, TabularModel, TabularOptionModel
 
 class DynaQP_OptionIntra_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
@@ -32,9 +34,7 @@ class DynaQP_OptionIntra_Tab:
         self.all_option_planning_update = params['all_option_planning_update']
         
         # Whether to plan with current state.
-        self.plan_with_current_state = params.get('plan_with_current_state', "random") # "random", "close", "current"
-        if self.plan_with_current_state != "random" and self.plan_with_current_state != "close" and self.plan_with_current_state != "current":
-            raise ValueError(f'plan_with_current_state with value {self.plan_with_current_state} is not supported')
+        self.plan_with_current_state = param_utils.parse_param(params, 'planning_method', ['random', 'current', 'close'])
         
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
         self.a = -1
@@ -43,19 +43,12 @@ class DynaQP_OptionIntra_Tab:
         # create initial weights
         self.Q = np.zeros((self.num_states, self.num_actions+self.num_options))
 
-        # initiation set is 1, all options are pertinent everywhere
-        self.d = np.ones((self.num_states, self.num_options))
-        # termination condition is the environment's discount except in terminal states where it's 0
-        self.term_cond = np.ones((self.num_states, self.num_options))*params["gamma"]
-        for terminal_state_position in self.env.terminal_state_positions:
-            self.Q[self.env.state_encoding(terminal_state_position),:]=0
-
-        self.visit_history = {}
-        self.option_r = np.zeros((self.num_states + 1, self.num_options))
-        self.option_discount = np.zeros((self.num_states + 1, self.num_options))
-        # The final +1 accounts for also tracking the transition probability into the terminal state
         self.termination_state_index = self.num_states
-        self.option_transition_probability = np.zeros((self.num_states + 1, self.num_options, self.num_states + 1))
+
+        # Creating models for actions and options
+        self.action_model = DictModel()
+        # The final +1 accounts for also tracking the transition probability into the terminal state
+        self.option_model = TabularOptionModel(self.num_states + 1, self.num_options, self.alpha)
 
         self.distance_from_goal = {}
 
@@ -107,14 +100,14 @@ class DynaQP_OptionIntra_Tab:
             arrival_value = (1 - t) * self.Q[xp,o] + t * max_q if xp != self.termination_state_index else 0
             self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma * arrival_value - self.Q[x,o]) 
 
-        self.update_model(x,a,xp,r, gamma)  
+        self.update_model(x,a,xp,r)  
 
 
         self.planning_step(gamma, x, self.plan_with_current_state)
 
         return oa_pair
 
-    def update_model(self, x, a, xp, r, gamma):
+    def update_model(self, x, a, xp, r):
         """updates the model 
         
         Returns:
@@ -126,10 +119,7 @@ class DynaQP_OptionIntra_Tab:
             if xp != self.termination_state_index and (xp not in self.distance_from_goal or self.distance_from_goal[xp] > self.distance_from_goal[x] +1):
                 self.distance_from_goal[xp] = self.distance_from_goal[x] +1
 
-        if x not in self.visit_history:
-            self.visit_history[x] = {a:(xp,r)}
-        else:
-            self.visit_history[x][a] = (xp,r)    
+        self.action_model.update(x, a, xp, r)
 
         # Update option model
         action_consistent_options = options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
@@ -141,38 +131,23 @@ class DynaQP_OptionIntra_Tab:
                 # _, termination = self.options[o].step(x)
                 _, option_termination = self.options[o].step(xp)
                 # option_termination = termination or option_termination
-
-            self.option_r[x, o] += self.alpha * (r + gamma * (1 - option_termination) * self.option_r[xp, o] - self.option_r[x, o])
-            self.option_discount[x, o] += self.alpha * (option_termination + (1 - option_termination) * gamma * self.option_discount[xp, o] - self.option_discount[x, o])
-            # accounting for terminal state
-            xp_onehot = np.zeros(self.num_states + 1)
-            xp_onehot[xp] = 1
-            
-            # Note that this update is NOT discounted. Use in conjunction with self.option_discount to form the planning estimate
-            self.option_transition_probability[x, o] += self.alpha * ((option_termination * xp_onehot) + (1 - option_termination) * self.option_transition_probability[xp, o] - self.option_transition_probability[x, o]) 
-            # if (self.option_transition_probability[12, 0][12] != 0) :
-            #     print("hmm")
-            #     print(options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions))
-            #     print(f'x: {x}, xp: {xp}, o: {o}, a {a} locations: {np.where(self.option_transition_probability[x, o] != 0)}')
-            #     print(np.where(self.option_transition_probability[xp, o] != 0))
-            #     exit()
+            # print(self.options[o].step(xp))
+            self.option_model.update(x, o, xp, r, self.gamma, 1 - option_termination)
 
     def _planning_update(self, gamma, x, o):
         if (o < self.num_actions):
-            xp, r = self.visit_history[x][o]
+            xp, r = self.action_model.predict(x, o)
             discount = gamma
-
             if (xp == self.termination_state_index):
                 max_q = 0
             else:
                 max_q = np.max(self.Q[xp,:])
         else:
             option_index = options.from_action_to_option_index(o, self.num_actions)
-            r = self.option_r[x, option_index]
-            discount = self.option_discount[x, option_index]
-            norm = np.linalg.norm(self.option_transition_probability[x, option_index], ord=1)
+            r, discount, transition_prob = self.option_model.predict(x, option_index)
+            norm = np.linalg.norm(transition_prob, ord=1)
             if (norm != 0):
-                prob = self.option_transition_probability[x, option_index] / norm
+                prob = transition_prob / norm
                 # +1 here accounts for the terminal state
                 xp = self.random.choice(self.num_states + 1, p=prob)
                 if (xp == self.num_states):
@@ -186,10 +161,6 @@ class DynaQP_OptionIntra_Tab:
         r += self.kappa * np.sqrt(self.tau[x, o])
         self.Q[x,o] = self.Q[x,o] + self.alpha * (r + discount * max_q - self.Q[x, o])
 
-
-
-
-
     def planning_step(self,gamma,current_x, plan_current_state):
         """performs planning, i.e. indirect RL.
 
@@ -200,33 +171,30 @@ class DynaQP_OptionIntra_Tab:
         # Additional model planning steps!
         for _ in range(self.model_planning_steps):
             # resample the states
-            x = choice(np.array(list(self.visit_history.keys())), self.random)
-            visited_actions = list(self.visit_history[x].keys())
+            x = choice(np.array(self.action_model.visited_states()), self.random)
+            visited_actions = self.action_model.visited_actions(x)
 
             # Improving option model!
             # We're improving the model a ton here (updating all 4 actions). We could reduce this later but let's keep it high for now?
             for a in visited_actions:
-                xp, r = self.visit_history[x][a]
-                self.update_model(x, a, xp, r, gamma)
+                xp, r = self.action_model.predict(x, a)
+                self.update_model(x, a, xp, r)
 
         if plan_current_state == "close":
             visited_states, distances = [], []
-            for k in self.visit_history.keys():
+            for k in self.action_model.visited_states():
                 visited_states.append(k)
                 distances.append(self.distance_from_goal[k])
             normed_distances = [i/sum(distances) for i in distances]
-            # import pprint
-            # pp = pprint.PrettyPrinter(indent=4)
-            # pp.pprint(self.distance_from_goal)
 
         for _ in range(self.planning_steps):
             if plan_current_state=="random":
-                x = choice(np.array(list(self.visit_history.keys())), self.random)
+                x = choice(np.array(self.action_model.visited_states()), self.random)
             elif plan_current_state =="current":
                 x = current_x
             elif plan_current_state =="close":
                 x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
-            visited_actions = list(self.visit_history[x].keys())
+            visited_actions = self.action_model.visited_actions(x)
             
             if self.all_option_planning_update:
                 # Pick a random action, then update the action and matching options
@@ -244,10 +212,12 @@ class DynaQP_OptionIntra_Tab:
 
     def agent_end(self, x, o, a, r, gamma):
         self.update(x, o, a, self.termination_state_index, r, gamma)
-                # Debug logging for each model component
-        globals.collector.collect('model_r', np.copy(self.option_r))  
-        globals.collector.collect('model_discount', np.copy(self.option_discount))  
-        globals.collector.collect('model_transition', np.copy(self.option_transition_probability))  
+        
+        # Debug logging for each model component
+        globals.collector.collect('model_r', np.copy(self.option_model.reward_model.weights.reshape(self.num_states + 1, self.num_options, order='F')))  
+        globals.collector.collect('model_discount', np.copy(self.option_model.discount_model.weights.reshape(self.num_states + 1, self.num_options, order='F')))  
+        globals.collector.collect('model_transition', np.copy(self.option_model.transition_model.weights.reshape(self.num_states + 1, self.num_options, self.num_states + 1, order='F')))  
+
         globals.collector.collect('action_selected', self.log_action_selected.copy())
 
         self.log_action_selected = []  
