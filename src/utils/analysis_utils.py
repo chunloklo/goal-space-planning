@@ -74,7 +74,7 @@ def load_different_runs(json_handle):
     # get the list of params
     iterable = get_param_iterable(json_handle)
     for i in iterable:
-        folder, file = create_file_name(i, old_compatibility_transform=False)
+        folder, file = create_file_name(i)
         filename = folder + file + '.pkl'
         # load the file
         try:
@@ -106,7 +106,7 @@ def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
     # print(iterable)
     for i in iterable:
 
-        folder, file = create_file_name(i, 'processed', old_compatibility_transform=False)
+        folder, file = create_file_name(i, 'processed')
         filename = folder + file + '.pcsd'
 
         if not os.path.exists(filename):
