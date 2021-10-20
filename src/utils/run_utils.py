@@ -1,5 +1,5 @@
 import os, sys
-from src.utils.formatting import create_file_name , get_folder_name
+from src.utils.formatting import create_file_name , get_folder_name, pushup_metaParameters
 from PyExpUtils.models.ExperimentDescription import ExperimentDescription
 from PyExpUtils.utils.dict import DictPath, flatKeys, get
 
@@ -7,6 +7,8 @@ def experiment_completed(experiment):
     '''
     Returns True if experiment is yet to be done
     '''
+    experiment = pushup_metaParameters(experiment)
+
     folder, filename = create_file_name(experiment)
     output_file_name = folder + filename
     # Cut the run if already done
@@ -31,5 +33,6 @@ def get_list_pending_experiments(expDescription: ExperimentDescription):
         if not experiment_completed(exp):
             pending_experiments.append(idx)
     print('')
+    print(f'Num experiments left: {len(pending_experiments)}/{experiment_no}')
     return pending_experiments
 

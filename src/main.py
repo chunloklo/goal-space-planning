@@ -54,9 +54,8 @@ output_file_name = folder + filename
 if args.overwrite == True:
     print('Will overwrite previous results when experiment finishes')
 
-if experiment_completed(experiment_old_format) and not args.overwrite:
+if experiment_completed(exp_json) and not args.overwrite:
     print(f'Run Already Complete - Ending Run')
-    print(experiment_old_format)
     exit()
 else:
     if not os.path.exists(folder):

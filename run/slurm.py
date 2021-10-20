@@ -40,9 +40,11 @@ json_files = get_files_recursively(experiment_list)
 
 # Getting the list of python commands needed to be ran
 pythoncommands = []
+total_num_experiments = 0
 for json_file in json_files:
     print(json_file)
     exp = ExperimentModel.load(json_file)
+    total_num_experiments += exp.numPermutations()
     if not args.overwrite:
         pending_experiments = get_list_pending_experiments(exp)
     else:
@@ -65,13 +67,12 @@ for json_file in json_files:
         pythoncommands.append(com)
         
 # print(pythoncommands)
-print(len(pythoncommands))
+print(f'Num pending experiments: {len(pythoncommands)} / {total_num_experiments}')
 
 num_commands = len(pythoncommands)
 
 
 if (args.estimate_time):
-    print(f"Num experiments: {num_commands}")
     while True:
         try:
             time_per_job = input("Please enter the amount of time needed per job. <D:H:M, H:M, M>: ")
