@@ -63,11 +63,12 @@ for en, js in enumerate(json_handles):
     agent = param['agent']
     print(param)
     plot(axs, data = data[key_to_plot], label = f"{agent}", color = agent_colors[agent] )
-    axs.plot(max_returns[0,0,:], label='max return')
+    if en == 0:
+        axs.plot(max_returns[0,0,:], label='max return')
     #print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
 
-
-axs.set_ylim([-70, 70])
+axs.set_xlim([40,120])
+axs.set_ylim([-300, 110])
 axs.spines['top'].set_visible(False)
 if show_legend:
     axs.set_title(f'{key_to_plot} accuracy')

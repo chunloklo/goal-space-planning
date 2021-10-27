@@ -62,6 +62,7 @@ class DynaQP_OptionIntra_Tab:
         return "DynaQP_OptionIntra_Tab"
 
     def selectAction(self, x) :
+
         p = self.random.rand()
         if p < self.epsilon:
             o = choice(np.arange(self.num_actions+self.num_options), self.random)
@@ -97,6 +98,7 @@ class DynaQP_OptionIntra_Tab:
             _, t = options.get_option_info(x, options.from_action_to_option_index(o, self.num_actions), self.options)
             # not strictly needed because gamma should already cancel out the term on termination
             # but it prevents some unneeded computation that could error out with weird indexing.
+            
             arrival_value = (1 - t) * self.Q[xp,o] + t * max_q if xp != self.termination_state_index else 0
             self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma * arrival_value - self.Q[x,o]) 
 
@@ -213,6 +215,8 @@ class DynaQP_OptionIntra_Tab:
     def agent_end(self, x, o, a, r, gamma):
         self.update(x, o, a, self.termination_state_index, r, gamma)
         
+        self.counter = 0
+
         # Debug logging for each model component
         globals.collector.collect('model_r', np.copy(self.option_model.reward_model.weights.reshape(self.num_states + 1, self.num_options, order='F')))  
         globals.collector.collect('model_discount', np.copy(self.option_model.discount_model.weights.reshape(self.num_states + 1, self.num_options, order='F')))  
