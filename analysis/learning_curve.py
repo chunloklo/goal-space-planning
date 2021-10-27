@@ -28,6 +28,7 @@ json_handles = [get_sorted_dict(j) for j in json_files]
 agent_colors={
     "Q_Tabular": 'red',
     "Dyna_Tab": 'yellow',
+    "Dynaesp_Tab": 'red',
     "Dynaqp_Tab": 'green',
     "Q_Linear": 'red',
     "Option_Q_Tab": 'cyan',
@@ -36,6 +37,7 @@ agent_colors={
     "Option_Given_Q_Tab": 'magenta',
     "Dyna_Option_Givenqp_Tab": 'orange',
     "DynaQP_OptionIntra_Tab": 'purple',
+    "DynaESP_OptionIntra_Tab": 'blue',
     "OptionPlanning_Tab": '#66CCEE'
 }
 
@@ -67,7 +69,7 @@ for en, js in enumerate(json_handles):
         axs.plot(max_returns[0,0,:], label='max return')
     #print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
 
-axs.set_xlim([40,120])
+
 axs.set_ylim([-300, 110])
 axs.spines['top'].set_visible(False)
 if show_legend:

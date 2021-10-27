@@ -1,5 +1,5 @@
 {
-    "agent": "Dynaqp_Tab",
+    "agent": "Dynaesp_Tab",
     "problem": "GrazingWorld",
     "episodes": 3000,
     "metaParameters": {
