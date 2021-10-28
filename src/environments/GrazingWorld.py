@@ -18,11 +18,14 @@ class GrazingWorld(BaseEnvironment):
 
     Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
     """
-    def __init__(self, seed:int, size=10, reward_sequence_length=10):
+    def __init__(self, seed:int,  size=10, reward_sequence_length=10, initial_learning=0):
         random.seed(1)
         self.size = size
         self.shape = (size, size)
         self.reward_sequence_length = reward_sequence_length
+        self.initial_learning = initial_learning
+        self.il_counter = -1
+        self.special_goal_nums = [1,2]
         """
         dictionary to keep track of goals
             position: position on the grid
@@ -33,17 +36,17 @@ class GrazingWorld(BaseEnvironment):
         self.goals = {
             1:{
                 "position" : (2,2),
-                "reward" : 50,
-                "current_reward":50,
+                "reward" : 100,
+                "current_reward":0,
                 "reward_sequence_length": self.reward_sequence_length,
-                "iterator" : int(self.reward_sequence_length/2)
+                "iterator" : 0
             },
             2:{
                 "position" : (2,size-3),
-                "reward" : 40,
-                "current_reward":40,
+                "reward" : 50,
+                "current_reward":0,
                 "reward_sequence_length": self.reward_sequence_length,
-                "iterator" : 0
+                "iterator" : int(self.reward_sequence_length/2)
             },
             3:{
                 "position" : (size-3,size-3),
@@ -64,7 +67,7 @@ class GrazingWorld(BaseEnvironment):
             3:(0,-1)
         }
 
-        self.step_penalty = -0.1
+        self.step_penalty = -1
         self.nS = np.prod(self.shape)
         self.nA = 4
         #self.start_state_index = np.ravel_multi_index((self.shape[0]-1, 0), self.shape)
@@ -98,12 +101,19 @@ class GrazingWorld(BaseEnvironment):
             
     # if iterator reached the end of sequence, generate new sequence and flip reward amount for both goals with not fixed rewards
     def update_goals(self):
+        if self.il_counter < self.initial_learning:
+            self.il_counter +=1
+            increment_iter = False
+        else:
+            increment_iter = True
         for i in range(1,3):
             if self.goals[i]["iterator"] == self.goals[i]["reward_sequence_length"]:
                 self.gen_reward_sequence(i,self.goals[i]["current_reward"] )
                 self.goals[i]["iterator"] = 0
             else:
-                self.goals[i]["iterator"] += 1
+                if increment_iter  and i in self.special_goal_nums:
+                    self.goals[i]["iterator"] += 1
+
 
     def gen_reward_sequence(self,terminal_state, previous_terminal_reward):
         #self.goals[terminal_state]["reward_sequence_length"] =  np.random.poisson(lam=self.reward_sequence_length)
