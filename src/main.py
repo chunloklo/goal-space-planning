@@ -104,7 +104,6 @@ if broke:
 datum = globals.collector.all_data['return']
 max_return = globals.collector.all_data['max_return']
 
-
 save_obj = {
     'datum': datum,
     'max_return': max_return,
