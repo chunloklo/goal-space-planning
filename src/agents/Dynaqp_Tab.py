@@ -3,7 +3,7 @@ import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
 from src.utils import rlglue, param_utils
-from src.agents.components.models import DictModel
+from src.agents.components.approximators import DictModel
 
 class Dynaqp_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
@@ -21,7 +21,7 @@ class Dynaqp_Tab:
         self.epsilon = params['epsilon']
         self.planning_steps = params['planning_steps']
         # Whether to plan with current state.
-        self.plan_with_current_state = param_utils.parse_param(params, 'planning_method', ['random', 'current'])
+        self.plan_with_current_state = param_utils.parse_param(params, 'planning_method', lambda p : p in ['random', 'current'])
 
 
         self.gamma = params['gamma']
