@@ -3,7 +3,7 @@ import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
 from src.utils import rlglue, globals, options
-from src.agents.components.models import DictModel, TabularOptionModel
+from src.agents.components.approximators import DictModel
 
 # Dyna but instead of doing Q Planning we do option planning
 class OptionPlanning_Tab:

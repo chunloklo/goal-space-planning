@@ -95,7 +95,6 @@ for episode in range(exp.episodes):
             broke = True
             break
     globals.collector.collect('return', glue.total_reward)
-    globals.collector.collect('Q', np.copy(agent.Q))   
 globals.collector.reset()
 
 if broke:

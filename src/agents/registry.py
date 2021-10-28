@@ -9,10 +9,10 @@ from agents.Dyna_Option_Givenqp_Tab import Dyna_Option_Givenqp_Tab
 from agents.DynaQP_OptionIntra_Tab import DynaQP_OptionIntra_Tab
 from agents.DynaESP_OptionIntra_Tab import DynaESP_OptionIntra_Tab
 from agents.Dynaesp_Tab import Dynaesp_Tab
+from agents.DynaOptions_Tab import DynaOptions_Tab
 
 # Option Planning
 from agents.OptionPlanning_Tab import OptionPlanning_Tab
-
 
 def getAgent(name):
     if name == 'Q_Tabular':
@@ -21,6 +21,8 @@ def getAgent(name):
         return Dynaqp_Tab
     elif name == 'Dynaesp_Tab':
         return Dynaesp_Tab
+    elif name == 'DynaOptions_Tab':
+        return DynaOptions_Tab
     elif name == 'Option_Given_Q_Tab':
         return Option_Given_Q_Tab
     elif name == 'Dyna_Option_Givenqp_Tab':

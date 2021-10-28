@@ -1,7 +1,8 @@
 import dill
-from typing import Union
+from typing import Union, List
 import numpy as np
-from src.utils.Option import QOption
+import numpy.typing as npt
+from src.utils.Option import QOption, Option
 
 def load_option(file_name):
     input_file = open("src/options/" + file_name + ".pkl", 'rb')
@@ -49,3 +50,32 @@ def get_action_consistent_options(x: int, a: Union[list, int], options: list, co
         assert num_actions != None, 'num_actions must be set if convert_to_actions is set to true'
         action_consistent_options = [from_option_to_action_index(o, num_actions) for o in action_consistent_options]
     return action_consistent_options
+
+# This likely do not being here, but it works for now. If this is used more extensively, we need 
+# a better way of dealing with termination rather than just adding an extra state here.
+GRAZING_WORLD_TERMINAL_STATE = 100
+def get_option_policy_prob(x: int, options: List[Option], num_actions: int) -> npt.ArrayLike:
+    num_options = len(options)
+    # Getting option policy and termination condition
+    # This is SPECIFIC to the current Option model where it returns you just the action, not the policy.
+    # this probably belong somewher eelse.
+    option_policies = np.zeros((num_options, num_actions))
+    for i, option in enumerate(options):
+        if x == GRAZING_WORLD_TERMINAL_STATE:
+            option_policies[i] = 1 / num_actions
+        else:
+            action, _ = option.step(x)
+            option_policies[i][action] = 1
+
+    return option_policies
+
+def get_option_term(xp: int, options: List[Option]) -> npt.ArrayLike:
+    num_options = len(options)
+    option_terminations = np.zeros(num_options)
+    for i, option in enumerate(options):
+        if xp == GRAZING_WORLD_TERMINAL_STATE:
+            term = 1
+        else:
+            _, term = option.step(xp)
+        option_terminations[i] = term
+    return option_terminations

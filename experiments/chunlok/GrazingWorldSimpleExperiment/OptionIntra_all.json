@@ -1,19 +1,19 @@
 {
     "agent": "DynaQP_OptionIntra_Tab",
     "problem": "GrazingWorldSimple",
-    "episodes": 200,
+    "episodes": 150,
     "metaParameters": {
-        "seed": [0],
+        "seed": [0, 1, 2, 3, 4 ,5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
         "exploration_phase": [50],
         "no_reward_exploration": [true],
-        "alpha": [0.9],
-        "epsilon": [0.2],
-        "all_option_planning_update": [false],
-        "plan_with_current_state": [true],
+        "alpha": [0.5, 0.7, 0.9],
+        "epsilon": [0.1, 0.2, 0.3, 0.4, 0.5],
+        "all_option_planning_update": [true],
+        "plan_with_current_state": [true, false],
         "gamma": [1.0],
         "kappa": [0.000001],
         "planning_steps": [1],
         "model_planning_steps": [5],
-        "reward_sequence_length" : [250]
+        "reward_sequence_length" : [150]
     }
 }
