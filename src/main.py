@@ -14,7 +14,7 @@ from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils import rlglue
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 import copy
-from src.utils.run_utils import experiment_completed
+from src.utils.run_utils import experiment_completed, InvalidRunException, save_error, cleanup_files
 import argparse
 
 # Logging info level logs for visibility.
@@ -26,6 +26,7 @@ parser = argparse.ArgumentParser(description='Parallizable experiment run file')
 parser.add_argument('json_path', help='path to the json that describes the configs to run')
 parser.add_argument('idx', type = int, help='index of the json config for which to run')
 parser.add_argument('-o', '--overwrite', action='store_true')
+parser.add_argument('-e', '--ignore-error', action='store_false', help='run the experiment even if it previously errored')
 args = parser.parse_args()
 
 json_file = args.json_path
@@ -54,7 +55,9 @@ output_file_name = folder + filename
 if args.overwrite == True:
     print('Will overwrite previous results when experiment finishes')
 
-if experiment_completed(exp_json) and not args.overwrite:
+if experiment_completed(exp_json, args.ignore_error) and not args.overwrite:
+    if (args.ignore_error):
+        print('Counted run as completed if run errored previously')
     print(f'Run Already Complete - Ending Run')
     exit()
 else:
@@ -64,6 +67,8 @@ else:
             os.makedirs(folder)
         except:
             pass
+    
+    cleanup_files(output_file_name)
 
 try:
     wrapper_class = agent.wrapper_class
@@ -85,17 +90,26 @@ glue = RlGlue(wrapper, env)
 # print("run:",run)
 # Run the experiment
 rewards = []
-for episode in range(exp.episodes):
-    glue.total_reward = 0
-    glue.runEpisode(max_steps)
-    if agent.FA()!="Tabular":
-        # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
-        if np.isnan(np.sum(agent.w)):
-            globals.collector.fillRest(np.nan, exp.episodes)
-            broke = True
+try:
+    for episode in range(exp.episodes):
+        glue.total_reward = 0
+        glue.runEpisode(max_steps)
+
+        if globals.run_exception != None:
             break
-    globals.collector.collect('return', glue.total_reward)
-globals.collector.reset()
+        if agent.FA()!="Tabular":
+            # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
+            if np.isnan(np.sum(agent.w)):
+                globals.collector.fillRest(np.nan, exp.episodes)
+                broke = True
+                break
+        globals.collector.collect('return', glue.total_reward)
+    globals.collector.reset()
+except InvalidRunException as e:
+    print(f'Run errored out. Check {output_file_name}.err for info')
+    save_error(output_file_name, e)
+    logging.info(f"Experiment errored {json_file} : {idx}, Time Taken : {time.time() - t_start}")
+    exit(0)
 
 if broke:
     exit(0)

@@ -3,7 +3,7 @@ import numpy as np
 import numpy.typing as npt
 from abc import ABC, abstractmethod
 
-from utils import numpy_utils
+from src.utils.run_utils import InvalidRunException
 
 class DictModel():
     def __init__(self):
@@ -42,6 +42,9 @@ class LinearApproximator():
 
     def update(self, step_size: float, grad: npt.ArrayLike):
         self.weights += step_size * grad
+
+        if (np.isnan(np.sum(self.weights))):
+            raise InvalidRunException("Nan encountered in approximator")
     
     def predict(self, input_vec: npt.ArrayLike):
         return np.dot(input_vec, self.weights)
