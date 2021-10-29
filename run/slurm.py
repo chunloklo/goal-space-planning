@@ -51,13 +51,7 @@ for json_file in json_files:
         pending_experiments = list(range(len(exp)))
 
     num_commands = len(pending_experiments)
-    # get the number of nodes that we want
-    # nodes = num_commands // cpus
-    # if num_commands % cpus == 0:
-    #     nodes = nodes
-    # else:
-    #     nodes = nodes + 1
-
+    
     for idx in pending_experiments:
         com = 'srun -N1 -n1 --exclusive python ' + args.pythonfile
         # for k in c.keys():
@@ -198,52 +192,3 @@ sfile.close()
 print(slurm_file)
 
 os.system(f'sbatch {slurm_file_name}')
-# time.sleep(1)
-
-# make slurm file
-
-
-    # command_nodes = [ [] for i in range(nodes)]
-    # # give each node command
-    # for i,c in enumerate(pythoncommands):
-    #     command_nodes[i%nodes].append(c)
-
-    # foldername = './temp/parallel_scripts/'
-    # if not os.path.exists(foldername):
-    #         os.makedirs(foldername, exist_ok=True)
-    # filename = [f'./temp/parallel_scripts/node_{i}_{str(args.cpus)}_{str(np.random.randint(0,100000))}.txt' for i in range(nodes) ]
-
-    # # write commands in files
-    # for i,f in enumerate(filename):
-    #     fil = open(f,'w')
-    #     fil.writelines(command_nodes[i])
-    #     fil.close()
-
-    # parallel_commands = []
-    # for f in filename:
-    #     command = 'parallel --verbose -P -0 :::: {}'.format(f)
-    #     parallel_commands.append(command)
-    # # make slurm file
-
-    # foldername = './temp/slurm_scripts/'
-    # if not os.path.exists(foldername):
-    #         os.makedirs(foldername, exist_ok=True)
-    # slurm_files = [ f'./temp/slurm_scripts/slurm{i}.sh' for i in range(nodes)]
-    # cwd = os.getcwd()
-    # for n in range(nodes):
-    #     slurm_file = f"#!/bin/sh\n" \
-    #                 f"#SBATCH --account={allocation_name}\n" \
-    #                 f"#SBATCH --time={time_str}\n" \
-    #                 f"#SBATCH --ntasks={args.cpus}\n" \
-    #                 f"#SBATCH --mem-per-cpu={memory}G\n" \
-    #                 f"{email_str}" \
-    #                 f"source ~/env/bin/activate\n" \
-    #                 f"cd {cwd}\n" \
-    #                 f"export PYTHONPATH={cwd}:$PYTHONPATH\n" \
-    #                 f"{parallel_commands[n]}"
-    #     sfile = open(slurm_files[n], 'w')
-    #     sfile.write(slurm_file)
-    #     sfile.close()
-    #     print(slurm_files[n])
-    #     # os.system(f'sbatch {slurm_files[n]}')
-    #     time.sleep(1)
