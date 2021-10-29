@@ -10,14 +10,16 @@ class Trace():
         self.z: npt.ArrayLike = np.zeros((num_state_features, output_features))
         self.feature_type:str = param_utils.check_valid(feature_type, lambda x: x in ['tabular', 'vector'])
 
-    def update(self, gamma: npt.ArrayLike, lmbda: float, step_size: float, grad: Any, delta: Any, rho: Any):
+    def update(self, gamma: npt.ArrayLike, lmbda: float, grad: Any, rho: Any):
         
         # For action values
         if self.feature_type == 'vector':
+            # accumulating trace
             self.z = rho * lmbda * gamma * self.z + grad
         elif self.feature_type == 'tabular':
+            # replacing trace
             self.z = lmbda * rho * gamma * self.z
-            self.z[grad] += 1
+            self.z[grad] = 1
             
     def episode_end(self):
         self.z[:] = 0

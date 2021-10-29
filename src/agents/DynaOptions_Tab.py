@@ -110,7 +110,7 @@ class DynaOptions_Tab:
         else:
             raise NotImplementedError()
         self.update_model(x,a,xp,r)  
-        self.planning_step(xp, self.search_control)
+        self.planning_step(x, xp, self.search_control)
 
         return oa_pair
     
@@ -168,7 +168,7 @@ class DynaOptions_Tab:
             else:
                 raise NotImplementedError()
 
-    def planning_step(self, xp: int, search_control: str):
+    def planning_step(self, x:int, xp: int, search_control: str):
         """performs planning, i.e. indirect RL.
 
         Returns:
@@ -178,15 +178,15 @@ class DynaOptions_Tab:
         # Additional model planning steps if we need them. Usually this is set to 0 though.
         for _ in range(self.model_planning_steps):
             # resample the states
-            x = choice(np.array(self.action_model.visited_states()), self.random)
-            visited_actions = self.action_model.visited_actions(x)
+            plan_x = choice(np.array(self.action_model.visited_states()), self.random)
+            visited_actions = self.action_model.visited_actions(plan_x)
 
             # Improving option model!
             # We're improving the model a ton here (updating all 4 actions). We could reduce this later but let's keep it high for now?
             # Disabling this since we are testing with traces
             for a in visited_actions:
-                xp, r = self.action_model.predict(x, a)
-                self.option_model_planning_update(x, a, xp, r)
+                xp, r = self.action_model.predict(plan_x, a)
+                self.option_model_planning_update(plan_x, a, xp, r)
 
         if search_control == "close":
             visited_states, distances = [], []
@@ -197,21 +197,26 @@ class DynaOptions_Tab:
 
         for _ in range(self.planning_steps):
             if search_control=="random":
-                x = choice(np.array(self.action_model.visited_states()), self.random)
+                plan_x = choice(np.array(self.action_model.visited_states()), self.random)
             elif search_control =="current":
-                x = xp
+                visited_states = list(self.action_model.visited_states())
+                if (xp in list(visited_states)):
+                    plan_x = xp
+                else:
+                    # Random if you haven't visited the next state yet
+                    plan_x = x
             elif search_control =="close":
-                x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
-            visited_actions = self.action_model.visited_actions(x)
+                plan_x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
+            visited_actions = self.action_model.visited_actions(plan_x)
             
             # Pick a random action/option within all eligable action/options
             # I think there should be a better way of doing this...
-            action_consistent_options = options.get_action_consistent_options(x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
+            action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
             available_actions = visited_actions + action_consistent_options
             update_options = [choice(np.array(available_actions), self.random)]
             
             for a in update_options: 
-                self._planning_update(x, a)
+                self._planning_update(plan_x, a)
 
     def agent_end(self, x, o, a, r, gamma):
         self.update(x, o, a, options.GRAZING_WORLD_TERMINAL_STATE, r, gamma)

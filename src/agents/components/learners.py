@@ -77,7 +77,7 @@ class ESarsaLambda():
         # Constructing the delta vector
         delta = r + env_gamma * xp_average - x_predictions
 
-        self.trace.update(env_gamma, lmbda, step_size, xa_index, delta, 1)
+        self.trace.update(env_gamma, lmbda, xa_index, 1)
         self.approximator.update(step_size, delta * self.trace.z)
 
     def episode_end(self):

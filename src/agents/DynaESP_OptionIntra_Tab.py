@@ -6,7 +6,8 @@ from PyFixedReps.Tabular import Tabular
 from src.utils import rlglue
 from src.utils import globals
 from src.utils import options, param_utils
-from src.agents.components.models import DictModel, TabularModel, TabularOptionModel
+from src.agents.components.approximators import DictModel
+from src.agents.components.models import OptionModel_Sutton_Tabular
 
 class DynaESP_OptionIntra_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
@@ -48,7 +49,7 @@ class DynaESP_OptionIntra_Tab:
         # Creating models for actions and options
         self.action_model = DictModel()
         # The final +1 accounts for also tracking the transition probability into the terminal state
-        self.option_model = TabularOptionModel(self.num_states + 1, self.num_options, self.alpha)
+        self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_options, self.alpha)
 
         self.distance_from_goal = {}
 

@@ -3,7 +3,7 @@ import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
 from src.utils import rlglue, param_utils
-from src.agents.components.models import DictModel
+from src.agents.components.approximators import DictModel
 
 class Dynaesp_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):

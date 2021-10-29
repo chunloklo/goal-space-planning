@@ -129,7 +129,7 @@ class DynaQP_OptionIntra_Tab:
             self.Q[x, o] = self.Q[x,o] + self.alpha * (r + gamma * arrival_value - self.Q[x,o]) 
 
         self.update_model(x,a,xp,r)  
-        self.planning_step(gamma, x, self.plan_with_current_state)
+        self.planning_step(gamma, x, xp, self.plan_with_current_state)
 
         return oa_pair
     
@@ -187,7 +187,7 @@ class DynaQP_OptionIntra_Tab:
         r += self.kappa * np.sqrt(self.tau[x, o])
         self.Q[x,o] = self.Q[x,o] + self.alpha * (r + discount * max_q - self.Q[x, o])
 
-    def planning_step(self,gamma,current_x, plan_current_state):
+    def planning_step(self,gamma, x, xp, plan_current_state):
         """performs planning, i.e. indirect RL.
 
         Returns:
@@ -197,14 +197,14 @@ class DynaQP_OptionIntra_Tab:
         # Additional model planning steps if we need them. Usually this is set to 0 though.
         for _ in range(self.model_planning_steps):
             # resample the states
-            x = choice(np.array(self.action_model.visited_states()), self.random)
-            visited_actions = self.action_model.visited_actions(x)
+            plan_x = choice(np.array(self.action_model.visited_states()), self.random)
+            visited_actions = self.action_model.visited_actions(plan_x)
 
             # Improving option model!
             # We're improving the model a ton here (updating all 4 actions). We could reduce this later but let's keep it high for now?
             for a in visited_actions:
-                xp, r = self.action_model.predict(x, a)
-                self.option_model_planning_update(x, a, xp, r)
+                xp, r = self.action_model.predict(plan_x, a)
+                self.option_model_planning_update(plan_x, a, xp, r)
 
         if plan_current_state == "close":
             visited_states, distances = [], []
@@ -215,35 +215,36 @@ class DynaQP_OptionIntra_Tab:
 
         for _ in range(self.planning_steps):
             if plan_current_state=="random":
-                x = choice(np.array(self.action_model.visited_states()), self.random)
+                plan_x = choice(np.array(self.action_model.visited_states()), self.random)
             elif plan_current_state =="current":
-                x = current_x
+                visited_states = list(self.action_model.visited_states())
+                if (xp in list(visited_states)):
+                    plan_x = xp
+                else:
+                    # Random if you haven't visited the next state yet
+                    plan_x = x
             elif plan_current_state =="close":
-                x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
-            visited_actions = self.action_model.visited_actions(x)
+                plan_x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
+            visited_actions = self.action_model.visited_actions(plan_x)
             
             if self.all_option_planning_update:
                 # Pick a random action, then update the action and matching options
                 action_to_update = choice(np.array(visited_actions), self.random)
-                action_consistent_options = options.get_action_consistent_options(x, action_to_update, self.options, convert_to_actions=True, num_actions=self.num_actions)
+                action_consistent_options = options.get_action_consistent_options(plan_x, action_to_update, self.options, convert_to_actions=True, num_actions=self.num_actions)
                 update_options = [action_to_update] + action_consistent_options
             else:
                 # Pick a random action/option within all eligable action/options
-                action_consistent_options = options.get_action_consistent_options(x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
+                action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
                 available_actions = visited_actions + action_consistent_options
                 update_options = [choice(np.array(available_actions), self.random)]
             
             for a in update_options: 
-                self._planning_update(gamma, x, a)
+                self._planning_update(gamma, plan_x, a)
 
     def agent_end(self, x, o, a, r, gamma):
         self.update(x, o, a, self.termination_state_index, r, gamma)
         self.counter = 0
-
-        # Debug logging for each model component
-        globals.collector.collect('model_r', np.copy(self.option_model.reward_model.weights.reshape(self.num_states + 1, self.num_options, order='F')))  
-        globals.collector.collect('model_discount', np.copy(self.option_model.discount_model.weights.reshape(self.num_states + 1, self.num_options, order='F')))  
-        globals.collector.collect('model_transition', np.copy(self.option_model.transition_model.weights.reshape(self.num_states + 1, self.num_options, self.num_states + 1, order='F')))  
+        
         self.option_model.episode_end()
 
         globals.collector.collect('Q', np.copy(self.Q))
