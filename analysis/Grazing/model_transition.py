@@ -48,7 +48,7 @@ def generatePlot(json_handle):
 
     colormap = cm.get_cmap('viridis')
 
-    num_options = 3
+    num_options = 4
 
     fig, axes = plt.subplots(1, num_options, figsize=(16 * num_options, 16))
     ax = axes[0]
@@ -67,7 +67,7 @@ def generatePlot(json_handle):
     # max_frames = 50
     # interval = 1
     max_frames = data.shape[0]
-    interval = 10
+    interval = 5
     frames = range(0, max_frames, interval)
     pbar = tqdm(total=max_frames)
 
@@ -81,7 +81,7 @@ def generatePlot(json_handle):
             for j in range(10):
                 q_value = q_values[i + j * 10, :]
                 # print(q_values.shape)
-                termination_positions = [12, 17, 76, 100]
+                termination_positions = [22,27,77,44]
                 for o in range(num_options):
                     for p in range(len(termination_positions)):
                         scaled_value = scale_value(q_value[o, termination_positions[p]], min_val, max_val)

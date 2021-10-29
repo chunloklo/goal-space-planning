@@ -16,75 +16,85 @@ from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whe
 from PyExpUtils.utils.arrays import first
 from tqdm import tqdm
 
-from action_values import _plot_init, scale_value
+from action_values import _plot_init, scale_value, get_json_handle, load_experiment_data, get_experiment_name
 
-def generatePlot(ax, exp_paths, bounds):
-    for exp_path in exp_paths:
-        exp = ExperimentModel.load(exp_path)
 
-        save_path = exp_path.replace('experiments', 'visualizations')
-        save_folder = os.path.splitext(save_path)[0]
-        save_file = save_folder + '/model_discount.mp4'
+def generatePlot(json_handle):
+    data = load_experiment_data(json_handle)
 
-        if (not os.path.isdir(save_folder)):
-            os.makedirs(save_folder)
+    # print(return_data)
+    # Processing data here so the dimensions are correct
+    data = data["model_discount"]
+    print(data.shape)
+    data = data[:, 0, :, :, :]
+    data = np.mean(data, axis=0)
 
-        results = loadResults(exp, 'model_discount.npy')
-        data = None
-        for r in results:
-            data = r.load()
+    experiment_name = get_experiment_name()
+    anim_file_name = f'{experiment_name}_model_discount.mp4'
 
-        # Using a simple way of determining whether options are used.
-        # Note that this might not work in the future if we do something separate, but it works for now
-        # hasOptions = data.shape[-1] > 4
-        print(f'data shape: {data.shape}')
+    save_path = "./visualizations/"
+    save_folder = os.path.splitext(save_path)[0]
+    save_file = save_folder + f'/{anim_file_name}'
 
-        min_val = np.min(data)
-        max_val = np.max(data)
+    print(f'data shape: {data.shape}')
 
-        print(f'min: {min_val} max: {max_val}')
+    min_val = np.min(data)
+    max_val = np.max(data)
 
-        fig, axes = plt.subplots(1, figsize=(16, 16))
-        ax = axes
+    print(f'min: {min_val} max: {max_val}')
 
-        colormap = cm.get_cmap('viridis')
+    fig, axes = plt.subplots(1, figsize=(16, 16))
+    ax = axes
 
-        ax.set_xlim(0, 10)
-        ax.set_ylim(0, 10)
-        ax.invert_yaxis()
-        texts, patches = _plot_init(ax)
-    
+    colormap = cm.get_cmap('viridis')
 
-        pbar = tqdm(total=data.shape[0])
-        def draw_func(i):
-            pbar.update(i - pbar.n)
-            q_values = data[i, :, :]
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.invert_yaxis()
+    texts, patches = _plot_init(ax)
 
-            ax.set_title(f"episode: {i}")
+    num_options = data.shape[-1] 
 
-            for i in range(10):
-                for j in range(10):
-                    q_value = q_values[i + j * 10, :]
-                    # print(q_values.shape)
-                    for a in range(3):
-                        scaled_value = scale_value(q_value[a], min_val, max_val)
-                        patches[i][j][a].set_facecolor(colormap(scaled_value))
-                        texts[i][j][a].set_text(round(q_value[a], 2))
-            return
+    # max_frames = 50
+    # interval = 1
+    start_frame = 0
+    max_frame = 50
+    interval = 2
+    frames = range(start_frame, max_frame, interval)
 
-        animation = FuncAnimation(fig, draw_func, frames=range(0, data.shape[0], 5))
-        animation.save(save_file)
-        pbar.close()
-        # plt.show()
+    print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
+    pbar = tqdm(total=max_frame - start_frame)
+    def draw_func(i):
+        pbar.update(i - pbar.n)
+        q_values = data[i, :, :]
+
+        ax.set_title(f"episode: {i}")
+
+        for i in range(10):
+            for j in range(10):
+                q_value = q_values[i + j * 10, :]
+                # print(q_values.shape)
+                for a in range(num_options):
+                    scaled_value = scale_value(q_value[a], min_val, max_val)
+                    patches[i][j][a].set_facecolor(colormap(scaled_value))
+                    texts[i][j][a].set_text(round(q_value[a], 2))
+        return
+
+    animation = FuncAnimation(fig, draw_func, frames=frames)
+    animation.save(save_file)
+    pbar.close()
+    # plt.show()
 
 if __name__ == "__main__":
-    # f, axes = plt.subplots(1)
-    axes = None
-    bounds = []
 
-    exp_paths = sys.argv[1:]
+    # read the arguments etc
+    if len(sys.argv) < 2:
+        print("usage : python analysis/process_data.py <list of json files")
+        exit()
 
-    generatePlot(axes, exp_paths, bounds)
+    json_handle = get_json_handle()
 
-    # plt.show()
+    # Only use the first handle for now?
+    generatePlot(json_handle)
+
     exit()

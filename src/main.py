@@ -16,6 +16,7 @@ from src.utils.json_handling import get_sorted_dict, get_param_iterable
 import copy
 from src.utils.run_utils import experiment_completed
 from src.data_management import zeo_common
+from src.utils.run_utils import experiment_completed, InvalidRunException, save_error, cleanup_files
 import argparse
 
 # Logging info level logs for visibility.
@@ -26,17 +27,12 @@ t_start = time.time()
 parser = argparse.ArgumentParser(description='Parallizable experiment run file')
 parser.add_argument('json_path', help='path to the json that describes the configs to run')
 parser.add_argument('idx', type = int, help='index of the json config for which to run')
+parser.add_argument('-o', '--overwrite', action='store_true')
+parser.add_argument('-e', '--ignore-error', action='store_false', help='run the experiment even if it previously errored')
 args = parser.parse_args()
 
-# new stuff for parallel
-#runs = sys.argv[1]
 json_file = args.json_path
 idx = args.idx
-# Get experiment
-# d = get_sorted_dict(json_file)
-# experiments = get_param_iterable(d)
-# experiment = experiments[ idx % len(experiments)]
-# seed = experiment['seed']
 
 exp = ExperimentModel.load(json_file)
 
@@ -58,24 +54,24 @@ print(exp)
 experiment_old_format = pushup_metaParameters(exp_json)
 folder , filename = create_file_name(experiment_old_format)
 output_file_name = folder + filename
-print(zeo_common.get_db_key(experiment_old_format))
-if zeo_common.use_zodb():
-    print('using zodb')
-    if zeo_common.zodb_check_exists(zeo_common.get_db_key(experiment_old_format)):
-        print("ZODB: Run Already Complete - Ending Run")
-        exit()
+
+if args.overwrite == True:
+    print('Will overwrite previous results when experiment finishes')
+
+if experiment_completed(exp_json, args.ignore_error) and not args.overwrite:
+    if (args.ignore_error):
+        print('Counted run as completed if run errored previously')
+    print(f'Run Already Complete - Ending Run')
+    exit()
 else:
-    if experiment_completed(experiment_old_format):
-        print(f'Run Already Complete - Ending Run')
-        print(experiment_old_format)
-        exit()
-    else:
-        if not os.path.exists(folder):
-            time.sleep(2)
-            try:
-                os.makedirs(folder)
-            except:
-                pass
+    if not os.path.exists(folder):
+        time.sleep(2)
+        try:
+            os.makedirs(folder)
+        except:
+            pass
+    
+    cleanup_files(output_file_name)
 
 try:
     wrapper_class = agent.wrapper_class
@@ -97,18 +93,26 @@ glue = RlGlue(wrapper, env)
 # print("run:",run)
 # Run the experiment
 rewards = []
-for episode in range(exp.episodes):
-    glue.total_reward = 0
-    glue.runEpisode(max_steps)
-    if agent.FA()!="Tabular":
-        # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
-        if np.isnan(np.sum(agent.w)):
-            globals.collector.fillRest(np.nan, exp.episodes)
-            broke = True
+try:
+    for episode in range(exp.episodes):
+        glue.total_reward = 0
+        glue.runEpisode(max_steps)
+
+        if globals.run_exception != None:
             break
-    globals.collector.collect('return', glue.total_reward)
-    globals.collector.collect('Q', np.copy(agent.Q))   
-globals.collector.reset()
+        if agent.FA()!="Tabular":
+            # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
+            if np.isnan(np.sum(agent.w)):
+                globals.collector.fillRest(np.nan, exp.episodes)
+                broke = True
+                break
+        globals.collector.collect('return', glue.total_reward)
+    globals.collector.reset()
+except InvalidRunException as e:
+    print(f'Run errored out. Check {output_file_name}.err for info')
+    save_error(output_file_name, e)
+    logging.info(f"Experiment errored {json_file} : {idx}, Time Taken : {time.time() - t_start}")
+    exit(0)
 
 if broke:
     exit(0)
@@ -116,7 +120,6 @@ if broke:
 # I'm pretty sure we need to subsample this especially once we have a larger dataset.
 datum = globals.collector.all_data['return']
 max_return = globals.collector.all_data['max_return']
-
 
 save_obj = {
     'datum': datum,

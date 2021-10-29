@@ -8,7 +8,7 @@ from src.utils.options import load_option
 class GrazingWorld(BaseProblem):
     def __init__(self, exp, idx):
         super().__init__(exp, idx)
-        self.env = GWEnv(self.seed, reward_sequence_length=self.params['reward_sequence_length'])
+        self.env = GWEnv(self.seed, reward_sequence_length=self.params['reward_sequence_length'], initial_learning=self.params['exploration_phase'])
         self.actions = 4
         self.options = [load_option('GrazingO1'), load_option('GrazingO2'),load_option('GrazingO3')]
         self.rep = Tabular(self.env.shape, self.actions)
@@ -24,7 +24,7 @@ class GrazingWorldWithMiddleOption(GrazingWorld):
 class GrazingWorldSimpleProblem(GrazingWorld):
     def __init__(self, exp, idx):
         super().__init__(exp, idx)
-        self.options = [load_option('IdealGrazingO1'), load_option('IdealGrazingO2'),load_option('IdealGrazingO3'), load_option('IdealGrazingO4')]
+        self.options = [load_option('IdealGrazingO1'), load_option('IdealGrazingO2'),load_option('IdealGrazingO3')]
         self.env = GWSimpleEnv(self.seed, reward_sequence_length=self.params['reward_sequence_length'])
         # Representation space is the same as normal GWEnv. No need to change it.
 

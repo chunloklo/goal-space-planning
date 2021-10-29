@@ -5,7 +5,7 @@ import random
 from src.utils import rlglue, param_utils
 from src.agents.components.approximators import DictModel
 
-class Dynaqp_Tab:
+class Dynaesp_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
         self.wrapper_class = rlglue.OneStepWrapper
         self.features = features
@@ -21,7 +21,7 @@ class Dynaqp_Tab:
         self.epsilon = params['epsilon']
         self.planning_steps = params['planning_steps']
         # Whether to plan with current state.
-        self.plan_with_current_state = param_utils.parse_param(params, 'planning_method', lambda p : p in ['random', 'current'])
+        self.plan_with_current_state = param_utils.parse_param(params, 'planning_method', ['random', 'current'])
 
 
         self.gamma = params['gamma']
@@ -49,13 +49,14 @@ class Dynaqp_Tab:
         ap = self.selectAction(xp)
         self.tau += 1
         self.tau[x, a] = 0
-        max_q = 0 if xp == -1 else np.max(self.Q[xp,:])
+        max_q = 0 if xp == -1 else np.average(self.Q[xp,:])
         self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*max_q - self.Q[x,a]) 
         self.update_model(x,a,xp,r)  
         if self.plan_with_current_state == 'current':
             self.planning_with_current_state(x)
         elif self.plan_with_current_state == 'random':
             self.planning_step()
+        print(self.Q)
         return ap
 
     def update_model(self, x, a, xp, r):
@@ -77,7 +78,7 @@ class Dynaqp_Tab:
             if xp ==-1:
                 max_q = 0
             else:
-                max_q = np.max(self.Q[xp,:])
+                max_q = np.average(self.Q[xp,:])
             
             self.Q[x,a] = self.Q[x,a] + self.alpha * (r + self.gamma * max_q - self.Q[x, a])
             
@@ -102,7 +103,7 @@ class Dynaqp_Tab:
             if xp ==-1:
                 max_q = 0
             else:
-                max_q = np.max(self.Q[xp,:])
+                max_q = np.average(self.Q[xp,:])
             
             self.Q[x,a] = self.Q[x,a] + self.alpha * (r + self.gamma * max_q - self.Q[x, a])
         

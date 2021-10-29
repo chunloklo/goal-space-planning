@@ -8,7 +8,6 @@ class RlGlue:
         self.num_steps = 0
         self.num_episodes = 0
 
-
     def start(self):
         s = self.environment.start()
         obs = self.observationChannel(s)
@@ -27,7 +26,6 @@ class RlGlue:
         self.num_episodes += 1
         obs = self.observationChannel(s)
         self.total_reward += reward
-
         if term:
             self.agent.end(reward)
 
@@ -47,7 +45,6 @@ class RlGlue:
         total_steps = 0
 
         option = self.agent.options[a - self.environment.nA]
-
         termination_condition = False
 
         while not termination_condition:

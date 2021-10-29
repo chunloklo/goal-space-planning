@@ -46,6 +46,11 @@ def deseriazlie_dict_to_name(d):
                 file_name += f"{k}_{d[k]}_"
     return file_name[:-1]
 
+# This method "pushes up" the metaParameters from
+# within a key to the high level dict. This is so 
+# we could transform a params dict between the new format
+# with metaParamaters as a key to the old format which 
+# didn't have the metaParameters key.
 def pushup_metaParameters(experiment):
     experiment = copy.deepcopy(experiment)
     metaParams = experiment['metaParameters']

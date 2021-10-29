@@ -3,6 +3,7 @@ import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
 from src.utils import rlglue, globals, options
+from src.agents.components.approximators import DictModel
 
 # Dyna but instead of doing Q Planning we do option planning
 class OptionPlanning_Tab:
@@ -16,7 +17,7 @@ class OptionPlanning_Tab:
         self.params = params
         self.num_states = self.env.nS
         self.options = options
-        self.num_options = len(self.env.terminal_state_positions)
+        self.num_options = len(options)
         self.random = np.random.RandomState(seed)
 
         # define parameter contract
@@ -34,19 +35,9 @@ class OptionPlanning_Tab:
         # create initial weights
         self.Q = np.zeros((self.num_states, self.num_actions))
 
-        # initiation set is 1, all options are pertinent everywhere
-        self.d = np.ones((self.num_states, self.num_options))
-        # termination condition is the environment's discount except in terminal states where it's 0
-        self.term_cond = np.ones((self.num_states, self.num_options))*params["gamma"]
-        for terminal_state_position in self.env.terminal_state_positions:
-            self.Q[self.env.state_encoding(terminal_state_position),:]=0
-
-        self.visit_history = {}
-        self.option_r = np.zeros((self.num_states + 1, self.num_options))
-        self.option_discount = np.zeros((self.num_states + 1, self.num_options))
-        # The final +1 accounts for also tracking the transition probability into the terminal state
         self.termination_state_index = self.num_states
-        self.option_transition_probability = np.zeros((self.num_states + 1, self.num_options, self.num_states + 1))
+        self.action_model = DictModel()
+        self.option_model = TabularOptionModel(self.num_states + 1, self.num_options, self.alpha)
 
     def FA(self):
         return "Tabular"
@@ -75,22 +66,19 @@ class OptionPlanning_Tab:
 
         self.Q[x, a] = self.Q[x,a] + self.alpha * (r + gamma*max_q - self.Q[x,a]) 
 
-        self.update_model(x,a,xp,r, gamma)  
+        self.update_model(x,a,xp,r)  
         self.planning_step(gamma)
 
         return action
 
-    def update_model(self, x, a, xp, r, gamma):
+    def update_model(self, x, a, xp, r):
         """updates the model 
         
         Returns:
             Nothing
         """
-        
-        if x not in self.visit_history:
-            self.visit_history[x] = {a:(xp,r)}
-        else:
-            self.visit_history[x][a] = (xp,r)    
+
+        self.action_model.update(x, a, xp, r)
 
         # Update option model
         action_consistent_options = options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
@@ -100,15 +88,8 @@ class OptionPlanning_Tab:
                 option_termination = 1
             else:
                 _, option_termination = self.options[o_index].step(xp)
-
-            self.option_r[x, o_index] += self.alpha * (r + gamma * (1 - option_termination) * self.option_r[xp, o_index] - self.option_r[x, o_index])
-            self.option_discount[x, o_index] += self.alpha * (option_termination + (1 - option_termination) * gamma * self.option_discount[xp, o_index] - self.option_discount[x, o_index])
-            # accounting for terminal state
-            xp_onehot = np.zeros(self.num_states + 1)
-            xp_onehot[xp] = 1
-            
-            # Note that this update is NOT discounted. Use in conjunction with self.option_discount to form the planning estimate
-            self.option_transition_probability[x, o_index] += self.alpha * ((option_termination * xp_onehot) + (1 - option_termination) * self.option_transition_probability[xp, o_index] - self.option_transition_probability[x, o_index]) 
+                
+            self.option_model.update(x, o_index, xp, r, env_gamma = self.gamma, option_gamma = 1 - option_termination)
 
     def planning_step(self,gamma):
         """performs planning, i.e. indirect RL.
@@ -120,23 +101,23 @@ class OptionPlanning_Tab:
         # Additional model planning steps!
         for _ in range(self.model_planning_steps):
             # resample the states
-            x = choice(np.array(list(self.visit_history.keys())), self.random)
-            visited_actions = list(self.visit_history[x].keys())
+            x = choice(self.action_model.visited_states(), self.random)
+            visited_actions = self.action_model.visited_actions(x)
 
             # Improving option model!
             # We're improving the model a ton here (updating all 4 actions). We could reduce this later but let's keep it high for now?
             for a in visited_actions:
-                xp, r = self.visit_history[x][a]
-                self.update_model(x, a, xp, r, gamma)
+                xp, r = self.action_model.predict(x, a)
+                self.update_model(x, a, xp, r)
 
         for _ in range(self.planning_steps):
-            x = choice(np.array(list(self.visit_history.keys())), self.random)
-            visited_actions = list(self.visit_history[x].keys())
+            x = choice(self.action_model.visited_states(), self.random)
+            visited_actions = self.action_model.visited_actions(x)
             a = choice(np.array(visited_actions), self.random) 
             action_consistent_options = options.get_action_consistent_options(x, a, self.options)
 
             # Getting the value of the action
-            xp, r = self.visit_history[x][a]
+            xp, r = self.action_model.predict(x, a)
             if (xp == self.termination_state_index):
                 max_q = 0
             else:
@@ -145,11 +126,10 @@ class OptionPlanning_Tab:
             option_values = [r + gamma * max_q]
 
             for a in action_consistent_options:
-                r = self.option_r[x, a]
-                discount = self.option_discount[x, a]
-                norm = np.linalg.norm(self.option_transition_probability[x, a], ord=1)
+                r, discount, transition_prob = self.option_model.predict(x, a)
+                norm = np.linalg.norm(transition_prob, ord=1)
                 if (norm != 0):
-                    prob = self.option_transition_probability[x, a] / norm
+                    prob = transition_prob / norm
                     # +1 here accounts for the terminal state
                     xp = self.random.choice(self.num_states + 1, p=prob)
                     if (xp == self.num_states):
@@ -171,7 +151,8 @@ class OptionPlanning_Tab:
 
     def agent_end(self, x, a, r, gamma):
         self.update(x, a, self.termination_state_index, r, gamma)
-                # Debug logging for each model component
-        globals.collector.collect('model_r', np.copy(self.option_r))  
-        globals.collector.collect('model_discount', np.copy(self.option_discount))  
-        globals.collector.collect('model_transition', np.copy(self.option_transition_probability))  
+        
+        # Debug logging for each model component
+        globals.collector.collect('model_r', np.copy(self.option_model.reward_model.weights.reshape(self.num_states + 1, self.num_options, order='F')))  
+        globals.collector.collect('model_discount', np.copy(self.option_model.discount_model.weights.reshape(self.num_states + 1, self.num_options, order='F')))  
+        globals.collector.collect('model_transition', np.copy(self.option_model.transition_model.weights.reshape(self.num_states + 1, self.num_options, self.num_states + 1, order='F')))  
