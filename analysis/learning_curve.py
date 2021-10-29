@@ -38,7 +38,8 @@ agent_colors={
     "Dyna_Option_Givenqp_Tab": 'orange',
     "DynaQP_OptionIntra_Tab": 'purple',
     "DynaESP_OptionIntra_Tab": 'blue',
-    "OptionPlanning_Tab": '#66CCEE'
+    "OptionPlanning_Tab": '#66CCEE',
+    "DynaOptions_Tab": '#4287f5',
 }
 
 

@@ -20,6 +20,7 @@ def pkl_loader(filename):
     return data
 
 def pkl_saver(obj, filename):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'wb') as fil:
         pkl.dump(obj, fil)
 

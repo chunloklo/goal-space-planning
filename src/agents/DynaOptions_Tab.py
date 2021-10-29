@@ -78,7 +78,6 @@ class DynaOptions_Tab:
 
     # public method for rlglue
     def selectAction(self, x: int) -> Tuple[int, int] :
-        p = self.random.rand()
         o = self.random.choice(self.num_actions + self.num_options, p = self.get_policy(x))
 
         if o >= self.num_actions:

@@ -4,26 +4,53 @@ from src.utils.formatting import create_file_name , get_folder_name, pushup_meta
 from PyExpUtils.models.ExperimentDescription import ExperimentDescription
 from PyExpUtils.utils.dict import DictPath, flatKeys, get
 import traceback
+from src.utils import analysis_utils
 from src.data_management import zeo_common
 
 class InvalidRunException(Exception):
     pass
 
-def cleanup_files(output_file_name):
-    if os.path.exists(output_file_name + '.pkl'):
-        os.remove(output_file_name + '.pkl')
-    if os.path.exists(output_file_name + '.err'):
-        os.remove(output_file_name + '.err')
-    pass
+def cleanup_files(experiment: Dict):
+    if zeo_common.use_zodb():
+        data_key = zeo_common.get_db_key(experiment)
+        error_key = zeo_common.get_db_key(experiment) + '_ERROR'
+        zeo_common.zodb_remove(error_key)
+        zeo_common.zodb_remove(data_key)
+    else:
+        folder, filename = create_file_name(experiment)
+        output_file_name = folder + filename
 
-def save_error(output_file_name, exception: Exception):
-    file_name = output_file_name + '.err'
+        if os.path.exists(output_file_name + '.pkl'):
+            os.remove(output_file_name + '.pkl')
+        if os.path.exists(output_file_name + '.err'):
+            os.remove(output_file_name + '.err')
+        pass
+
+def save_error(experiment: Dict, exception: Exception):
 
     err_text = str(exception) + '\n'
     err_text += "".join(traceback.TracebackException.from_exception(exception).format()) + '\n'
-    
-    with open(file_name, 'w') as f:
-        f.write(err_text)
+        
+    if zeo_common.use_zodb():
+        error_key = zeo_common.get_db_key(experiment) + '_ERROR'
+        zeo_common.zodb_saver(err_text, error_key)
+    else:
+        folder, filename = create_file_name(experiment)
+        output_file_name = folder + filename
+
+        file_name = output_file_name + '.err'
+
+        with open(file_name, 'w') as f:
+            f.write(err_text)
+
+def save_data(experiment: Dict, data: Dict):
+    if zeo_common.use_zodb():
+        zeo_common.zodb_saver(data, zeo_common.get_db_key(experiment))
+    else:
+        folder, filename = create_file_name(experiment)
+        output_file_name = folder + filename
+        analysis_utils.pkl_saver(data, output_file_name + '.pkl')
+    pass
 
 def experiment_completed(experiment, include_errored=True):
     '''
@@ -32,7 +59,7 @@ def experiment_completed(experiment, include_errored=True):
     experiment = pushup_metaParameters(experiment)
 
     if zeo_common.use_zodb():
-        exists = zeo_common.zodb_check_exists(zeo_common.get_db_key(experiment))
+        exists = zeo_common.zodb_check_exists(experiment)
         return exists
 
     folder, filename = create_file_name(experiment)

@@ -1,4 +1,5 @@
 import json
+from PyExpUtils.models.ExperimentDescription import ExperimentDescription
 import ZEO
 import os
 import time
@@ -32,20 +33,45 @@ def open_zeo_client():
     root = connection.root()
     return root
 
-def zodb_check_exists(file_name):
+def zodb_check_exists(experiment: ExperimentDescription):
+    db_key = get_db_key(experiment)
     root = open_zeo_client()
     if root.get('experiments', None) is None:
         return False
 
-    if root['experiments'].get(file_name, None) is None:
+    if root['experiments'].get(db_key, None) is None:
         return False
 
     return True
 
+MAX_ATTEMPTS = 10
+def zodb_remove(file_name: str):
+    root = open_zeo_client()
+
+    max_attempts = MAX_ATTEMPTS
+    attempts = 0
+    while True:
+        try:
+            with transaction.manager:
+                transaction.begin()
+                if root.get('experiments', None) is None:
+                    root['experiments'] = persistent.dict.PersistentDict()
+                
+                if file_name in root['experiments']:
+                    del root['experiments'][file_name]
+                transaction.commit()
+        except transaction.interfaces.TransientError:
+            print('transient error')
+            attempts += 1
+            if attempts == max_attempts:
+                raise
+        else:
+            break
+
 def zodb_saver(obj, file_name):
     root = open_zeo_client()
 
-    max_attempts = 5
+    max_attempts = MAX_ATTEMPTS
     attempts = 0
     while True:
         try:

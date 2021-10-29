@@ -14,9 +14,8 @@ from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils import rlglue
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 import copy
-from src.utils.run_utils import experiment_completed
 from src.data_management import zeo_common
-from src.utils.run_utils import experiment_completed, InvalidRunException, save_error, cleanup_files
+from src.utils.run_utils import experiment_completed, InvalidRunException, save_error, cleanup_files, save_data
 import argparse
 
 # Logging info level logs for visibility.
@@ -38,22 +37,18 @@ exp = ExperimentModel.load(json_file)
 
 max_steps = exp.max_steps
 globals.collector = Collector()
-broke = False
+
 # set random seeds accordingly
-
-Problem = getProblem(exp.problem)
-problem = Problem(exp, idx)
-agent = problem.getAgent()
-env = problem.getEnvironment()
-
 exp_json = exp.getPermutation(idx)
 seed = exp_json['metaParameters']['seed']
 np.random.seed(seed)
-print(exp)
+
+Problem = getProblem(exp.problem)
+problem = Problem(exp, idx, seed)
+agent = problem.getAgent()
+env = problem.getEnvironment()
 
 experiment_old_format = pushup_metaParameters(exp_json)
-folder , filename = create_file_name(experiment_old_format)
-output_file_name = folder + filename
 
 if args.overwrite == True:
     print('Will overwrite previous results when experiment finishes')
@@ -63,15 +58,8 @@ if experiment_completed(exp_json, args.ignore_error) and not args.overwrite:
         print('Counted run as completed if run errored previously')
     print(f'Run Already Complete - Ending Run')
     exit()
-else:
-    if not os.path.exists(folder):
-        time.sleep(2)
-        try:
-            os.makedirs(folder)
-        except:
-            pass
     
-    cleanup_files(output_file_name)
+cleanup_files(experiment_old_format)
 
 try:
     wrapper_class = agent.wrapper_class
@@ -97,24 +85,16 @@ try:
     for episode in range(exp.episodes):
         glue.total_reward = 0
         glue.runEpisode(max_steps)
-
-        if globals.run_exception != None:
-            break
         if agent.FA()!="Tabular":
             # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
             if np.isnan(np.sum(agent.w)):
-                globals.collector.fillRest(np.nan, exp.episodes)
-                broke = True
+                raise InvalidRunException('nan in agent weights')
                 break
         globals.collector.collect('return', glue.total_reward)
     globals.collector.reset()
 except InvalidRunException as e:
-    print(f'Run errored out. Check {output_file_name}.err for info')
-    save_error(output_file_name, e)
+    save_error(experiment_old_format, e)
     logging.info(f"Experiment errored {json_file} : {idx}, Time Taken : {time.time() - t_start}")
-    exit(0)
-
-if broke:
     exit(0)
 
 # I'm pretty sure we need to subsample this especially once we have a larger dataset.
@@ -135,9 +115,5 @@ save_obj = {
 }
 
 # We likely want to abstract this away from src/main
-if zeo_common.use_zodb():
-    zeo_common.zodb_saver(save_obj, zeo_common.get_db_key(experiment_old_format))
-else:
-    analysis_utils.pkl_saver(save_obj, output_file_name + '.pkl')
-
+save_data(experiment_old_format, save_obj)
 logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")
