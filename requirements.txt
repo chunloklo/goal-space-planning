@@ -16,3 +16,4 @@ mypy>=0.770
 tqdm>=4.62.2
 dill>=0.3.4
 git+https://github.com/numpy/numpy-stubs
+ZEO>=5.2.3
