@@ -54,7 +54,7 @@ def get_action_consistent_options(x: int, a: Union[list, int], options: list, co
 # This likely do not being here, but it works for now. If this is used more extensively, we need 
 # a better way of dealing with termination rather than just adding an extra state here.
 GRAZING_WORLD_TERMINAL_STATE = 100
-def get_option_policy_prob(x: int, options: List[Option], num_actions: int) -> npt.ArrayLike:
+def get_option_policies_prob(x: int, options: List[Option], num_actions: int) -> npt.ArrayLike:
     num_options = len(options)
     # Getting option policy and termination condition
     # This is SPECIFIC to the current Option model where it returns you just the action, not the policy.
@@ -68,6 +68,16 @@ def get_option_policy_prob(x: int, options: List[Option], num_actions: int) -> n
             option_policies[i][action] = 1
 
     return option_policies
+
+def get_option_policy_prob(x: int, option: Option, num_actions: int) -> npt.ArrayLike:
+    policy = np.zeros(num_actions)
+    if x == GRAZING_WORLD_TERMINAL_STATE:
+        policy = 1 / num_actions
+    else:
+        action, _ = option.step(x)
+        policy[action] = 1
+
+    return policy
 
 def get_option_term(xp: int, options: List[Option]) -> npt.ArrayLike:
     num_options = len(options)

@@ -17,11 +17,6 @@ class RlGlue:
         return (obs, self.last_action)
 
     def step(self):
-        # if self.last_action >= self.environment.nA:
-
-        #     reward, s, term,total_steps = self.execute_option(self.last_action) 
-        #     self.num_episodes += total_steps
-        # else:
         (reward, s, term) = self.environment.step(self.last_action)
         self.num_episodes += 1
         obs = self.observationChannel(s)
@@ -67,8 +62,9 @@ class RlGlue:
         is_terminal = False
         
         self.start()
+        self.num_steps = 0
         while (not is_terminal) and ((max_steps == 0) or (self.num_steps < max_steps)):
-
+            self.num_steps += 1
             rl_step_result = self.step()
             is_terminal = rl_step_result[3]
         return is_terminal

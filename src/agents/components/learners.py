@@ -22,6 +22,11 @@ class QLearner():
     def planning_update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
         self.update(x, a, xp, r, env_gamma, step_size)
 
+    def target_update(self, x: int, a: int, target: float, step_size: float):
+        x_prediction = self.Q[x, a]
+        delta = target - x_prediction
+        self.Q[x, a] += step_size * delta
+
     def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
         x_prediction = self.Q[x, a]
         xp_predictions = self.get_action_values(xp)

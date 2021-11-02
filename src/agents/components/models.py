@@ -54,7 +54,79 @@ class OptionModel_Sutton_Tabular():
         # Logging
         globals.collector.collect('model_r', np.copy(self.reward_model))
         globals.collector.collect('model_discount', np.copy(self.discount_model))
-        globals.collector.collect('model_transition', np.copy(self.transition_model)) 
+        globals.collector.collect('model_transition', np.copy(self.transition_model))
+
+# Differeniating combined models and separate action/option models
+class CombinedModel():
+    pass
+
+class CombinedModel_ESarsa_Tabular(CombinedModel):
+    def __init__(self, num_states: int, num_actions: int, num_options: int, options: List[Option]):
+        self.num_states: int = num_states
+        self.num_actions: int = num_actions
+        self.num_options: int = num_options
+        self.options = options
+        
+        self.reward_model = np.zeros((num_states, num_actions, 1 + num_options))
+        self.discount_model = np.zeros((num_states, num_actions, 1 + num_options))
+        self.transition_model = np.zeros((num_states, num_actions, 1 + num_options, num_states))
+        
+    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+        """updates the model 
+        
+        Returns:
+            Nothing
+        """
+        xp_onehot = numpy_utils.create_onehot(self.num_states, xp)
+
+        # Update action models first
+        self.reward_model[x, a, self.num_options] += step_size * (r - self.reward_model[x, a, self.num_options])
+        self.discount_model[x, a, self.num_options] += step_size * (env_gamma - self.discount_model[x, a, self.num_options])
+        self.transition_model[x, a, self.num_options] += step_size * (xp_onehot - self.transition_model[x, a, self.num_options])
+
+        option_policies = options.get_option_policies_prob(xp, self.options, self.num_actions)
+        option_terminations = options.get_option_term(xp, self.options)
+        for o in range(self.num_options):
+            xp_policy = option_policies[o]
+            option_termination = option_terminations[o]
+
+            xp_reward_average = np.average(self.reward_model[xp, :, o], weights=xp_policy)
+            self.reward_model[x, a, o] += step_size * (r + env_gamma * (1 - option_termination) * xp_reward_average - self.reward_model[x, a, o])
+
+            xp_discount_average = np.average(self.discount_model[xp, :, o], weights=xp_policy)
+            self.discount_model[x, a, o] += step_size * (option_termination + (1 - option_termination) * env_gamma * xp_discount_average - self.discount_model[x, a, o])
+            
+            xp_transition_average = np.average(self.transition_model[xp, :, o], weights=xp_policy, axis=0)
+            self.transition_model[x, a, o] += step_size * ((option_termination * xp_onehot) + (1 - option_termination) * xp_transition_average -  self.transition_model[x, a, o]) 
+
+    def predict(self, x: npt.ArrayLike, o: int) -> Any:
+        if (o >= self.num_actions):
+            o_index = options.from_action_to_option_index(o, self.num_actions)
+            policy = options.get_option_policy_prob(x, self.options[o_index], self.num_actions)
+
+            reward = np.average(self.reward_model[x, :, o_index], weights=policy)
+            discount = np.average(self.discount_model[x, :, o_index], weights=policy)
+            next_state_prob = np.average(self.transition_model[x, :, o_index], weights=policy, axis=0)
+            
+        else:
+            reward = self.reward_model[x, o, self.num_options]
+            discount = self.discount_model[x, o, self.num_options]
+            next_state_prob = self.transition_model[x, o, self.num_options]
+        return reward, discount, next_state_prob
+
+    def episode_end(self):
+        # Logging
+        # Processing for logging
+        reward = np.zeros((self.num_states, self.num_options))
+        discount = np.zeros((self.num_states, self.num_options))
+        transition =  np.zeros((self.num_states, self.num_options, self.num_states))
+        
+        for x in range(0, 100):
+            for o in range(self.num_options):
+                xo_reward, xo_discount, xo_transition_prob = self.predict(x, options.from_option_to_action_index(o, self.num_actions))
+                reward[x, o] = xo_reward
+                discount[x, o] = xo_discount
+                transition[x, o] = xo_transition_prob
 
 class OptionModel_TB_Tabular():
     def __init__(self, num_state_features: int, num_actions: int, num_options: int, options: List[Option]):
@@ -93,7 +165,7 @@ class OptionModel_TB_Tabular():
         xp_predictions = self.get_predictions_for_all_actions(xp)
   
         option_gamma = 1 - options.get_option_term(xp, self.options)
-        option_policies = options.get_option_policy_prob(xp, self.options, self.num_actions)
+        option_policies = options.get_option_policies_prob(xp, self.options, self.num_actions)
 
         transition_gamma = np.repeat(option_gamma, self.num_state_features)
         xp_onehot = numpy_utils.create_onehot(self.num_state_features, xp)

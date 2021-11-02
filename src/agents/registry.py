@@ -10,6 +10,7 @@ from agents.DynaQP_OptionIntra_Tab import DynaQP_OptionIntra_Tab
 from agents.DynaESP_OptionIntra_Tab import DynaESP_OptionIntra_Tab
 from agents.Dynaesp_Tab import Dynaesp_Tab
 from agents.DynaOptions_Tab import DynaOptions_Tab
+from agents.Dyna_Tab import Dyna_Tab
 
 # Option Planning
 from agents.OptionPlanning_Tab import OptionPlanning_Tab
@@ -33,5 +34,7 @@ def getAgent(name):
         return DynaESP_OptionIntra_Tab
     elif name == 'OptionPlanning_Tab':
         return OptionPlanning_Tab
+    elif name == 'Dyna_Tab':
+        return Dyna_Tab
     else:
         raise NotImplementedError()
