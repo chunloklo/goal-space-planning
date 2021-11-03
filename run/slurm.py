@@ -14,6 +14,7 @@ from src.utils.run_utils import get_list_pending_experiments
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 from src.utils.file_handling import get_files_recursively
 from src.experiment import ExperimentModel
+from src.data_management import zeo_common
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--allocation" ,"-a", type = str, default = 'rrg')
@@ -25,6 +26,7 @@ parser.add_argument('--pythonfile','-p', type = str)
 parser.add_argument('--json', '-j', type = str ,nargs='+', help='Json Files', required=True) # the json configuration
 parser.add_argument('--overwrite','-o', type = bool,   help= "If True, the experiment will overwrite past experiment", default = False)
 parser.add_argument('--time' , '-t', type = str, help = "Time wanted to run the jobs. <DD:HH:MM>", default = '00:00:30')
+parser.add_argument('--zodb', '-z', action='store_true')
 
 # email for started and completed messages
 parser.add_argument("--email", type = str)
@@ -37,6 +39,10 @@ args = parser.parse_args()
 
 experiment_list = args.json
 json_files = get_files_recursively(experiment_list)
+
+if (args.zodb):
+    address, stop = zeo_common.start_zeo_server()
+    os.environ["USE_ZODB"] = "TRUE"
 
 # Getting the list of python commands needed to be ran
 pythoncommands = []
@@ -170,6 +176,9 @@ email_str = f"#SBATCH --mail-user={args.email}\n#SBATCH --mail-type=ALL\n" if ar
 cwd = os.getcwd()
 
 command = f'parallel --verbose -P -0 -j {args.ntasks} --delay 0.5 :::: ' + filename
+
+if args.zodb:
+    command = f'python src/data_management/zeo_wrapper.py {command}'
 print(command)
 # sdfsdf
 
@@ -189,6 +198,6 @@ slurm_file_name = f'./temp/slurm_scripts/slurm.sh'
 sfile = open(slurm_file_name, 'w')
 sfile.write(slurm_file)
 sfile.close()
-print(slurm_file)
+# print(slurm_file)
 
 os.system(f'sbatch {slurm_file_name}')

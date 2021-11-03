@@ -60,9 +60,6 @@ class DynaOptions_Tab:
         # For 'close' search control
         self.distance_from_goal = {}
 
-        # Temp logging vars
-        self.log_action_selected = []
-
     def FA(self):
         return "Tabular"
 
@@ -88,16 +85,6 @@ class DynaOptions_Tab:
         return o,a
 
     def update(self, x, o, a, xp, r, gamma):
-        self.log_action_selected.append(o)
-
-        # not strictly needed because the option action pair shouldn't be used in termination,
-        # but it prevents some unneeded computation that could error out with weird indexing.
-        if (xp != options.GRAZING_WORLD_TERMINAL_STATE):
-            oa_pair = self.selectAction(xp)
-        else:
-            # the oa pair doesn't matter if the agent arrived in the terminal state.
-            oa_pair = None
-
         # Exploration bonus tracking
         self.tau += 1
         self.tau[x, o] = 0
@@ -110,6 +97,14 @@ class DynaOptions_Tab:
             raise NotImplementedError()
         self.update_model(x,a,xp,r)  
         self.planning_step(x, xp, self.search_control)
+    
+        # not strictly needed because the option action pair shouldn't be used in termination,
+        # but it prevents some unneeded computation that could error out with weird indexing.
+        if (xp != options.GRAZING_WORLD_TERMINAL_STATE):
+            oa_pair = self.selectAction(xp)
+        else:
+            # the oa pair doesn't matter if the agent arrived in the terminal state.
+            oa_pair = None
 
         return oa_pair
     
@@ -221,6 +216,3 @@ class DynaOptions_Tab:
         self.update(x, o, a, options.GRAZING_WORLD_TERMINAL_STATE, r, gamma)
         self.behaviour_learner.episode_end()
         self.option_model.episode_end()
-
-        globals.collector.collect('action_selected', self.log_action_selected.copy())
-        self.log_action_selected = []  

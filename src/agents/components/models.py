@@ -52,9 +52,10 @@ class OptionModel_Sutton_Tabular():
 
     def episode_end(self):
         # Logging
-        globals.collector.collect('model_r', np.copy(self.reward_model))
-        globals.collector.collect('model_discount', np.copy(self.discount_model))
-        globals.collector.collect('model_transition', np.copy(self.transition_model))
+        # globals.collector.collect('model_r', np.copy(self.reward_model))
+        # globals.collector.collect('model_discount', np.copy(self.discount_model))
+        # globals.collector.collect('model_transition', np.copy(self.transition_model))
+        pass
 
 # Differeniating combined models and separate action/option models
 class CombinedModel():
@@ -217,6 +218,6 @@ class OptionModel_TB_Tabular():
                 transition[x, o] = xo_transition_prob
 
         # Logging
-        globals.collector.collect('model_r', reward)
-        globals.collector.collect('model_discount', discount)
-        globals.collector.collect('model_transition', transition) 
+        # globals.collector.collect('model_r', reward)
+        # globals.collector.collect('model_discount', discount)
+        # globals.collector.collect('model_transition', transition) 

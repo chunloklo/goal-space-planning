@@ -28,7 +28,7 @@ class GrazingWorld(BaseEnvironment):
         self.il_counter = -1
         self.special_goal_nums = [1,2]
         self.num_steps = None
-        self.error_max_steps = 10000
+        self.error_max_steps = 5000
         """
         dictionary to keep track of goals
             position: position on the grid
