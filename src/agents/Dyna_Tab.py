@@ -55,9 +55,6 @@ class Dyna_Tab:
         # For 'close' search control
         self.distance_from_goal = {}
 
-        # Temp logging vars
-        self.log_action_selected = []
-
     def FA(self):
         return "Tabular"
 
@@ -77,7 +74,6 @@ class Dyna_Tab:
         return a
 
     def update(self, x, a, xp, r, gamma):
-        self.log_action_selected.append(a)
 
         if (xp != options.GRAZING_WORLD_TERMINAL_STATE):
             ap = self.selectAction(xp)
@@ -169,6 +165,3 @@ class Dyna_Tab:
     def agent_end(self, x, a, r, gamma):
         self.update(x, a, options.GRAZING_WORLD_TERMINAL_STATE, r, gamma)
         self.behaviour_learner.episode_end()
-        print(f"end episode {a}")
-        globals.collector.collect('action_selected', self.log_action_selected.copy())
-        self.log_action_selected = []  

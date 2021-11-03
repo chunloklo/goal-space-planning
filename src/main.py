@@ -17,6 +17,7 @@ import copy
 from src.data_management import zeo_common
 from src.utils.run_utils import experiment_completed, InvalidRunException, save_error, cleanup_files, save_data
 import argparse
+import tqdm
 
 # Logging info level logs for visibility.
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +28,7 @@ parser = argparse.ArgumentParser(description='Parallizable experiment run file')
 parser.add_argument('json_path', help='path to the json that describes the configs to run')
 parser.add_argument('idx', type = int, help='index of the json config for which to run')
 parser.add_argument('-o', '--overwrite', action='store_true')
+parser.add_argument('-p', '--progress', action='store_true', help='Show process')
 parser.add_argument('-e', '--ignore-error', action='store_false', help='run the experiment even if it previously errored')
 args = parser.parse_args()
 
@@ -82,7 +84,10 @@ glue = RlGlue(wrapper, env)
 # Run the experiment
 rewards = []
 try:
-    for episode in range(exp.episodes):
+    episode_iter = range(exp.episodes)
+    if args.progress:
+        episode_iter = tqdm.tqdm(episode_iter)
+    for episode in episode_iter:
         glue.total_reward = 0
         glue.runEpisode(max_steps)
         if agent.FA()!="Tabular":

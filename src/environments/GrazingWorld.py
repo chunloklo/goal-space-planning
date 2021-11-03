@@ -2,6 +2,7 @@ import numpy as np
 from RlGlue import BaseEnvironment
 from src.utils import globals
 import random
+from src.utils.run_utils import InvalidRunException
 
 UP = 0
 RIGHT = 1
@@ -26,6 +27,8 @@ class GrazingWorld(BaseEnvironment):
         self.initial_learning = initial_learning
         self.il_counter = -1
         self.special_goal_nums = [1,2]
+        self.num_steps = None
+        self.error_max_steps = 10000
         """
         dictionary to keep track of goals
             position: position on the grid
@@ -76,6 +79,7 @@ class GrazingWorld(BaseEnvironment):
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
         
     def start(self):
+        self.num_steps = 0
         return self.current_state
 
     # give all actions for a given state
@@ -132,6 +136,9 @@ class GrazingWorld(BaseEnvironment):
         return self.current_state, is_done
 
     def step(self, a):
+        self.num_steps += 1
+        if (self.num_steps >= self.error_max_steps):
+            raise InvalidRunException(f'There have been {self.error_max_steps} steps in this episode, over the maximum allowed number of steps. This means the agent is likely stuck and thus exiting.')
         s = self.current_state
         sp, t = self.next_state(s, self.action_encoding[a])
         r = self.rewards(s, t)
