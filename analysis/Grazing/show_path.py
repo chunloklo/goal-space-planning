@@ -32,7 +32,7 @@ def generatePlot(json_handle):
 
     # data = load_experiment_data(exp_path, file_name)
 
-    experiment_name = get_experiment_name() + '_action_selected'
+    experiment_name = get_experiment_name() + 'show_path'
     save_path = "./plots/"
     save_folder = os.path.splitext(save_path)[0]
 
@@ -42,7 +42,8 @@ def generatePlot(json_handle):
     data = load_experiment_data(json_handle)
     # print(return_data)
     # Processing data here so the dimensions are correct
-    data = data["action_selected"]
+    data_tuples = data["tuples"]
+    data_Q = data["Q"]
 
     data = data[:, 0, :]
     option_percentages = []

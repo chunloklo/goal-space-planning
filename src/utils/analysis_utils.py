@@ -45,13 +45,18 @@ def load_different_runs_all_data(json_handle, key_list: list = None):
     return_data = {}
     # get the list of params
     iterable = get_param_iterable(json_handle)
-    for i in iterable:
+    for index, i in enumerate(iterable):
+
+        if index>0:
+            break
+
         folder, file = create_file_name(i)
         filename = folder + file + '.pkl'
         # load the file
         try:
             arr = pkl_loader(filename)
             get_keys = arr.keys() if key_list == None else key_list
+            
             for key in get_keys:
                 if key not in return_data:
                     return_data[key] = []
@@ -59,7 +64,6 @@ def load_different_runs_all_data(json_handle, key_list: list = None):
         except Exception as e:
             print(f'Run not valid: {str(e)}')
             pass
-    
     for key in return_data.keys():
         return_data[key] = np.array(return_data[key])
     return return_data

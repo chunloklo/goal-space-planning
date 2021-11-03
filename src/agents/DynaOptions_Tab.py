@@ -39,6 +39,7 @@ class DynaOptions_Tab:
         
         # DO WE NEED THIS?!?!? CAN WE MAKE THIS SOMEWHERE ELSE?
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
+        self.ksi = np.zeros((self.num_states, self.num_options))
         self.a = -1
         self.x = -1
 
@@ -62,6 +63,7 @@ class DynaOptions_Tab:
 
         # Temp logging vars
         self.log_action_selected = []
+        self.log_tuples = []
 
     def FA(self):
         return "Tabular"
@@ -89,6 +91,7 @@ class DynaOptions_Tab:
 
     def update(self, x, o, a, xp, r, gamma):
         self.log_action_selected.append(o)
+        self.log_tuples.append((x,o,xp,r))
 
         # not strictly needed because the option action pair shouldn't be used in termination,
         # but it prevents some unneeded computation that could error out with weird indexing.
@@ -100,7 +103,9 @@ class DynaOptions_Tab:
 
         # Exploration bonus tracking
         self.tau += 1
+        self.tau[:,self.num_actions:self.num_options] +=100
         self.tau[x, o] = 0
+        self.tau[x, a] = 0
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
@@ -224,3 +229,5 @@ class DynaOptions_Tab:
 
         globals.collector.collect('action_selected', self.log_action_selected.copy())
         self.log_action_selected = []  
+        globals.collector.collect('tuples', self.log_tuples.copy())
+        self.log_tuples = []  

@@ -83,6 +83,7 @@ glue = RlGlue(wrapper, env)
 rewards = []
 try:
     for episode in range(exp.episodes):
+        #print(episode)
         glue.total_reward = 0
         glue.runEpisode(max_steps)
         if agent.FA()!="Tabular":

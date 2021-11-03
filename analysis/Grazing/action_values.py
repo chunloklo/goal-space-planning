@@ -182,8 +182,8 @@ def generatePlot(json_handle):
     # max_frames = 20
     # interval = 1
     start_frame = 0
-    max_frame = 50
-    interval = 5
+    max_frame = 3000
+    interval = 50
     frames = range(start_frame, max_frame, interval)
 
     print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
@@ -253,11 +253,8 @@ def get_json_handle():
 def load_experiment_data(json_handle, load_keys: list = None):
     # if load_keys is None, then it loads all the keys
     iterables = get_param_iterable_runs(json_handle)
-        
     for i in iterables:
-        print(i)
         return_data = analysis_utils.load_different_runs_all_data(i, load_keys)
-        print(return_data.keys())
         # mean_return_data, stderr_return_data = process_runs(return_data)
         pass
 

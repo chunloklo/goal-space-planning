@@ -2,6 +2,7 @@ from typing import Any, List, Dict, Tuple
 import numpy as np
 import numpy.typing as npt
 
+import random
 from utils import numpy_utils, param_utils
 from src.agents.components.traces import Trace
 from src.agents.components.approximators import TabularApproximator
@@ -15,6 +16,9 @@ class QLearner():
         self.num_state_features: int = num_state_features
         self.num_actions: int = num_actions
         self.Q = np.zeros((self.num_state_features, self.num_actions))
+        # self.update_counter = 0
+        # self.average_delta = 0
+        # self.stop_counter = 0
 
     def get_action_values(self, x: int) -> np.ndarray:
         return self.Q[x, :]
@@ -26,8 +30,22 @@ class QLearner():
         x_prediction = self.Q[x, a]
         xp_predictions = self.get_action_values(xp)
 
-        max_q = np.max(xp_predictions)
+        if random.random() > 0.8:
+            max_q  = np.average(xp_predictions)
+        else:
+            max_q = np.max(xp_predictions)
+
+        
         delta = r + env_gamma * max_q - x_prediction
+
+        # self.average_delta = (self.average_delta * self.update_counter + delta) / (self.update_counter +1)
+        # self.update_counter+=1
+        # self.stop_counter+=1
+        # if abs(delta) > self.average_delta and self.stop_counter>=100:
+        #     self.Q[:,4:7] += delta
+        #     self.stop_counter=0
+        
+
         self.Q[x, a] += step_size * delta
 
     def episode_end(self):
@@ -76,6 +94,7 @@ class ESarsaLambda():
 
         # Constructing the delta vector
         delta = r + env_gamma * xp_average - x_predictions
+
 
         self.trace.update(env_gamma, lmbda, xa_index, 1)
         self.approximator.update(step_size, delta * self.trace.z)
