@@ -83,7 +83,6 @@ glue = RlGlue(wrapper, env)
 rewards = []
 try:
     for episode in range(exp.episodes):
-        #print(episode)
         glue.total_reward = 0
         glue.runEpisode(max_steps)
         if agent.FA()!="Tabular":
@@ -113,6 +112,7 @@ save_obj = {
     # 'end_goal': globals.collector.all_data['end_goal'],
     # 'goal_rewards': globals.collector.all_data['goal_rewards'],
     # 'action_selected': globals.collector.all_data['action_selected'],
+    # 'tuples' : globals.collector.all_data['tuples]
 }
 
 # We likely want to abstract this away from src/main

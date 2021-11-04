@@ -27,6 +27,9 @@ class DictModel():
     def visited_actions(self, x: Any) -> List:
         return list(self.dictionary[x].keys())
 
+    def get_model_dictionary(self):
+        return self.dictionary
+
     def predict(self, x: Any, a: Any) -> Any:
         return self.dictionary[x][a]
 

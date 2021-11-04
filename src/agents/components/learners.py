@@ -10,9 +10,10 @@ from src.utils.feature_utils import stacked_tabular_features, stacked_features
 from src.utils import globals
 from src.utils import options
 from utils.Option import Option
+import heapq
 
 class QLearner():
-    def __init__(self, num_state_features: int, num_actions: int):
+    def __init__(self, num_state_features: int, num_actions: int, pq_size:int):
         self.num_state_features: int = num_state_features
         self.num_actions: int = num_actions
         self.Q = np.zeros((self.num_state_features, self.num_actions))
@@ -20,12 +21,33 @@ class QLearner():
         # self.average_delta = 0
         # self.stop_counter = 0
 
+        self.priority_q_size = pq_size
+        self.priority_q = []
+        for i in range(self.priority_q_size):
+            self.priority_q.append([0,90]) # 90 for start state, this should be changed later for an (inherited) variable, 0 is for TD error
+
     def get_action_values(self, x: int) -> np.ndarray:
         return self.Q[x, :]
     
+    def get_priority_q(self):
+        return [i[1] for i in self.priority_q]
+
+    def replace_element_in_pq(self,delta, xp):
+        for i,element in enumerate(self.priority_q):
+            if xp == element[1]:
+                self.priority_q[i][0] = delta
+
+    def update_priority_q(self,delta,xp):
+        if delta>self.priority_q[0][0] and xp not in self.get_priority_q(): 
+            self.priority_q.pop(0)
+            self.priority_q.append([delta, xp])
+        elif xp in self.get_priority_q():
+            self.replace_element_in_pq(delta,xp)
+        self.priority_q.sort()
+        
     def planning_update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
         self.update(x, a, xp, r, env_gamma, step_size)
-
+    
     def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
         x_prediction = self.Q[x, a]
         xp_predictions = self.get_action_values(xp)
@@ -34,10 +56,11 @@ class QLearner():
             max_q  = np.average(xp_predictions)
         else:
             max_q = np.max(xp_predictions)
-
         
         delta = r + env_gamma * max_q - x_prediction
-
+        # 100 for terminal state, again, this should be a variable
+        if xp !=100:
+            self.update_priority_q(abs(delta),xp)
         # self.average_delta = (self.average_delta * self.update_counter + delta) / (self.update_counter +1)
         # self.update_counter+=1
         # self.stop_counter+=1

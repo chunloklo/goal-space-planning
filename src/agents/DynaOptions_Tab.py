@@ -11,6 +11,8 @@ from src.utils import options, param_utils
 from src.agents.components.models import OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
 from src.agents.components.approximators import DictModel
 
+import heapq
+
 class DynaOptions_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
         self.wrapper_class = rlglue.OptionOneStepWrapper
@@ -36,6 +38,7 @@ class DynaOptions_Tab:
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
         self.search_control = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'close'])
+        self.pq_size = params['pq_size']
         
         # DO WE NEED THIS?!?!? CAN WE MAKE THIS SOMEWHERE ELSE?
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
@@ -45,7 +48,7 @@ class DynaOptions_Tab:
 
         # +1 accounts for the terminal state
         if self.behaviour_alg == 'QLearner':
-            self.behaviour_learner = QLearner(self.num_states + 1, self.num_actions + self.num_options)
+            self.behaviour_learner = QLearner(self.num_states + 1, self.num_actions + self.num_options, self.pq_size)
         elif self.behaviour_alg == 'ESarsaLambda':
             self.behaviour_learner = ESarsaLambda(self.num_states + 1, self.num_actions + self.num_options)
         else:
@@ -93,6 +96,9 @@ class DynaOptions_Tab:
         self.log_action_selected.append(o)
         self.log_tuples.append((x,o,xp,r))
 
+        self.update_model(x,a,xp,r)  
+        self.planning_step(x, xp, self.search_control)
+
         # not strictly needed because the option action pair shouldn't be used in termination,
         # but it prevents some unneeded computation that could error out with weird indexing.
         if (xp != options.GRAZING_WORLD_TERMINAL_STATE):
@@ -113,8 +119,7 @@ class DynaOptions_Tab:
             self.behaviour_learner.update(x, o, xp, r, self.get_policy(xp), self.gamma, self.lmbda, self.alpha)
         else:
             raise NotImplementedError()
-        self.update_model(x,a,xp,r)  
-        self.planning_step(x, xp, self.search_control)
+
 
         return oa_pair
     
@@ -130,11 +135,6 @@ class DynaOptions_Tab:
         Returns:
             Nothing
         """
-        if self.search_control == "close":
-            if x == self.env.state_encoding(self.env.start_state):
-                self.distance_from_goal[x] = 1
-            if xp != self.termination_state_index and (xp not in self.distance_from_goal or self.distance_from_goal[xp] > self.distance_from_goal[x] +1):
-                self.distance_from_goal[xp] = self.distance_from_goal[x] +1
 
         self.action_model.update(x, a, xp, r)
         if isinstance(self.option_model, OptionModel_Sutton_Tabular):
@@ -159,7 +159,6 @@ class DynaOptions_Tab:
                 xp = self.random.choice(self.num_states + 1, p=prob)
             else:
                 xp = None
-
         # Exploration bonus for +
         r += self.kappa * np.sqrt(self.tau[x, o])
 
@@ -192,13 +191,6 @@ class DynaOptions_Tab:
                 xp, r = self.action_model.predict(plan_x, a)
                 self.option_model_planning_update(plan_x, a, xp, r)
 
-        if search_control == "close":
-            visited_states, distances = [], []
-            for k in self.action_model.visited_states():
-                visited_states.append(k)
-                distances.append(self.distance_from_goal[k])
-            normed_distances = [i/sum(distances) for i in distances]
-
         for _ in range(self.planning_steps):
             if search_control=="random":
                 plan_x = choice(np.array(self.action_model.visited_states()), self.random)
@@ -210,9 +202,13 @@ class DynaOptions_Tab:
                     # Random if you haven't visited the next state yet
                     plan_x = x
             elif search_control =="close":
-                plan_x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
+                priority_q = self.behaviour_learner.get_priority_q()
+                plan_x = random.choices(priority_q, weights=[i+1 for i in range(len(priority_q))])[0]
+                if plan_x not in self.action_model.get_model_dictionary():
+                    # print(plan_x)
+                    # print (priority_q)
+                    plan_x =x
             visited_actions = self.action_model.visited_actions(plan_x)
-            
             # Pick a random action/option within all eligable action/options
             # I think there should be a better way of doing this...
             action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
