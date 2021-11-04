@@ -9,13 +9,13 @@
         "alpha": [0.5,0.6],
         "epsilon": [0.1],
         "behaviour_alg": ["QLearner"],
-        "search_control": ["close"],
+        "search_control": ["close", "td"],
         "option_model_alg": ["sutton"],
         "gamma": [1.0],
         "kappa": [0.01,0.02,0.03,0.04,0.05,0.06,0.07],
         "lambda": [0.9],
-        "pq_size": [50,80,100],
-        "planning_steps": [5],
+        "pq_size": [10,20,50,80,100],
+        "planning_steps": [5,10,20],
         "model_planning_steps": [0],
         "reward_sequence_length" : [500]
     }

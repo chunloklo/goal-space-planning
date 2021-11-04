@@ -37,18 +37,22 @@ class QLearner():
             if xp == element[1]:
                 self.priority_q[i][0] = delta
 
-    def update_priority_q(self,delta,xp):
-        if delta>self.priority_q[0][0] and xp not in self.get_priority_q(): 
+    def update_priority_q(self,delta,xp, search):
+        if search == "td":
+            if delta>self.priority_q[0][0] and xp not in self.get_priority_q(): 
+                self.priority_q.pop(0)
+                self.priority_q.append([delta, xp])
+            elif xp in self.get_priority_q():
+                self.replace_element_in_pq(delta,xp)
+            self.priority_q.sort()
+        elif search == "close":
             self.priority_q.pop(0)
-            self.priority_q.append([delta, xp])
-        elif xp in self.get_priority_q():
-            self.replace_element_in_pq(delta,xp)
-        self.priority_q.sort()
+            self.priority_q.append([delta,xp])
         
-    def planning_update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
-        self.update(x, a, xp, r, env_gamma, step_size)
+    def planning_update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float, search):
+        self.update(x, a, xp, r, env_gamma, step_size, search)
     
-    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float, search):
         x_prediction = self.Q[x, a]
         xp_predictions = self.get_action_values(xp)
 
@@ -59,8 +63,9 @@ class QLearner():
         
         delta = r + env_gamma * max_q - x_prediction
         # 100 for terminal state, again, this should be a variable
+
         if xp !=100:
-            self.update_priority_q(abs(delta),xp)
+            self.update_priority_q(abs(delta),xp, search)            
         # self.average_delta = (self.average_delta * self.update_counter + delta) / (self.update_counter +1)
         # self.update_counter+=1
         # self.stop_counter+=1

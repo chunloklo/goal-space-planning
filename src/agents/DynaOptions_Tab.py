@@ -37,7 +37,7 @@ class DynaOptions_Tab:
         self.lmbda = params['lambda']
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
-        self.search_control = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'close'])
+        self.search_control = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'close', 'td'])
         self.pq_size = params['pq_size']
         
         # DO WE NEED THIS?!?!? CAN WE MAKE THIS SOMEWHERE ELSE?
@@ -114,7 +114,7 @@ class DynaOptions_Tab:
         self.tau[x, a] = 0
 
         if isinstance(self.behaviour_learner, QLearner):
-            self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
+            self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha, self.search_control)
         elif isinstance(self.behaviour_learner, ESarsaLambda):
             self.behaviour_learner.update(x, o, xp, r, self.get_policy(xp), self.gamma, self.lmbda, self.alpha)
         else:
@@ -165,7 +165,7 @@ class DynaOptions_Tab:
         # xp could be none if the transition probability errored out
         if xp != None:
             if isinstance(self.behaviour_learner, QLearner):
-                self.behaviour_learner.planning_update(x, o, xp, r, discount, self.alpha)
+                self.behaviour_learner.planning_update(x, o, xp, r, discount, self.alpha, self.search_control)
             elif isinstance(self.behaviour_learner, ESarsaLambda):
                 self.behaviour_learner.planning_update(x, o, xp, r, self.get_policy(xp), discount, self.alpha)
             else:
@@ -201,12 +201,10 @@ class DynaOptions_Tab:
                 else:
                     # Random if you haven't visited the next state yet
                     plan_x = x
-            elif search_control =="close":
+            elif search_control =="td" or search_control == "close":
                 priority_q = self.behaviour_learner.get_priority_q()
                 plan_x = random.choices(priority_q, weights=[i+1 for i in range(len(priority_q))])[0]
                 if plan_x not in self.action_model.get_model_dictionary():
-                    # print(plan_x)
-                    # print (priority_q)
                     plan_x =x
             visited_actions = self.action_model.visited_actions(plan_x)
             # Pick a random action/option within all eligable action/options
