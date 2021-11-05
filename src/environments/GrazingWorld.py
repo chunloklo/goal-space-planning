@@ -18,10 +18,10 @@ class GrazingWorld(BaseEnvironment):
 
     Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
     """
-    def __init__(self, seed:int,  size=10, reward_sequence_length=10, initial_learning=0):
+    def __init__(self, seed:int,  size=8, reward_sequence_length=10, initial_learning=0):
         random.seed(1)
         self.size = size
-        self.shape = (size, size)
+        self.shape = (size, int(size*1.5))
         self.reward_sequence_length = reward_sequence_length
         self.initial_learning = initial_learning
         self.il_counter = -1
@@ -35,21 +35,21 @@ class GrazingWorld(BaseEnvironment):
         """
         self.goals = {
             1:{
-                "position" : (2,2),
+                "position" : (1,1),
                 "reward" : 100,
                 "current_reward":0,
                 "reward_sequence_length": self.reward_sequence_length,
                 "iterator" : 0
             },
             2:{
-                "position" : (2,size-3),
+                "position" : (2,size-5),
                 "reward" : 50,
                 "current_reward":0,
                 "reward_sequence_length": self.reward_sequence_length,
                 "iterator" : int(self.reward_sequence_length/2)
             },
             3:{
-                "position" : (size-3,size-3),
+                "position" : (size-2,size-3),
                 "current_reward":1,
             }
         }
@@ -71,7 +71,7 @@ class GrazingWorld(BaseEnvironment):
         self.nS = np.prod(self.shape)
         self.nA = 4
         #self.start_state_index = np.ravel_multi_index((self.shape[0]-1, 0), self.shape)
-        self.start_state = (self.shape[0]-1, 0)
+        self.start_state = (self.shape[0]-3, 2)
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
         
@@ -155,8 +155,8 @@ class GrazingWorld(BaseEnvironment):
         wall_grids = []
         for i in range(1,3):
             goal_number = np.ravel_multi_index(np.array(self.goals[i]["position"]), self.shape)
-            wall_grids.append(goal_number-self.shape[0] - 1)
-            wall_grids.append(goal_number-self.shape[0] + 1)
+            # wall_grids.append(goal_number-self.shape[0] - 1)
+            # wall_grids.append(goal_number-self.shape[0] + 1)
             wall_grids.append(goal_number-1)
             wall_grids.append(goal_number+1)
             wall_grids.append(goal_number+self.shape[0] - 1)

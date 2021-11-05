@@ -53,7 +53,7 @@ def get_action_consistent_options(x: int, a: Union[list, int], options: list, co
 
 # This likely do not being here, but it works for now. If this is used more extensively, we need 
 # a better way of dealing with termination rather than just adding an extra state here.
-GRAZING_WORLD_TERMINAL_STATE = 100
+GRAZING_WORLD_TERMINAL_STATE = 96
 def get_option_policy_prob(x: int, options: List[Option], num_actions: int) -> npt.ArrayLike:
     num_options = len(options)
     # Getting option policy and termination condition

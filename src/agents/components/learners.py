@@ -24,7 +24,7 @@ class QLearner():
         self.priority_q_size = pq_size
         self.priority_q = []
         for i in range(self.priority_q_size):
-            self.priority_q.append([0,90]) # 90 for start state, this should be changed later for an (inherited) variable, 0 is for TD error
+            self.priority_q.append([0,62]) # 62 for start state, this should be changed later for an (inherited) variable, 0 is for TD error
 
     def get_action_values(self, x: int) -> np.ndarray:
         return self.Q[x, :]
@@ -72,7 +72,6 @@ class QLearner():
         # if abs(delta) > self.average_delta and self.stop_counter>=100:
         #     self.Q[:,4:7] += delta
         #     self.stop_counter=0
-        
 
         self.Q[x, a] += step_size * delta
 
