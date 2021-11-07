@@ -55,9 +55,9 @@ class GrazingWorld(BaseEnvironment):
         }
 
         self.step_to_goals = {
-            1: 3,
-            2: 3,
-            3: 1
+            1: 9,
+            2: 9,
+            3: 6
         }
 
         self.action_encoding = {
