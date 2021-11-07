@@ -203,7 +203,10 @@ class DynaOptions_Tab:
                     plan_x = x
             elif search_control =="td" or search_control == "close":
                 priority_q = self.behaviour_learner.get_priority_q()
-                plan_x = random.choices(priority_q, weights=[i+1 for i in range(len(priority_q))])[0]
+                if random.random > 0.5:
+                    plan_x = random.choices(priority_q, weights=[i+1 for i in range(len(priority_q))])[0]
+                else:
+                    plan_x = choice(np.array(self.action_model.visited_states()), self.random)
                 if plan_x not in self.action_model.get_model_dictionary():
                     plan_x =x
             visited_actions = self.action_model.visited_actions(plan_x)
