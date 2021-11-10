@@ -35,6 +35,9 @@ class QLearner():
         delta = r + env_gamma * max_q - x_prediction
         self.Q[x, a] += step_size * delta
 
+        # Pushing up learner delta for search control
+        globals.blackboard['learner_delta'] = delta
+
     def episode_end(self):
         globals.collector.collect('Q', np.copy(self.Q))   
         pass
@@ -84,6 +87,9 @@ class ESarsaLambda():
 
         self.trace.update(env_gamma, lmbda, xa_index, 1)
         self.approximator.update(step_size, delta * self.trace.z)
+
+        # Pushing up learner delta for search control
+        globals.blackboard['learner_delta'] = delta
 
     def episode_end(self):
         weights = self.approximator.weights

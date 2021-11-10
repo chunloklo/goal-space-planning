@@ -5,6 +5,7 @@ from PyExpUtils.utils.random import argmax, choice
 import random
 from PyFixedReps.Tabular import Tabular
 from agents.components.learners import ESarsaLambda, QLearner
+from agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue
 from src.utils import globals
 from src.utils import options, param_utils
@@ -35,7 +36,9 @@ class DynaOptions_Tab:
         self.lmbda = params['lambda']
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
-        self.search_control = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'close'])
+
+        search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
+        self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
         # DO WE NEED THIS?!?!? CAN WE MAKE THIS SOMEWHERE ELSE?
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
@@ -56,9 +59,6 @@ class DynaOptions_Tab:
             self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
         else:
             raise NotImplementedError(f'option_model_alg for {self.model_alg} is not implemented')
-
-        # For 'close' search control
-        self.distance_from_goal = {}
 
     def FA(self):
         return "Tabular"
@@ -95,8 +95,12 @@ class DynaOptions_Tab:
             self.behaviour_learner.update(x, o, xp, r, self.get_policy(xp), self.gamma, self.lmbda, self.alpha)
         else:
             raise NotImplementedError()
+
+        # Updating search control. Order is important.
+        self.search_control.update(x, xp)
+
         self.update_model(x,a,xp,r)  
-        self.planning_step(x, xp, self.search_control)
+        self.planning_step(x, xp)
     
         # not strictly needed because the option action pair shouldn't be used in termination,
         # but it prevents some unneeded computation that could error out with weird indexing.
@@ -120,12 +124,6 @@ class DynaOptions_Tab:
         Returns:
             Nothing
         """
-        if self.search_control == "close":
-            if x == self.env.state_encoding(self.env.start_state):
-                self.distance_from_goal[x] = 1
-            if xp != self.termination_state_index and (xp not in self.distance_from_goal or self.distance_from_goal[xp] > self.distance_from_goal[x] +1):
-                self.distance_from_goal[xp] = self.distance_from_goal[x] +1
-
         self.action_model.update(x, a, xp, r)
         if isinstance(self.option_model, OptionModel_Sutton_Tabular):
             self.option_model.update(x, a, xp, r, self.gamma, self.alpha)
@@ -162,7 +160,7 @@ class DynaOptions_Tab:
             else:
                 raise NotImplementedError()
 
-    def planning_step(self, x:int, xp: int, search_control: str):
+    def planning_step(self, x:int, xp: int):
         """performs planning, i.e. indirect RL.
 
         Returns:
@@ -182,34 +180,18 @@ class DynaOptions_Tab:
                 xp, r = self.action_model.predict(plan_x, a)
                 self.option_model_planning_update(plan_x, a, xp, r)
 
-        if search_control == "close":
-            visited_states, distances = [], []
-            for k in self.action_model.visited_states():
-                visited_states.append(k)
-                distances.append(self.distance_from_goal[k])
-            normed_distances = [i/sum(distances) for i in distances]
+        sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
 
-        for _ in range(self.planning_steps):
-            if search_control=="random":
-                plan_x = choice(np.array(self.action_model.visited_states()), self.random)
-            elif search_control =="current":
-                visited_states = list(self.action_model.visited_states())
-                if (xp in list(visited_states)):
-                    plan_x = xp
-                else:
-                    # Random if you haven't visited the next state yet
-                    plan_x = x
-            elif search_control =="close":
-                plan_x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
-            visited_actions = self.action_model.visited_actions(plan_x)
-            
+        for i in range(self.planning_steps):
+            plan_x = sample_states[i]
+
             # Pick a random action/option within all eligable action/options
             # I think there should be a better way of doing this...
+            visited_actions = self.action_model.visited_actions(plan_x)
             action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
             available_actions = visited_actions + action_consistent_options
-            update_options = [choice(np.array(available_actions), self.random)]
             
-            for a in update_options: 
+            for a in available_actions: 
                 self._planning_update(plan_x, a)
 
     def agent_end(self, x, o, a, r, gamma):

@@ -5,6 +5,7 @@ from PyExpUtils.utils.random import argmax, choice
 import random
 from PyFixedReps.Tabular import Tabular
 from agents.components.learners import ESarsaLambda, QLearner
+from agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue
 from src.utils import globals
 from src.utils import options, param_utils
@@ -35,7 +36,8 @@ class Dyna_Tab:
         self.kappa = params['kappa']
         self.lmbda = params['lambda']
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
-        self.search_control = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'close'])
+        search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
+        self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
         self.tau = np.zeros((self.num_states, self.num_actions))
         self.a = -1
@@ -91,6 +93,9 @@ class Dyna_Tab:
         else:
             raise NotImplementedError()
 
+        # Updating search control. Order is important.
+        self.search_control.update(x, xp)
+
         self.update_model(x,a,xp,r)  
         self.planning_step(x, xp, self.search_control)
 
@@ -134,31 +139,11 @@ class Dyna_Tab:
             Nothing
         """
 
-        if search_control == "close":
-            visited_states, distances = [], []
-            for k in self.action_model.visited_states():
-                visited_states.append(k)
-                distances.append(self.distance_from_goal[k])
-            normed_distances = [i/sum(distances) for i in distances]
+        sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
 
-        for _ in range(self.planning_steps):
-            if search_control=="random":
-                    plan_x = choice(np.array(self.action_model.visited_states()), self.random)
-            elif search_control =="current":
-                visited_states = list(self.action_model.visited_states())
-                if (xp in list(visited_states)):
-                    plan_x = xp
-                else:
-                    # Random if you haven't visited the next state yet
-                    plan_x = x
-                    
-            elif search_control =="close":
-                plan_x = self.random.choice(np.array(list(visited_states)), p = normed_distances)
-            
-            # Pick a random action/option within all eligable action/options
-            # I think there should be a better way of doing this...
+        for i in range(self.planning_steps):
+            plan_x = sample_states[i]
             visited_actions = self.action_model.visited_actions(plan_x)
-
             for a in visited_actions: 
                 self._planning_update(plan_x, a)
 

@@ -138,8 +138,9 @@ def find_best(json_handle, data = 'return_data',  key = None, metric = 'auc'):
             best_data['return_data'] = return_data
             best_data['max_returns'] = max_returns
 
-
-    return best_run, best_params, best_data, best_data['max_returns']
+    print(f'best performance: {best_auc}')
+    max_returns = best_data.get('max_returns', 0)
+    return best_run, best_params, best_data, max_returns
 
 # FIXME fix this script for validatoin data
 def find_best_key(json_handle,data = 'return_data', key = None, metric = 'auc'):

@@ -9,3 +9,6 @@ use_zodb = False
 
 global collector
 collector = None
+
+global blackboard
+blackboard = {}
