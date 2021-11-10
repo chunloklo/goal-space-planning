@@ -86,7 +86,8 @@ class DynaOptions_Tab:
 
     def update(self, x, o, a, xp, r, gamma):
         # Exploration bonus tracking
-        self.tau += 1
+        if not globals.blackboard['in_exploration_phase']:
+            self.tau += 1
         self.tau[x, o] = 0
 
         if isinstance(self.behaviour_learner, QLearner):
@@ -104,7 +105,7 @@ class DynaOptions_Tab:
     
         # not strictly needed because the option action pair shouldn't be used in termination,
         # but it prevents some unneeded computation that could error out with weird indexing.
-        if (xp != options.GRAZING_WORLD_TERMINAL_STATE):
+        if (xp != globals.blackboard['terminal_state']):
             oa_pair = self.selectAction(xp)
         else:
             # the oa pair doesn't matter if the agent arrived in the terminal state.
@@ -195,6 +196,6 @@ class DynaOptions_Tab:
                 self._planning_update(plan_x, a)
 
     def agent_end(self, x, o, a, r, gamma):
-        self.update(x, o, a, options.GRAZING_WORLD_TERMINAL_STATE, r, gamma)
+        self.update(x, o, a, globals.blackboard['terminal_state'], r, gamma)
         self.behaviour_learner.episode_end()
         self.option_model.episode_end()

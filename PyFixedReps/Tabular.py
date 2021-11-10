@@ -13,6 +13,6 @@ class Tabular(BaseRepresentation):
         return int(self.shape[0] * self.shape[1] * self.actions)
 
     def encode(self, s, a = None):
-        return s[0]*self.shape[0]+s[1]
+        return s[0]*self.shape[1]+s[1]
 
 

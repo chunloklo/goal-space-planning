@@ -68,44 +68,47 @@ def get_text_location(offsetx:int, offsety:int, action: int):
     y = center[1] + text_offset[action][1]
     return (x, y)
 
+COLUMN_MAX = 12
+ROW_MAX = 8
+
 def _plot_init(ax, center_arrows: bool = False):
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
+    ax.set_xlim(0, COLUMN_MAX)
+    ax.set_ylim(0, ROW_MAX)
     ax.invert_yaxis()
 
     texts = []
     patches = []
     arrows = []
-    for i in range(10):
+    for r in range(ROW_MAX):
         texts.append([])
         patches.append([])
         arrows.append([])
-        for j in range(10):
-            texts[i].append([])
-            patches[i].append([])
+        for c in range(COLUMN_MAX):
+            texts[r].append([])
+            patches[r].append([])
 
             # Getting action triangle patches
-            action_path_map = _get_q_value_patch_paths(i, j)
+            action_path_map = _get_q_value_patch_paths(c, r)
 
             for a in range(4):
                 font = {
                     'size': 8
                 }
-                text_location = get_text_location(i ,j ,a)
+                text_location = get_text_location(c, r ,a)
                 # 'p' is just placeholder text
-                texts[i][j].append(ax.text(text_location[0], text_location[1], 'p', fontdict = font, va='center', ha='center'))
+                texts[r][c].append(ax.text(text_location[0], text_location[1], 'p', fontdict = font, va='center', ha='center'))
 
                 # placeholder color
                 color = "blue"
                 path = action_path_map[a]
                 patch = ax.add_patch(PathPatch(Path(path), facecolor=color, ec='None'))
-                patches[i][j].append(patch)
+                patches[r][c].append(patch)
 
             # Getting default arrow. Making sure that this gets put on top of the patches
-            center = [0.5 + i, 0.5 + j]
+            center = [0.5 + r, 0.5 + c]
             if center_arrows:
                 arrow = ax.arrow(center[0], center[1], 0.25, 0.25, width=0.025)
-                arrows[i].append(arrow)
+                arrows[r].append(arrow)
 
     
     if (center_arrows):
@@ -174,8 +177,8 @@ def generatePlot(json_handle):
     
 
     if hasOptions:
-        ax_options.set_xlim(0, 10)
-        ax_options.set_ylim(0, 10)
+        ax_options.set_xlim(0, COLUMN_MAX)
+        ax_options.set_ylim(0, ROW_MAX)
         ax_options.invert_yaxis()
         texts_options, patches_options = _plot_init(ax_options)
     
@@ -191,48 +194,49 @@ def generatePlot(json_handle):
     def draw_func(i):
         pbar.update(i - start_frame - pbar.n)
         q_values = data[i, :, :]
+        # print(q_values)
+
 
         ax.set_title(f"episode: {i}")
 
-        for i in range(10):
-            for j in range(10):
-                q_value = q_values[i + j * 10, :]
-
+        for r in range(ROW_MAX):
+            for c in range(COLUMN_MAX):
+                q_value = q_values[r * COLUMN_MAX + c, :]
                 action = np.argmax(q_value)
                 arrow_magnitude = 0.0625
                 width = 0.025
-                center = [0.5 + i, 0.5 + j]
+                center = [0.5 + c, 0.5 + r]
                 offset = get_action_offset(arrow_magnitude)
 
-                arrows[i][j].remove()
+                arrows[r][c].remove()
 
                 if (action < 4):
                     offset = get_action_offset(arrow_magnitude)
                     arrow = ax.arrow(center[0], center[1], offset[action][0], offset[action][1], width=width, facecolor='black')
-                    arrows[i][j] = arrow
+                    arrows[r][c] = arrow
                 else:
                     option = action - 4
 
-                    from src.utils.options import load_option
-                    options = [load_option('GrazingO1'), load_option('GrazingO2'),load_option('GrazingO3'), load_option('GrazingO4')]
-                    action, _ = options[option].step(i + j * 10)
+                    from src.utils.create_options import get_options
+                    options = get_options('GrazingAdam')
+                    action, _ = options[option].step(r * COLUMN_MAX + c)
 
                     offset = get_action_offset(arrow_magnitude)
                     arrow = ax.arrow(center[0], center[1], offset[action][0], offset[action][1], width=width, facecolor='red')
-                    arrows[i][j] = arrow
+                    arrows[r][c] = arrow
 
                 for a in range(4):
                     scaled_value = scale_value(q_value[a], min_val, max_val)
-                    patches[i][j][a].set_facecolor(colormap(scaled_value))
+                    patches[r][c][a].set_facecolor(colormap(scaled_value))
                     # colors = ["red", "green", "blue", "orange"]
                     # patches[i][j][a].set_facecolor(colors[a])
-                    texts[i][j][a].set_text(round(q_value[a], 2))
+                    texts[r][c][a].set_text(round(q_value[a], 2))
 
                 if hasOptions:
                     for a in range(num_options):
                         scaled_value = scale_value(q_value[a + 4], min_val, max_val)
-                        patches_options[i][j][a].set_facecolor(colormap(scaled_value))
-                        texts_options[i][j][a].set_text(round(q_value[a + 4], 2))
+                        patches_options[r][c][a].set_facecolor(colormap(scaled_value))
+                        texts_options[r][c][a].set_text(round(q_value[a + 4], 2))
         return
 
     animation = FuncAnimation(fig, draw_func, frames=frames)

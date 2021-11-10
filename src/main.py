@@ -60,8 +60,6 @@ if experiment_completed(exp_json, args.ignore_error) and not args.overwrite:
         print('Counted run as completed if run errored previously')
     print(f'Run Already Complete - Ending Run')
     exit()
-    
-cleanup_files(experiment_old_format)
 
 try:
     wrapper_class = agent.wrapper_class
@@ -120,5 +118,6 @@ save_obj = {
 }
 
 # We likely want to abstract this away from src/main
+cleanup_files(experiment_old_format)
 save_data(experiment_old_format, save_obj)
 logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")

@@ -75,7 +75,7 @@ class OptionPlanning_Tab:
     def update(self, x, a, xp, r, gamma):
         # not strictly needed because the option action pair shouldn't be used in termination,
         # but it prevents some unneeded computation that could error out with weird indexing.
-        action = self.selectAction(xp) if xp != options.GRAZING_WORLD_TERMINAL_STATE else None
+        action = self.selectAction(xp) if xp != globals.blackboard['terminal_state'] else None
 
         self.tau += 1
         self.tau[x, a] = 0
@@ -172,4 +172,4 @@ class OptionPlanning_Tab:
 
 
     def agent_end(self, x, a, r, gamma):
-        self.update(x, a, options.GRAZING_WORLD_TERMINAL_STATE, r, gamma)
+        self.update(x, a, globals.blackboard['terminal_state'], r, gamma)

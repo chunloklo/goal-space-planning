@@ -7,5 +7,5 @@ def create_onehot(num_features: np.number, index: int):
     return onehot
 
 def softmax(vector: npt.ArrayLike) -> npt.ArrayLike:
-    exp = np.exp(vector)
+    exp = np.exp(vector - np.max(vector))
     return exp / np.sum(exp)

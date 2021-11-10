@@ -1,6 +1,7 @@
 from RlGlue import BaseAgent
 import numpy as np
 from typing import Union, Tuple
+from src.utils import globals
 
 # keeps a one step memory for TD based agents
 class OneStepWrapper(BaseAgent):
@@ -20,6 +21,8 @@ class OneStepWrapper(BaseAgent):
 
         self.options = self.agent.options
 
+        self._update_exploration_phase()
+
     def __str__(self):
         return self.agent.__str__()
 
@@ -27,13 +30,13 @@ class OneStepWrapper(BaseAgent):
         self.s = s
         self.x = self.rep.encode(s)
         self.a = self.agent.selectAction(self.x)
+        self.a = self.random_action_if_exploring(self.a, use_option_action_pair = False)
 
         return self.a
 
     # Doesn't modify the action/option if not exploring, otherwise sets it to a random action
     def random_action_if_exploring(self, action_or_option: Union[int, Tuple], use_option_action_pair: bool) -> Union[int, Tuple]:
-        in_exploration_phase = self.num_episodes_passed < self.exploration_phase
-        if in_exploration_phase:
+        if globals.blackboard['in_exploration_phase']:
             action = self.random.choice(self.actions)
             if use_option_action_pair:
                 return action, action
@@ -43,13 +46,19 @@ class OneStepWrapper(BaseAgent):
         return action_or_option
 
     def no_reward_if_exploring(self, reward: float) -> float:
-        in_exploration_phase = self.num_episodes_passed < self.exploration_phase
-        if in_exploration_phase and self.no_reward_exploration:
+        if globals.blackboard['in_exploration_phase'] and self.no_reward_exploration:
             return 0
 
         return reward
 
+    def _update_exploration_phase(self):
+        if self.num_episodes_passed < self.exploration_phase:
+            globals.blackboard['in_exploration_phase'] = True
+        else:
+            globals.blackboard['in_exploration_phase'] = False
+
     def step(self, r, sp, t=False):
+
         r = self.no_reward_if_exploring(r)
 
         xp = self.rep.encode(sp)
@@ -70,6 +79,7 @@ class OneStepWrapper(BaseAgent):
         r = self.no_reward_if_exploring(r)
 
         self.num_episodes_passed += 1
+        self._update_exploration_phase()
         gamma = 0
         self.agent.agent_end(self.x, self.a, r, gamma)  
         # reset agent here if necessary (e.g. to clear traces)
@@ -79,10 +89,8 @@ class OptionOneStepWrapper(OneStepWrapper):
         self.s = s
         self.x = self.rep.encode(s)
         self.o, self.a = self.agent.selectAction(self.x)
+        self.a, self.o = self.random_action_if_exploring((self.a, self.o), use_option_action_pair = True)
 
-        if (self.num_episodes_passed < self.exploration_phase):
-            self.o = self.random.choice(self.actions)
-            self.a = self.o
         return self.a
 
     def step(self, r, sp, t=False):
@@ -103,6 +111,7 @@ class OptionOneStepWrapper(OneStepWrapper):
         r = self.no_reward_if_exploring(r)
 
         self.num_episodes_passed += 1
+        self._update_exploration_phase()
         gamma = 0
         self.agent.agent_end(self.x, self.o, self.a, r, gamma)
 
@@ -153,5 +162,6 @@ class OptionFullExecuteWrapper(OneStepWrapper):
         r = self.no_reward_if_exploring(r)
         
         self.num_episodes_passed += 1
+        self._update_exploration_phase
         gamma = 0  
         self.agent.agent_end(self.x, self.o, r, gamma)

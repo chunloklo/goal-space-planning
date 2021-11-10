@@ -3,6 +3,7 @@ from typing import Union, List
 import numpy as np
 import numpy.typing as npt
 from src.utils.Option import QOption, Option
+from src.utils import globals
 
 def load_option(file_name):
     input_file = open("src/options/" + file_name + ".pkl", 'rb')
@@ -51,9 +52,6 @@ def get_action_consistent_options(x: int, a: Union[list, int], options: list, co
         action_consistent_options = [from_option_to_action_index(o, num_actions) for o in action_consistent_options]
     return action_consistent_options
 
-# This likely do not being here, but it works for now. If this is used more extensively, we need 
-# a better way of dealing with termination rather than just adding an extra state here.
-GRAZING_WORLD_TERMINAL_STATE = 100
 def get_option_policies_prob(x: int, options: List[Option], num_actions: int) -> npt.ArrayLike:
     num_options = len(options)
     # Getting option policy and termination condition
@@ -61,7 +59,7 @@ def get_option_policies_prob(x: int, options: List[Option], num_actions: int) ->
     # this probably belong somewher eelse.
     option_policies = np.zeros((num_options, num_actions))
     for i, option in enumerate(options):
-        if x == GRAZING_WORLD_TERMINAL_STATE:
+        if x == globals.blackboard['terminal_state']:
             option_policies[i] = 1 / num_actions
         else:
             action, _ = option.step(x)
@@ -71,7 +69,7 @@ def get_option_policies_prob(x: int, options: List[Option], num_actions: int) ->
 
 def get_option_policy_prob(x: int, option: Option, num_actions: int) -> npt.ArrayLike:
     policy = np.zeros(num_actions)
-    if x == GRAZING_WORLD_TERMINAL_STATE:
+    if x == globals.blackboard['terminal_state']:
         policy = 1 / num_actions
     else:
         action, _ = option.step(x)
@@ -83,7 +81,7 @@ def get_option_term(xp: int, options: List[Option]) -> npt.ArrayLike:
     num_options = len(options)
     option_terminations = np.zeros(num_options)
     for i, option in enumerate(options):
-        if xp == GRAZING_WORLD_TERMINAL_STATE:
+        if xp == globals.blackboard['terminal_state']:
             term = 1
         else:
             _, term = option.step(xp)

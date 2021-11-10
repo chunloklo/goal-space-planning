@@ -77,13 +77,14 @@ class Dyna_Tab:
 
     def update(self, x, a, xp, r, gamma):
 
-        if (xp != options.GRAZING_WORLD_TERMINAL_STATE):
+        if (xp != globals.blackboard['terminal_state']):
             ap = self.selectAction(xp)
         else:
             ap = None
 
         # Exploration bonus tracking
-        self.tau += 1
+        if not globals.blackboard['in_exploration_phase']:
+            self.tau += 1
         self.tau[x, a] = 0
 
         if isinstance(self.behaviour_learner, QLearner):
@@ -97,7 +98,7 @@ class Dyna_Tab:
         self.search_control.update(x, xp)
 
         self.update_model(x,a,xp,r)  
-        self.planning_step(x, xp, self.search_control)
+        self.planning_step(x, xp)
 
         return ap
     def update_model(self, x, a, xp, r):
@@ -115,7 +116,7 @@ class Dyna_Tab:
         self.action_model.update(x, a, xp, r)
 
     def _planning_update(self, x: int, a: int):
-        if x == options.GRAZING_WORLD_TERMINAL_STATE:
+        if x == globals.blackboard['terminal_state']:
             # If its terminal state, no need to plan with it
             return
 
@@ -132,7 +133,7 @@ class Dyna_Tab:
         else:
             raise NotImplementedError()
 
-    def planning_step(self, x:int, xp: int, search_control: str):
+    def planning_step(self, x:int, xp: int):
         """performs planning, i.e. indirect RL.
 
         Returns:
@@ -148,5 +149,5 @@ class Dyna_Tab:
                 self._planning_update(plan_x, a)
 
     def agent_end(self, x, a, r, gamma):
-        self.update(x, a, options.GRAZING_WORLD_TERMINAL_STATE, r, gamma)
+        self.update(x, a, globals.blackboard['terminal_state'], r, gamma)
         self.behaviour_learner.episode_end()

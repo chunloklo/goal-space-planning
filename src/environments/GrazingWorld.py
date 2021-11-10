@@ -86,9 +86,6 @@ class GrazingWorld(BaseEnvironment):
     def actions(self, s):
         return [UP, RIGHT, DOWN, LEFT]
 
-    def state_encoding(self,position):
-        return self.size*position[0]+position[1]
-
     # give the rewards associated with a given state, action, next state tuple
     def rewards(self, s, terminal):
         if terminal:

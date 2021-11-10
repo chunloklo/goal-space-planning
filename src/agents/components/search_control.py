@@ -35,7 +35,7 @@ class ActionModelSearchControl_Tabular():
             samples = []
             for _ in range(num_samples):
                 if self.state_sample_type =="random":
-                    plan_x = self.random.choice(np.array(action_model.visited_states()), self.random)
+                    plan_x = self.random.choice(np.array(action_model.visited_states()))
                 elif self.state_sample_type =="current":
                     visited_states = list(action_model.visited_states())
                     if (xp in list(visited_states)):

@@ -30,7 +30,7 @@ class OptionModel_Sutton_Tabular():
         action_consistent_options = options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
         for action_option in action_consistent_options:
             o = options.from_action_to_option_index(action_option, self.num_actions)
-            if (xp == options.GRAZING_WORLD_TERMINAL_STATE):
+            if (xp == globals.blackboard['terminal_state']):
                 option_termination = 1
             else:
                 # _, termination = self.options[o].step(x)
