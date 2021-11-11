@@ -40,6 +40,7 @@ def save_error(experiment: Dict, exception: Exception):
 
         file_name = output_file_name + '.err'
 
+        os.makedirs(os.path.dirname(folder), exist_ok=True)
         with open(file_name, 'w') as f:
             f.write(err_text)
 
