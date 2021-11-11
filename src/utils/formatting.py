@@ -98,10 +98,4 @@ def pretty_print_experiment(experiment):
 
 
 def create_folder(folder):
-    ''' Make the folder in a way that doesnt violate race conditions'''
-    if not os.path.exists(folder):
-        time.sleep(1)
-        try:
-            os.makedirs(folder)
-        except:
-            pass
+    os.makedirs(folder, exist_ok=True)
