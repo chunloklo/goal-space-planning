@@ -29,7 +29,7 @@ def get_options(option_name):
             
         }
         
-        term_set = [13,30,81]
+        term_set = [13,31,81]
 
         def policy_selection(policy, state):
             return policy[state]
