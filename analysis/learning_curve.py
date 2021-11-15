@@ -11,15 +11,15 @@ from src.utils.json_handling import get_sorted_dict
 from src.utils import analysis_utils 
 from src.utils.formatting import create_folder
 from src.utils.file_handling import get_files_recursively
+import argparse
 
-# read the arguments etc
-if len(sys.argv) < 2:
-    print("usage : python analysis/learning_curve.py legend(y/n) <list of json files>")
-    exit()
+parser = argparse.ArgumentParser(description='Parallizable experiment run file')
+parser.add_argument('-j', '--json-path', type = str ,nargs='+', help='Json Files', required=True) # the json configuration
+parser.add_argument('-nl', '--no-legend', action='store_true', help='Flag to not show legend')
 
-assert sys.argv[1].lower() in ['y' ,'n'] , "[ERROR], Choose between y/n"
-show_legend = sys.argv[1].lower() == 'y'
-json_files = sys.argv[2:] # all the json files
+args = parser.parse_args()
+show_legend = not args.no_legend
+json_files = args.json_path
 
 json_files = get_files_recursively(json_files)
 
@@ -63,15 +63,16 @@ key_to_plot = 'return_data' # the key to plot the data
 fig, axs = plt.subplots(1, figsize = (6, 4 ), dpi = 300)
 for en, js in enumerate(json_handles):
     run, param , data, max_returns = analysis_utils.find_best(js, data = 'return')
-    agent = param['agent']
+    label_str = f'{param["agent"]} + {param.get("behaviour_alg", "")}'
     print(param)
-    plot(axs, data = data[key_to_plot], label = f"{agent}", color = agent_colors[agent] )
+    plot(axs, data = data[key_to_plot], label = f"{label_str}")
     if en == 0:
         axs.plot(max_returns[0,0,:], label='max return')
     #print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
 
 
-axs.set_ylim([-300, 110])
+# axs.set_ylim([-300, 110])
+axs.set_ylim([-100, 100])
 axs.spines['top'].set_visible(False)
 if show_legend:
     axs.set_title(f'{key_to_plot} accuracy')

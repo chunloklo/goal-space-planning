@@ -64,8 +64,7 @@ def create_file_name(experiment: dict, sub_folder = 'results'):
     We will make folder names with agent and problem and then appends the rest fo the config
     return the folder and filename
     '''
-
-    folder = f"{experiment['agent']}/{experiment['problem']}"
+    folder = f"{experiment['experiment_name']}/{experiment['agent']}/{experiment['problem']}"
     keys = list(experiment.keys())
     keys.remove("agent")
     keys.remove("problem")
@@ -88,7 +87,7 @@ def create_file_name(experiment: dict, sub_folder = 'results'):
     return folder ,hash_name(file_name)
 
 def get_folder_name(experiments, sub_folder = 'results'):
-    folder = f"{experiments['agent']}/{experiments['problem']}"
+    folder = f"{experiments['experiment_name']}/{experiments['agent']}/{experiments['problem']}"
     folder = f"{os.getcwd()}/{sub_folder}/{folder}/"
     return folder
 

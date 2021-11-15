@@ -60,6 +60,9 @@ class DynaOptions_Tab:
         else:
             raise NotImplementedError(f'option_model_alg for {self.model_alg} is not implemented')
 
+        # For logging state visitation
+        self.state_visitations = np.zeros(self.num_states)
+
     def FA(self):
         return "Tabular"
 
@@ -85,6 +88,8 @@ class DynaOptions_Tab:
         return o,a
 
     def update(self, x, o, a, xp, r, gamma):
+        self.state_visitations[x] += 1
+
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
             self.tau += 1
@@ -150,7 +155,12 @@ class DynaOptions_Tab:
                 xp = None
 
         # Exploration bonus for +
-        r += self.kappa * np.sqrt(self.tau[x, o])
+        # These states are specifically or GrazingWorldAdam
+        if x in [13,31]:
+            factor = 1
+        else:
+            factor = 0.0
+        r += self.kappa * factor * np.sqrt(self.tau[x, o])
 
         # xp could be none if the transition probability errored out
         if xp != None:
@@ -199,3 +209,7 @@ class DynaOptions_Tab:
         self.update(x, o, a, globals.blackboard['terminal_state'], r, gamma)
         self.behaviour_learner.episode_end()
         self.option_model.episode_end()
+
+        # Logging state visitation
+        globals.collector.collect('state_visitation', np.copy(self.state_visitations))   
+        self.state_visitations[:] = 0

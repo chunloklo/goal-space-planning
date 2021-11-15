@@ -54,8 +54,8 @@ class Dyna_Tab:
         # Creating models for actions and options
         self.action_model = DictModel()
 
-        # For 'close' search control
-        self.distance_from_goal = {}
+        # For logging state visitation
+        self.state_visitations = np.zeros(self.num_states)
 
     def FA(self):
         return "Tabular"
@@ -76,11 +76,7 @@ class Dyna_Tab:
         return a
 
     def update(self, x, a, xp, r, gamma):
-
-        if (xp != globals.blackboard['terminal_state']):
-            ap = self.selectAction(xp)
-        else:
-            ap = None
+        self.state_visitations[x] += 1
 
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
@@ -100,6 +96,11 @@ class Dyna_Tab:
         self.update_model(x,a,xp,r)  
         self.planning_step(x, xp)
 
+        if (xp != globals.blackboard['terminal_state']):
+            ap = self.selectAction(xp)
+        else:
+            ap = None
+
         return ap
     def update_model(self, x, a, xp, r):
         """updates the model 
@@ -107,12 +108,6 @@ class Dyna_Tab:
         Returns:
             Nothing
         """
-        if self.search_control == "close":
-            if x == self.env.state_encoding(self.env.start_state):
-                self.distance_from_goal[x] = 1
-            if xp != self.termination_state_index and (xp not in self.distance_from_goal or self.distance_from_goal[xp] > self.distance_from_goal[x] +1):
-                self.distance_from_goal[xp] = self.distance_from_goal[x] +1
-        
         self.action_model.update(x, a, xp, r)
 
     def _planning_update(self, x: int, a: int):
@@ -124,7 +119,13 @@ class Dyna_Tab:
         discount = self.gamma
 
         # Exploration bonus for +
-        r += self.kappa * np.sqrt(self.tau[x, a])
+        # These states are specifically for GrazingWorldAdam
+        if x in [13,31]:
+            factor = 1
+        else:
+            factor = 0.0
+        
+        r += self.kappa * factor * np.sqrt(self.tau[x, a])
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.planning_update(x, a, xp, r, discount, self.alpha)
@@ -151,3 +152,7 @@ class Dyna_Tab:
     def agent_end(self, x, a, r, gamma):
         self.update(x, a, globals.blackboard['terminal_state'], r, gamma)
         self.behaviour_learner.episode_end()
+
+        # Logging state visitation
+        globals.collector.collect('state_visitation', np.copy(self.state_visitations))   
+        self.state_visitations[:] = 0

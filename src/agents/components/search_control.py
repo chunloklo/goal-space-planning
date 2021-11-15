@@ -44,7 +44,7 @@ class ActionModelSearchControl_Tabular():
                         # Random if you haven't visited the next state yet
                         plan_x = x
                 samples.append(plan_x)
-        
+
         elif self.state_sample_type == 'td':
             state_buffers = np.array([s[0] for s in self.replay_buffer])
             weights = np.array([s[1] for s in self.replay_buffer])
