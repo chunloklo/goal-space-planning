@@ -1,0 +1,23 @@
+{
+    "agent": "DynaOptions_Tab",
+    "problem": "GrazingWorld",
+    "episodes": 3000,
+    "metaParameters": {
+        "seed": [0,1,2,3],
+        "exploration_phase": [200],
+        "no_reward_exploration": [true],
+        "alpha": [0.3,0.5, 0.9],
+        "epsilon": [0.1],
+        "behaviour_alg": ["QLearner"],
+        "search_control": ["current"],
+        "option_model_alg": ["sutton"],
+        "gamma": [1.0],
+        "zeta": [0.5,0.8,1],
+        "tau_boost": [50,100,250,500,1000,10000],
+        "kappa": [0.01, 0.03, 0.05],
+        "lambda": [0.9],
+        "planning_steps": [5],
+        "model_planning_steps": [0],
+        "reward_sequence_length" : [500]
+    }
+}

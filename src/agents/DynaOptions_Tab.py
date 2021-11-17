@@ -156,7 +156,7 @@ class DynaOptions_Tab:
 
         # Exploration bonus for +
         # These states are specifically or GrazingWorldAdam
-        if x in [13,31]:
+        if x in self.env.terminal_states:
             factor = 1
         else:
             factor = 0.0
