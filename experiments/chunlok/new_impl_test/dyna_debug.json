@@ -1,9 +1,9 @@
 {
-    "agent": "DynaOptions_Tab",
+    "agent": "Dyna_Tab",
     "problem": "GrazingWorldAdam",
     "episodes": 3000,
     "metaParameters": {
-        "seed": [24,25,26,27],
+        "seed": [28,29,30,31],
         "exploration_phase": [200],
         "no_reward_exploration": [true],
         "alpha": [0.7],
@@ -18,7 +18,6 @@
         "model_planning_steps": [0],
         "reward_sequence_length" : [500],
         "experiment_name" : ["debug"],
-        "perturbation_ratio" : [0.0005],
-        "perturb_options" : ["True"]
+        "perturbation_ratio" : [0.0005]
     }
 }

@@ -39,6 +39,8 @@ class Dyna_Tab:
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
+        self.perturbation_ratio = params['perturbation_ratio']
+
         self.tau = np.zeros((self.num_states, self.num_actions))
         self.a = -1
         self.x = -1
@@ -126,6 +128,9 @@ class Dyna_Tab:
             factor = 0.0
         
         r += self.kappa * factor * np.sqrt(self.tau[x, a])
+
+        if random.random() < self.perturbation_ratio:
+            xp = random.choice(self.env.selectable_states)
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.planning_update(x, a, xp, r, discount, self.alpha)

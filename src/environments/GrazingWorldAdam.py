@@ -35,11 +35,30 @@ class GrazingWorldAdam(GrazingWorld):
             3: 7
         }
 
+        """
+        deal with potential wall bump
+        calculate scalar index of each special goal state, and check that the agent didn't end up moving there
+        """
+        self.wall_grids = []
+        for i in range(1,3):
+            goal_number = np.ravel_multi_index(np.array(self.goals[i]["position"]), self.shape)
+            self.wall_grids.append(goal_number-1)
+            self.wall_grids.append(goal_number+1)
+            self.wall_grids.append(goal_number+self.shape[1] - 1)
+            self.wall_grids.append(goal_number+self.shape[1])   
+            self.wall_grids.append(goal_number+self.shape[1] + 1)
+
         #self.start_state_index = np.ravel_multi_index((self.shape[0]-1, 0), self.shape)
         self.start_state = (self.shape[0]-2, 2)
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
         self.terminal_states = [state[0]*self.shape[1] + state[1] for state in self.terminal_state_positions]
+
+        self.selectable_states = list(range(self.shape[0]*self.shape[1]))
+        for i, wall_grid in enumerate(self.wall_grids):
+            self.selectable_states.remove(wall_grid)
+        for i, terminal_state in enumerate(self.terminal_states):
+            self.selectable_states.remove(terminal_state)
 
     def _limit_coordinates(self, s, a):
         """
@@ -50,20 +69,9 @@ class GrazingWorldAdam(GrazingWorld):
         coord[0] = max(coord[0], 0)
         coord[1] = min(coord[1], self.shape[1] - 1)
         coord[1] = max(coord[1], 0)
-        """
-        deal with potential wall bump
-        calculate scalar index of each special goal state, and check that the agent didn't end up moving there
-        """
-        wall_grids = []
-        for i in range(1,3):
-            goal_number = np.ravel_multi_index(np.array(self.goals[i]["position"]), self.shape)
-            wall_grids.append(goal_number-1)
-            wall_grids.append(goal_number+1)
-            wall_grids.append(goal_number+self.shape[1] - 1)
-            wall_grids.append(goal_number+self.shape[1])   
-            wall_grids.append(goal_number+self.shape[1] + 1)
+
     
-        if np.ravel_multi_index(coord, self.shape) in wall_grids:
+        if np.ravel_multi_index(coord, self.shape) in self.wall_grids:
             coord = s
         return coord
 

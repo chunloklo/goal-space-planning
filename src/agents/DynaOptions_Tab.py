@@ -40,6 +40,9 @@ class DynaOptions_Tab:
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
+        self.perturbation_ratio = params['perturbation_ratio']
+        self.perturb_options = params["perturb_options"]
+
         # DO WE NEED THIS?!?!? CAN WE MAKE THIS SOMEWHERE ELSE?
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
         self.a = -1
@@ -140,6 +143,10 @@ class DynaOptions_Tab:
         if (o < self.num_actions):
             # Generating the experience from the action_model
             xp, r = self.action_model.predict(x, o)
+
+            if random.random() < self.perturbation_ratio:
+                xp = random.choice(self.env.selectable_states)
+
             discount = self.gamma
         else:
             # Generating the experience from the option model
@@ -164,6 +171,10 @@ class DynaOptions_Tab:
 
         # xp could be none if the transition probability errored out
         if xp != None:
+            if self.perturb_options == "True":
+                if random.random() < self.perturbation_ratio:
+                    xp = random.choice(self.env.selectable_states)
+
             if isinstance(self.behaviour_learner, QLearner):
                 self.behaviour_learner.planning_update(x, o, xp, r, discount, self.alpha)
             elif isinstance(self.behaviour_learner, ESarsaLambda):
