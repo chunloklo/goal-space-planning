@@ -1,9 +1,7 @@
-from typing import Dict, Union, Tuple
+
 import numpy as np
-import numpy.typing as npt
 from PyExpUtils.utils.random import argmax, choice
 import random
-from PyFixedReps.Tabular import Tabular
 from agents.components.learners import ESarsaLambda, QLearner
 from agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue
@@ -11,27 +9,36 @@ from src.utils import globals
 from src.utils import options, param_utils
 from src.agents.components.models import OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
 from src.agents.components.approximators import DictModel
+from PyFixedReps.BaseRepresentation import BaseRepresentation
+import numpy.typing as npt
+from PyFixedReps.Tabular import Tabular
+from typing import Dict, Union, Tuple, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Important for forward reference
+    from src.problems.BaseProblem import BaseProblem
 
 class DynaOptions_Tab:
-    def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
+    def __init__(self, problem: 'BaseProblem'):
         self.wrapper_class = rlglue.OptionOneStepWrapper
-
-        self.env = env
-        self.features = features
-        self.num_actions = actions
+        self.env = problem.getEnvironment()
+        self.representation: Tabular = problem.get_representation('Tabular')
+        assert isinstance(self.representation, Tabular)
+        self.features = self.representation.features
+        self.num_actions = problem.actions
         self.actions = list(range(self.num_actions))
-        self.params = params
+        self.params = problem.params
         self.num_states = self.env.nS
-        self.options = options
-        self.num_options = len(options)
-        self.random = np.random.RandomState(seed)
+        self.options = problem.options
+        self.num_options = len(problem.options)
+        self.random = np.random.RandomState(problem.seed)
 
         # define parameter contract
+        params = self.params
         self.alpha = params['alpha']
         self.epsilon = params['epsilon']
         self.planning_steps = params['planning_steps']
         self.model_planning_steps = params['model_planning_steps']
-        self.gamma = params['gamma']
         self.kappa = params['kappa']
         self.lmbda = params['lambda']
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
@@ -77,7 +84,8 @@ class DynaOptions_Tab:
         return probs
 
     # public method for rlglue
-    def selectAction(self, x: int) -> Tuple[int, int] :
+    def selectAction(self, s: Any) -> Tuple[int, int] :
+        x = self.representation.encode(s)
         o = self.random.choice(self.num_actions + self.num_options, p = self.get_policy(x))
 
         if o >= self.num_actions:
@@ -87,7 +95,11 @@ class DynaOptions_Tab:
 
         return o,a
 
-    def update(self, x, o, a, xp, r, gamma):
+    def update(self, s: Any, o, a, sp: Any, r, gamma, terminal: bool = False):
+        x = self.representation.encode(s)
+        # Treating the terminal state as an additional state in the tabular setting
+        xp = self.representation.encode(sp) if not terminal else self.num_states
+
         self.state_visitations[x] += 1
 
         # Exploration bonus tracking
@@ -98,49 +110,49 @@ class DynaOptions_Tab:
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
         elif isinstance(self.behaviour_learner, ESarsaLambda):
-            self.behaviour_learner.update(x, o, xp, r, self.get_policy(xp), self.gamma, self.lmbda, self.alpha)
+            self.behaviour_learner.update(x, o, xp, r, self.get_policy(xp), gamma, self.lmbda, self.alpha)
         else:
             raise NotImplementedError()
 
         # Updating search control. Order is important.
         self.search_control.update(x, xp)
 
-        self.update_model(x,a,xp,r)  
+        self.update_model(x,a,xp,r,gamma)  
         self.planning_step(x, xp)
     
         # not strictly needed because the option action pair shouldn't be used in termination,
         # but it prevents some unneeded computation that could error out with weird indexing.
-        if (xp != globals.blackboard['terminal_state']):
-            oa_pair = self.selectAction(xp)
+        if not terminal:
+            oa_pair = self.selectAction(sp)
         else:
             # the oa pair doesn't matter if the agent arrived in the terminal state.
             oa_pair = None
 
         return oa_pair
     
-    def option_model_planning_update(self, x, a, xp ,r):
+    def option_model_planning_update(self, x, a, xp ,r, gamma):
         if isinstance(self.option_model, OptionModel_Sutton_Tabular):
-            self.option_model.update(x, a, xp, r, self.gamma, self.alpha)
+            self.option_model.update(x, a, xp, r, gamma, self.alpha)
         else:
             raise NotImplementedError(f'Planning update for {type(self.option_model)} is not implemented')
 
-    def update_model(self, x, a, xp, r):
+    def update_model(self, x, a, xp, r, gamma):
         """updates the model 
         
         Returns:
             Nothing
         """
-        self.action_model.update(x, a, xp, r)
+        self.action_model.update(x, a, xp, r, gamma)
         if isinstance(self.option_model, OptionModel_Sutton_Tabular):
-            self.option_model.update(x, a, xp, r, self.gamma, self.alpha)
+            self.option_model.update(x, a, xp, r, gamma, self.alpha)
         else:
             raise NotImplementedError(f'Update for {type(self.option_model)} is not implemented')
 
     def _planning_update(self, x: int, o: int):
         if (o < self.num_actions):
             # Generating the experience from the action_model
-            xp, r = self.action_model.predict(x, o)
-            discount = self.gamma
+            xp, r, gamma = self.action_model.predict(x, o)
+            discount = gamma
         else:
             # Generating the experience from the option model
             option_index = options.from_action_to_option_index(o, self.num_actions)
@@ -188,8 +200,8 @@ class DynaOptions_Tab:
             # We're improving the model a ton here (updating all 4 actions). We could reduce this later but let's keep it high for now?
             # Disabling this since we are testing with traces
             for a in visited_actions:
-                xp, r = self.action_model.predict(plan_x, a)
-                self.option_model_planning_update(plan_x, a, xp, r)
+                xp, r, gamma = self.action_model.predict(plan_x, a)
+                self.option_model_planning_update(plan_x, a, xp, r, gamma)
 
         sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
 
@@ -205,8 +217,8 @@ class DynaOptions_Tab:
             for a in available_actions: 
                 self._planning_update(plan_x, a)
 
-    def agent_end(self, x, o, a, r, gamma):
-        self.update(x, o, a, globals.blackboard['terminal_state'], r, gamma)
+    def agent_end(self, s, o, a, r, gamma):
+        self.update(s, o, a, None, r, gamma, terminal=True)
         self.behaviour_learner.episode_end()
         self.option_model.episode_end()
 

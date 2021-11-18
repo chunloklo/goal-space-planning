@@ -1,0 +1,18 @@
+{
+    "experiment_name": "representation_refactor_test",
+    "agent": "Direct_Tab",
+    "problem": "GrazingWorld",
+    "episodes": 1000,
+    "metaParameters": {
+        "seed": [0],
+        "exploration_phase": [0],
+        "no_reward_exploration": [true],
+        "alpha": [0.7],
+        "epsilon": [0.2],
+        "behaviour_alg": ["QLearner"],
+        "skip_alg": ["None"],
+        "gamma": [1.0],
+        "lambda": [0.9],
+        "reward_sequence_length" : [200]
+    }
+}

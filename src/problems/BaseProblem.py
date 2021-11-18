@@ -1,5 +1,6 @@
 from experiment.ExperimentModel import ExperimentModel
 from src.agents.registry import getAgent
+from typing import Any
 
 class BaseProblem:
     def __init__(self, exp: ExperimentModel, idx: int, seed: int):
@@ -11,25 +12,23 @@ class BaseProblem:
 
         self.agent = None
         self.env = None
-        self.rep = None
         self.gamma = self.params
 
         self.seed = seed
-
-        self.features = 0
-        self.actions = 0
+        self.actions = None
         self.options = None
 
     def getEnvironment(self):
         return self.env
 
-    def getRepresentation(self):
-        return self.rep
-
     def getGamma(self):
         return self.gamma
 
     def getAgent(self):
-        Agent = getAgent(self.exp.agent)
-        self.agent = Agent(self.features, self.actions, self.params, self.seed, self.options, self.env)
+        if self.agent is None:
+            Agent = getAgent(self.exp.agent)
+            self.agent = Agent(self)
         return self.agent
+    
+    def get_representation(self, rep_type: Any):
+        raise NotImplementedError(f'get_representation is not implemented for {type(self).__name__}')

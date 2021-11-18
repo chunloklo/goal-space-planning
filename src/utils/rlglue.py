@@ -8,7 +8,6 @@ class OneStepWrapper(BaseAgent):
     def __init__(self, agent, problem):
         self.agent = agent
         self.gamma = problem.getGamma()
-        self.rep = problem.rep
         self.exploration_phase = self.agent.params["exploration_phase"]
         self.no_reward_exploration = self.agent.params.get("no_reward_exploration", False)
         self.num_episodes_passed = 0
@@ -17,10 +16,6 @@ class OneStepWrapper(BaseAgent):
 
         self.s = None
         self.a = None
-        self.x = None
-
-        self.options = self.agent.options
-
         self._update_exploration_phase()
 
     def __str__(self):
@@ -28,8 +23,7 @@ class OneStepWrapper(BaseAgent):
 
     def start(self, s):
         self.s = s
-        self.x = self.rep.encode(s)
-        self.a = self.agent.selectAction(self.x)
+        self.a = self.agent.selectAction(self.s)
         self.a = self.random_action_if_exploring(self.a, use_option_action_pair = False)
 
         return self.a
@@ -61,50 +55,41 @@ class OneStepWrapper(BaseAgent):
 
         r = self.no_reward_if_exploring(r)
 
-        xp = self.rep.encode(sp)
-        ap = self.agent.update(self.x, self.a, xp, r, self.gamma)
+        ap = self.agent.update(self.s, self.a, sp, r, self.gamma)
 
         ap = self.random_action_if_exploring(ap, use_option_action_pair = False)
 
         self.s = sp
         self.a = ap
-        self.x = xp
 
         return ap
-
-    def state_encoding(self, s):
-        return self.rep.encode(s)
-
+        
     def end(self, r):
         r = self.no_reward_if_exploring(r)
 
         self.num_episodes_passed += 1
         self._update_exploration_phase()
         gamma = 0
-        self.agent.agent_end(self.x, self.a, r, gamma)  
+        self.agent.agent_end(self.s, self.a, r, gamma)  
         # reset agent here if necessary (e.g. to clear traces)
 
 class OptionOneStepWrapper(OneStepWrapper):
     def start(self, s):
         self.s = s
-        self.x = self.rep.encode(s)
-        self.o, self.a = self.agent.selectAction(self.x)
+        self.o, self.a = self.agent.selectAction(self.s)
         self.a, self.o = self.random_action_if_exploring((self.a, self.o), use_option_action_pair = True)
 
         return self.a
 
     def step(self, r, sp, t=False):
         r = self.no_reward_if_exploring(r)
-
-        xp = self.rep.encode(sp)
-        op, ap = self.agent.update(self.x, self.o, self.a, xp, r, self.gamma)
+        op, ap = self.agent.update(self.s, self.o, self.a, sp, r, self.gamma)
 
         op, ap = self.random_action_if_exploring((op, ap), use_option_action_pair = True)
 
         self.s = sp
         self.o = op
         self.a = ap
-        self.x = xp
 
         return ap
     def end(self, r):
@@ -113,20 +98,19 @@ class OptionOneStepWrapper(OneStepWrapper):
         self.num_episodes_passed += 1
         self._update_exploration_phase()
         gamma = 0
-        self.agent.agent_end(self.x, self.o, self.a, r, gamma)
+        self.agent.agent_end(self.s, self.o, self.a, r, gamma)
 
 class OptionFullExecuteWrapper(OneStepWrapper):
     def start(self, s):
         self.s = s
-        self.x = self.rep.encode(s)
-        self.o = self.agent.selectAction(self.x)
+        self.o = self.agent.selectAction(self.s)
 
-        action = self._get_action(self.x, self.o)
+        action = self._get_action(self.s, self.o)
         return action
 
-    def _get_action(self, x, o) -> int:
+    def _get_action(self, s, o) -> int:
         if (self.agent.is_option(o)):
-            action, t = self.agent.get_action(x, o)
+            action, t = self.agent.get_action(s, o)
             return action
         return o
 
@@ -143,19 +127,18 @@ class OptionFullExecuteWrapper(OneStepWrapper):
                 # Option has not terminated yet, keep giving the action
                 return action
                 
-        op = self.agent.update(self.x, self.o, xp, r, self.gamma)
+        op = self.agent.update(self.s, self.o, xp, r, self.gamma)
         op = self.random_action_if_exploring(op, use_option_action_pair = False)
 
         self.s = sp
         self.o = op
-        self.x = xp
 
         # [2021-09-03 clo] Whenever _get_action is called, the action chosen is always taken
         # This is perhaps not good if the option can start at one of its termination states,
         # because that would mean that the beginning action will always execute.
         # However, dealing with this will likely involve dealing with an infinite loop of selecting actions,
         # which we avoid for now. The same issue occurs in the start function.
-        action = self._get_action(self.x, self.o)
+        action = self._get_action(self.s, self.o)
         return action
 
     def end(self, r):
@@ -164,4 +147,4 @@ class OptionFullExecuteWrapper(OneStepWrapper):
         self.num_episodes_passed += 1
         self._update_exploration_phase
         gamma = 0  
-        self.agent.agent_end(self.x, self.o, r, gamma)
+        self.agent.agent_end(self.s, self.o, r, gamma)

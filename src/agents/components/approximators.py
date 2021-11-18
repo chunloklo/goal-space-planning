@@ -10,7 +10,7 @@ class DictModel():
     def __init__(self):
         self.dictionary: Dict[Any, Dict[Any, Tuple[Any, Any]]] = {}
     
-    def update(self, x: Any, a: Any, xp: Any, r: Any):
+    def update(self, x: Any, a: Any, xp: Any, r: Any, gamma: Any):
         """updates the model 
         
         Returns:
@@ -18,9 +18,9 @@ class DictModel():
         """
         
         if x not in self.dictionary:
-            self.dictionary[x] = {a:(xp,r)}
+            self.dictionary[x] = {a:(xp, r, gamma)}
         else:
-            self.dictionary[x][a] = (xp,r)
+            self.dictionary[x][a] = (xp, r, gamma)
 
     def visited_states(self) -> List:
         return list(self.dictionary.keys())

@@ -30,7 +30,7 @@ class OptionModel_Sutton_Tabular():
         action_consistent_options = options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
         for action_option in action_consistent_options:
             o = options.from_action_to_option_index(action_option, self.num_actions)
-            if (xp == globals.blackboard['terminal_state']):
+            if env_gamma == 0:
                 option_termination = 1
             else:
                 # _, termination = self.options[o].step(x)
@@ -39,7 +39,7 @@ class OptionModel_Sutton_Tabular():
 
             self.reward_model[x, o] += step_size * (r + env_gamma * (1 - option_termination) * self.reward_model[xp, o] - self.reward_model[x, o])
             self.discount_model[x, o] += step_size * (option_termination + (1 - option_termination) * env_gamma * self.discount_model[xp, o] - self.discount_model[x, o])
-
+            
             xp_onehot = numpy_utils.create_onehot(self.num_states, xp)
             # Note that this update is NOT discounted. Use in conjunction with self.option_discount to form the planning estimate
             self.transition_model[x, o] += step_size * ((option_termination * xp_onehot) + (1 - option_termination) * self.transition_model[xp, o] - self.transition_model[x, o]) 
@@ -52,9 +52,9 @@ class OptionModel_Sutton_Tabular():
 
     def episode_end(self):
         # Logging
-        # globals.collector.collect('model_r', np.copy(self.reward_model))
-        # globals.collector.collect('model_discount', np.copy(self.discount_model))
-        # globals.collector.collect('model_transition', np.copy(self.transition_model))
+        globals.collector.collect('model_r', np.copy(self.reward_model))
+        globals.collector.collect('model_discount', np.copy(self.discount_model))
+        globals.collector.collect('model_transition', np.copy(self.transition_model))
         pass
 
 # Differeniating combined models and separate action/option models

@@ -74,7 +74,7 @@ class ESarsaLambda():
         grad = self.approximator.grad(xa_index, target)
         self.approximator.update(step_size, grad)
 
-    def update(self, x: int, a: int, xp: int, r: float, xp_policy: npt.ArrayLike, env_gamma: float, lmbda: float, step_size: float):
+    def update(self, x: int, a: int, xp: int, r: float, xp_policy: npt.ArrayLike, env_gamma: float, lmbda: float, step_size: float, terminal: bool):
         xa_index = stacked_tabular_features(x, a, self.num_state_features)
         x_predictions = self.approximator.predict(xa_index)
         xp_predictions = self.get_action_values(xp)

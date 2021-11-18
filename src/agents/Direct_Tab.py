@@ -14,22 +14,29 @@ from src.agents.components.models import OptionModel_Sutton_Tabular, CombinedMod
 from src.agents.components.approximators import DictModel
 from utils import numpy_utils
 
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Important for forward reference
+    from src.problems.BaseProblem import BaseProblem
+
 class Direct_Tab:
-    def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
+    def __init__(self, problem: 'BaseProblem'):
         self.wrapper_class = rlglue.OneStepWrapper
 
-        self.env = env
-        self.features = features
-        self.num_actions = actions
+        self.env = problem.getEnvironment()
+        self.representation: Tabular = problem.get_representation('Tabular')
+        self.features = self.representation.features
+        self.num_actions = problem.actions
         self.actions = list(range(self.num_actions))
-        self.params = params
+        self.params = problem.params
         self.num_states = self.env.nS
-        self.random = np.random.RandomState(seed)
+        self.random = np.random.RandomState(problem.seed)
 
         # This is only needed for RL glue (for convenience reason to have uniform initialization between
         # options and non-options agents). Not used in the algorithm at all.
         self.options = options
-
+        params = self.params
         # define parameter contract
         self.alpha = params['alpha']
         self.epsilon = params['epsilon']
@@ -82,7 +89,8 @@ class Direct_Tab:
         return probs
 
     # public method for rlglue
-    def selectAction(self, x: int) -> Tuple[int, int] :
+    def selectAction(self, s: Any) -> int:
+        x = self.representation.encode(s)
         a = self.random.choice(self.num_actions, p = self.get_policy(x))
         return a
 
@@ -94,11 +102,11 @@ class Direct_Tab:
         else:
             raise NotImplementedError()
 
-    def update(self, x, a, xp, r, gamma) -> int:
+    def update(self, s, a, sp, r, gamma, terminal: bool = False) -> int:
+        x = self.representation.encode(s)
+        # Treating the terminal state as an additional state in the tabular setting
+        xp = self.representation.encode(sp) if not terminal else self.num_states
         # print(f'x:{x} a: {a} xp:{xp}')
-
-        # if (self.prior_x is None):
-        #     self.prior_x = x
 
         # Initialization
         if self.prior_x == None:
@@ -122,7 +130,7 @@ class Direct_Tab:
             #     skip_condition = True
             # if xp in [6, 13, 20, 27, 34, 41]:
             #     skip_condition = True
-        if xp == globals.blackboard['terminal_state']:
+        if terminal:
             skip_condition = False
     
         if skip_condition:
@@ -172,9 +180,9 @@ class Direct_Tab:
         
         self.average_learning[x] = (1 - self.learning_rate) * self.average_learning[x] + improvement * self.learning_rate
 
-        if (xp != globals.blackboard['terminal_state']):
+        if not terminal:
             # if not skip_condition:
-            ap = self.selectAction(xp)
+            ap = self.selectAction(sp)
             # else:
                 # if xp in [10, 17, 24, 31, 38, 45]:
                 #     ap = 0
@@ -194,8 +202,8 @@ class Direct_Tab:
             self.prior_a = ap
         return ap
 
-    def agent_end(self, x, a, r, gamma):
-        self.update(x, a, globals.blackboard['terminal_state'], r, gamma)
+    def agent_end(self, s, a, r, gamma):
+        self.update(s, a, None, r, gamma, terminal=True)
         self.behaviour_learner.episode_end()
 
         self.interim_r = 0

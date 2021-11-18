@@ -11,22 +11,28 @@ from src.utils import globals
 from src.utils import options, param_utils
 from src.agents.components.models import OptionModel_Sutton_Tabular, CombinedModel_ESarsa_Tabular
 from src.agents.components.approximators import DictModel
+from typing import Dict, Union, Tuple, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Important for forward reference
+    from src.problems.BaseProblem import BaseProblem
 
 class Dyna_Tab:
-    def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):
+    def __init__(self, problem: 'BaseProblem'):
         self.wrapper_class = rlglue.OneStepWrapper
 
-        self.env = env
-        self.features = features
-        self.num_actions = actions
+        self.env = problem.getEnvironment()
+        self.representation: Tabular = problem.get_representation('Tabular')
+        self.features = self.representation.features
+        self.num_actions = problem.actions
         self.actions = list(range(self.num_actions))
-        self.params = params
+        self.params = problem.params
         self.num_states = self.env.nS
-        self.random = np.random.RandomState(seed)
+        self.random = np.random.RandomState(problem.seed)
 
         # This is only needed for RL glue (for convenience reason to have uniform initialization between
         # options and non-options agents). Not used in the algorithm at all.
-        self.options = options
+        params = self.params
 
         # define parameter contract
         self.alpha = params['alpha']
@@ -71,11 +77,17 @@ class Dyna_Tab:
         return probs
 
     # public method for rlglue
-    def selectAction(self, x: int) -> Tuple[int, int] :
+    def selectAction(self, s: int) -> Tuple[int, int] :
+        x = self.representation.encode(s)
         a = self.random.choice(self.num_actions, p = self.get_policy(x))
         return a
 
-    def update(self, x, a, xp, r, gamma):
+    def update(self, s, a, sp, r, gamma, terminal: bool = False):
+        x = self.representation.encode(s)
+        # Treating the terminal state as an additional state in the tabular setting
+        xp = self.representation.encode(sp) if not terminal else self.num_states
+
+
         self.state_visitations[x] += 1
 
         # Exploration bonus tracking
@@ -93,34 +105,30 @@ class Dyna_Tab:
         # Updating search control. Order is important.
         self.search_control.update(x, xp)
 
-        self.update_model(x,a,xp,r)  
+        self.update_model(x,a,xp,r, gamma)  
         self.planning_step(x, xp)
 
-        if (xp != globals.blackboard['terminal_state']):
-            ap = self.selectAction(xp)
+        if not terminal:
+            ap = self.selectAction(sp)
         else:
             ap = None
 
         return ap
-    def update_model(self, x, a, xp, r):
+    def update_model(self, x, a, xp, r, gamma):
         """updates the model 
         
         Returns:
             Nothing
         """
-        self.action_model.update(x, a, xp, r)
+        self.action_model.update(x, a, xp, r, gamma)
 
     def _planning_update(self, x: int, a: int):
-        if x == globals.blackboard['terminal_state']:
-            # If its terminal state, no need to plan with it
-            return
-
-        xp, r = self.action_model.predict(x, a)
-        discount = self.gamma
+        xp, r, gamma = self.action_model.predict(x, a)
+        discount = gamma
 
         # Exploration bonus for +
         # These states are specifically for GrazingWorldAdam
-        if x in [13,31]:
+        if x in [22,27,77]:
             factor = 1
         else:
             factor = 0.0
@@ -149,8 +157,8 @@ class Dyna_Tab:
             for a in visited_actions: 
                 self._planning_update(plan_x, a)
 
-    def agent_end(self, x, a, r, gamma):
-        self.update(x, a, globals.blackboard['terminal_state'], r, gamma)
+    def agent_end(self, s, a, r, gamma):
+        self.update(s, a, None, r, gamma, terminal=True)
         self.behaviour_learner.episode_end()
 
         # Logging state visitation
