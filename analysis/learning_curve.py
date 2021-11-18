@@ -12,17 +12,20 @@ from src.utils import analysis_utils
 from src.utils.formatting import create_folder
 from src.utils.file_handling import get_files_recursively
 import argparse
+import numpy as np
 
 parser = argparse.ArgumentParser(description='Parallizable experiment run file')
 parser.add_argument('-j', '--json-path', type = str ,nargs='+', help='Json Files', required=True) # the json configuration
 parser.add_argument('-nl', '--no-legend', action='store_true', help='Flag to not show legend')
+parser.add_argument('-c', '--cumulative', action='store_true', help='Whether to show the cumulative return' )
 
 args = parser.parse_args()
 show_legend = not args.no_legend
 json_files = args.json_path
 
+print(json_files)
 json_files = get_files_recursively(json_files)
-
+print(json_files)
 json_handles = [get_sorted_dict(j) for j in json_files]
 
 agent_colors={
@@ -42,12 +45,19 @@ agent_colors={
     "DynaOptions_Tab": '#4287f5',
 }
 
+def cumulative(mean):
+    for i in range(len(mean)):
+        prev_sum = mean[i-1] if i - 1 > 0 else 0
+        mean[i] += prev_sum
 
 def confidence_interval(mean, stderr):
     return (mean - stderr, mean + stderr)
 
 def  plot(ax , data, label = None , color = None):
     mean = data['mean']
+
+    if args.cumulative:
+        cumulative(mean)
 
     # mean = smoothen_runs(mean)
     stderr = data['stderr']
@@ -63,16 +73,20 @@ key_to_plot = 'return_data' # the key to plot the data
 fig, axs = plt.subplots(1, figsize = (6, 4 ), dpi = 300)
 for en, js in enumerate(json_handles):
     run, param , data, max_returns = analysis_utils.find_best(js, data = 'return')
-    label_str = f'{param["agent"]} + {param.get("behaviour_alg", "")}'
-    print(param)
+    label_str = f'{param["agent"]} + {param.get("skip_alg", "")}'
     plot(axs, data = data[key_to_plot], label = f"{label_str}")
     if en == 0:
-        axs.plot(max_returns[0,0,:], label='max return')
+        if args.cumulative:
+            cumulative(max_returns[0,0,:])
+            # axs.plot(max_returns[0,0,:], label='max return')
+        else:
+            axs.plot(max_returns[0,0,:], label='max return')
     #print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
 
 
-# axs.set_ylim([-300, 110])
-axs.set_ylim([-100, 100])
+# axs.set_ylim([-600, 110])
+# axs.set_xlim([3250, 3750])
+# axs.set_ylim([-2000, 100])
 axs.spines['top'].set_visible(False)
 if show_legend:
     axs.set_title(f'{key_to_plot} accuracy')

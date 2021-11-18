@@ -108,8 +108,11 @@ save_obj = {
     'datum': datum,
     'max_return': max_return,
     # Debug info. Comment me out if doing a big sweep I hope
-    # 'Q': globals.collector.all_data['Q'],
-    # 'state_visitation': globals.collector.all_data['state_visitation']
+    'Q': globals.collector.all_data['Q'],
+    # 'action_preferences': globals.collector.all_data['action_preferences'],
+    # 'policy_switch': globals.collector.all_data['policy_switch'],
+    # 'skipped_states': globals.collector.all_data['skipped_states'],
+    # 'state_visitation': globals.collector.all_data['state_visitation'],
     # 'model_r': globals.collector.all_data['model_r'],
     # 'model_discount': globals.collector.all_data['model_discount'],
     # 'model_transition': globals.collector.all_data['model_transition'],

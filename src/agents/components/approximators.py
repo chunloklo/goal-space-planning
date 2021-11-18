@@ -4,6 +4,7 @@ import numpy.typing as npt
 from abc import ABC, abstractmethod
 
 from src.utils.run_utils import InvalidRunException
+from src.utils.numpy_utils import create_onehot
 
 class DictModel():
     def __init__(self):
@@ -36,9 +37,9 @@ class LinearApproximator():
         self.output_features = output_features
         self.weights = np.zeros((input_features, output_features))
 
-    def grad(self, input_vec: npt.ArrayLike, target_vec: npt.ArrayLike):
-        prediction = self.predict(input_vec)
-        return np.outer(input_vec, target_vec - prediction)
+    def grad(self, input_vec: npt.ArrayLike):
+        # Not sure whether this works with multi-dimensional input vecs, but that's not necessary right now I think
+        return np.tile(input_vec[:, np.newaxis], self.output_features)
 
     def update(self, step_size: float, grad: npt.ArrayLike):
         self.weights += step_size * grad
@@ -50,11 +51,5 @@ class LinearApproximator():
         return np.dot(input_vec, self.weights)
 
 class TabularApproximator(LinearApproximator):
-    def grad(self, input_vec: List, target_vec: npt.ArrayLike):
-        prediction = self.predict(input_vec)
-        grad = np.zeros((self.input_features, self.output_features))
-        grad[input_vec, :] = (target_vec - prediction)
-        return grad
-
     def predict(self, input_vec: List):
-        return self.weights[input_vec, :].flatten()
+        return np.copy(self.weights[input_vec, :].flatten())

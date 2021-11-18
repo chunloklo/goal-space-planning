@@ -8,5 +8,5 @@ def stacked_features(x: npt.ArrayLike, a: int, num_actions: int):
     feature[a * vec_len : (a+1) * vec_len] = x
     return feature
 
-def stacked_tabular_features(x: int, a: int, num_features: int):
-    return a * num_features + x
+def stacked_tabular_features(x: int, a: int, num_state_features: int):
+    return a * num_state_features + x
