@@ -2,6 +2,7 @@ from src.problems.BaseProblem import BaseProblem
 from src.environments.GrazingWorld import GrazingWorld as GWEnv
 from src.environments.GrazingWorldSimple import GrazingWorldSimple as GWSimpleEnv
 from src.environments.GrazingWorldAdam import GrazingWorldAdam as GWEnvAdam
+from src.environments.GrazingWorldAdam import GrazingWorldAdamImageFeature
 from PyFixedReps.TileCoder import TileCoder
 from PyFixedReps.Tabular import Tabular
 from src.utils.options import load_option
@@ -42,6 +43,8 @@ class GrazingWorldAdam(BaseProblem):
         self.gamma = self.params['gamma']
 
     def get_representation(self, rep_type: str):
-        rep_type = param_utils.check_valid(rep_type, lambda x: x in ['Tabular'])
+        rep_type = param_utils.check_valid(rep_type, lambda x: x in ['Tabular', 'Image'])
         if rep_type == 'Tabular':
             return Tabular(self.env.shape, self.actions)
+        elif rep_type == 'Image':
+            return GrazingWorldAdamImageFeature()

@@ -1,4 +1,5 @@
 import numpy as np
+from PyFixedReps.BaseRepresentation import BaseRepresentation
 from RlGlue import BaseEnvironment
 from src.utils import globals
 import random
@@ -65,4 +66,38 @@ class GrazingWorldAdam(GrazingWorld):
         if np.ravel_multi_index(coord, self.shape) in wall_grids:
             coord = s
         return coord
+
+class GrazingWorldAdamImageFeature(BaseRepresentation):
+    def __init__(self):
+        self.base_token_viz = np.array([    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                                            ['W', 'G', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                                            ['W', 'W', 'W', ' ', ' ', ' ', 'W', 'G', 'W', ' ', ' ', ' '],
+                                            [' ', ' ', ' ', ' ', ' ', ' ', 'W', 'W', 'W', ' ', ' ', ' '],
+                                            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                                            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                                            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'G', ' ', ' '],
+                                            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']])
+
+    def _translate(self, token: str):
+        if token == ' ':
+            return 1.0
+        elif token == 'G':
+            return 1.0
+        elif token == 'A':
+            return 0.0
+        elif token == 'W':
+            return 0.99
+        pass
+
+    def features(self):
+        return (8, 12)
+
+    def encode(self, s):
+        image = np.zeros((8, 12))
+        for r in range(8):
+            for c in range(12):
+                image[r, c] = self._translate(self.base_token_viz[r, c])
+
+        image[s[0], s[1]] = self._translate('A')
+        return image
 

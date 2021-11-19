@@ -1,0 +1,22 @@
+{
+    "experiment_name": "DynaOptions_NN_Test",
+    "agent": "DynaOptions_NN",
+    "problem": "GrazingWorldAdam",
+    "episodes": 3000,
+    "metaParameters": {
+        "seed": [0],
+        "exploration_phase": [400],
+        "no_reward_exploration": [false],
+        "alpha": [0.1],
+        "epsilon": [0.1],
+        "behaviour_alg": ["QLearner"],
+        "search_control": ["random"],
+        "option_model_alg": ["sutton"],
+        "gamma": [1.0],
+        "kappa": [0.9],
+        "lambda": [0.9],
+        "planning_steps": [5],
+        "model_planning_steps": [0],
+        "reward_sequence_length" : [3000]
+    }
+}

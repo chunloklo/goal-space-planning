@@ -9,6 +9,70 @@ from src.utils.feature_utils import stacked_tabular_features, stacked_features
 from src.utils import globals
 from src.utils import options
 from utils.Option import Option
+import haiku as hk
+import jax.numpy as jnp
+import jax
+import optax
+
+class QLearner_ImageNN_funcs():
+    def __init__(self, num_actions: int):
+        self.num_actions = num_actions
+
+        def q_function(states):
+            mlp = hk.Sequential([
+                hk.Linear(40), jax.nn.relu,
+                hk.Linear(20), jax.nn.relu,
+                hk.Linear(self.num_actions),
+            ])
+            return mlp(states) 
+        self.f_qfunc = hk.without_apply_rng(hk.transform(q_function))
+        self.f_opt = optax.adam(1e-3)
+
+        def get_q_values(params: hk.Params, x: Any):
+            action_values = self.f_qfunc.apply(params, x)
+            return action_values
+
+        def loss(params: hk.Params, x, a, xp, r, gamma):
+            x = x.flatten()
+            if xp is not None:
+                xp = xp.flatten()
+                pred = self.f_qfunc.apply(params, x)
+                xp_pred = jnp.max(jax.lax.stop_gradient(self.f_qfunc.apply(params, xp)))
+                return  jnp.square(r + gamma * xp_pred - pred[a])
+            else:
+                pred = self.f_qfunc.apply(params, x)
+                return  jnp.square(r - pred[a])
+
+        def update(params: hk.Params, opt_state, x, a, xp, r, gamma):
+            grads = jax.grad(loss)(params, x, a, xp, r, gamma)
+            updates, opt_state = self.f_opt.update(grads, opt_state)
+            params = optax.apply_updates(params, updates)
+            return params, opt_state
+
+        self.f_get_q_values = jax.jit(get_q_values)
+        self.f_update = jax.jit(update)        
+        return
+
+class QLearner_ImageNN():
+    def __init__(self, image_size: Tuple[int, int], num_actions: int):
+        self.image_size: int = image_size
+        self.num_actions: int = num_actions
+        # For now, flatten the image
+        self.input_size = image_size[0] * image_size[1]
+
+        self.funcs = QLearner_ImageNN_funcs(num_actions)
+
+        dummy_state = jnp.zeros(self.input_size)
+        self.params = self.funcs.f_qfunc.init(jax.random.PRNGKey(42), dummy_state)
+        self.opt_state = self.funcs.f_opt.init(self.params)
+    
+    def get_action_values(self, x: npt.ArrayLike) -> np.ndarray:
+        action_values = self.funcs.f_get_q_values(self.params, x.flatten())
+        return action_values
+
+    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+        self.params, self.opt_state = self.funcs.f_update(self.params, self.opt_state, x, a, xp, r, env_gamma)
+        return self.params
 
 class QLearner():
     def __init__(self, num_state_features: int, num_actions: int):

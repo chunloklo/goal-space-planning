@@ -88,11 +88,6 @@ try:
     for episode in episode_iter:
         glue.total_reward = 0
         glue.runEpisode(max_steps)
-        if agent.FA()!="Tabular":
-            # if the weights diverge to nan, just quit. This run doesn't matter to me anyways now.
-            if np.isnan(np.sum(agent.w)):
-                raise InvalidRunException('nan in agent weights')
-                break
         globals.collector.collect('return', glue.total_reward)
     globals.collector.reset()
 except InvalidRunException as e:

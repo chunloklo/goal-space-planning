@@ -17,3 +17,8 @@ tqdm>=4.62.2
 dill>=0.3.4
 git+https://github.com/numpy/numpy-stubs
 ZEO>=5.2.3
+
+# Libraries for NN
+jax[cpu]=0.2.25
+git+https://github.com/deepmind/dm-haiku
+
