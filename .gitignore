@@ -21,3 +21,6 @@ test.json
 
 # Tar files
 *.tar.bz2
+
+# Slurm output files
+*.out
