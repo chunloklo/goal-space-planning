@@ -90,10 +90,10 @@ class GrazingWorldAdamImageFeature(BaseRepresentation):
         pass
 
     def features(self):
-        return (8, 12)
+        return (8, 12, 1)
 
     def encode(self, s):
-        image = np.zeros((8, 12))
+        image = np.zeros((8, 12, 1))
         for r in range(8):
             for c in range(12):
                 image[r, c] = self._translate(self.base_token_viz[r, c])

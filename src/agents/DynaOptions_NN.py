@@ -14,6 +14,8 @@ from PyFixedReps.BaseRepresentation import BaseRepresentation
 import numpy.typing as npt
 from PyFixedReps.Tabular import Tabular
 from typing import Dict, Union, Tuple, Any, TYPE_CHECKING
+import jax.numpy as jnp
+from src.agents.components.buffers import Buffer
 
 if TYPE_CHECKING:
     # Important for forward reference
@@ -37,11 +39,17 @@ class DynaOptions_NN:
         # self.num_options = len(problem.options)
         self.random = np.random.RandomState(problem.seed)
 
-        self.behaviour_learner = QLearner_ImageNN(self.image_representation.features(), self.num_actions)
+        self.behaviour_learner = QLearner_ImageNN(self.image_representation.features(), self.num_actions, 1e-3)
         # # define parameter contract
         params = self.params
         self.alpha = params['alpha']
-        # self.epsilon = params['epsilon']
+        self.epsilon = params['epsilon']
+
+        # Replay Buffer:
+        self.buffer_size = 1000
+        self.batch_size = 8
+        self.buffer = Buffer(self.buffer_size, {'x': (8, 12, 1), 'a': (), 'xp': (8, 12, 1), 'r': (), 'gamma': ()}, self.random.randint(0,2**31))
+
         # self.planning_steps = params['planning_steps']
         # self.model_planning_steps = params['model_planning_steps']
         # self.kappa = params['kappa']
@@ -75,6 +83,7 @@ class DynaOptions_NN:
         # # For logging state visitation
         # self.state_visitations = np.zeros(self.num_states)
 
+
     def FA(self):
         return "Neural Network"
 
@@ -90,8 +99,18 @@ class DynaOptions_NN:
 
     # public method for rlglue
     def selectAction(self, s: Any) -> Tuple[int, int] :
-        a = self.random.choice(self.num_actions)
+        x = jnp.expand_dims(self.image_representation.encode(s), axis=0)
+        q_values = self.behaviour_learner.get_action_values(x)
+        a = int(np.argmax(q_values))
+
+        if self.random.uniform(0, 1) < self.epsilon:
+            a = self.random.choice(4)
+        # a = self.random.choice(4)
+        # print(a)
         return a, a
+
+
+
         # x = self.representation.encode(s)
         # o = self.random.choice(self.num_actions + self.num_options, p = self.get_policy(x))
 
@@ -105,13 +124,14 @@ class DynaOptions_NN:
     def update(self, s: Any, o, a, sp: Any, r, gamma, terminal: bool = False):
         x = self.image_representation.encode(s)
         # Treating the terminal state as an additional state in the tabular setting
-        xp = self.image_representation.encode(sp) if not terminal else None
+        xp = self.image_representation.encode(sp) if not terminal else jnp.zeros(self.image_representation.features())
 
-        # print(x)
-        # print(f'r: {r} action: {a} target: {r + gamma * np.max(self.behaviour_learner.get_action_values(x))}')
-        # print(self.behaviour_learner.get_action_values(x))
-        # print('hello')
-        self.behaviour_learner.update(x, a, xp, r, gamma, self.alpha)
+        buffer_data = {'x': x, 'a': a, 'xp': xp, 'r': r, 'gamma': gamma}
+        self.buffer.update(buffer_data)
+
+        batch = self.buffer.sample(self.batch_size)
+
+        self.behaviour_learner.update(batch)
         # print('hello1')
         # print(self.behaviour_learner.get_action_values(x))
         # sadasdsd
@@ -236,12 +256,13 @@ class DynaOptions_NN:
     def agent_end(self, s, o, a, r, gamma):
         self.update(s, o, a, None, r, gamma, terminal=True)
 
-        q_values = np.zeros((96, 4))
+        xs = np.zeros((96, 8, 12, 1))
         for r in range(8):
             for c in range(12):
                 s = (r, c)
                 x = self.image_representation.encode(s)
-                q_values[r * 12 + c] = self.behaviour_learner.get_action_values(x)
+                xs[r * 12 + c] = x
+        q_values = self.behaviour_learner.get_action_values(xs)
         globals.collector.collect('Q', np.copy(q_values))        
         # self.behaviour_learner.episode_end()
         # self.option_model.episode_end()
