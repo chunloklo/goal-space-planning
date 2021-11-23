@@ -13,38 +13,44 @@ import haiku as hk
 import jax.numpy as jnp
 import jax
 import optax
+import copy
 
 class QLearner_ImageNN_funcs():
-    def __init__(self, num_actions: int):
+    def __init__(self, num_actions: int, learning_rate: float):
         self.num_actions = num_actions
 
         def q_function(states):
             mlp = hk.Sequential([
-                hk.Linear(40), jax.nn.relu,
+                hk.Conv2D(40, [4, 4], stride=1), jax.nn.relu,
+                hk.Flatten(),
                 hk.Linear(20), jax.nn.relu,
                 hk.Linear(self.num_actions),
             ])
             return mlp(states) 
         self.f_qfunc = hk.without_apply_rng(hk.transform(q_function))
-        self.f_opt = optax.adam(1e-3)
+        self.f_opt = optax.adam(learning_rate)
 
         def get_q_values(params: hk.Params, x: Any):
             action_values = self.f_qfunc.apply(params, x)
             return action_values
 
-        def loss(params: hk.Params, x, a, xp, r, gamma):
-            x = x.flatten()
-            if xp is not None:
-                xp = xp.flatten()
-                pred = self.f_qfunc.apply(params, x)
-                xp_pred = jnp.max(jax.lax.stop_gradient(self.f_qfunc.apply(params, xp)))
-                return  jnp.square(r + gamma * xp_pred - pred[a])
-            else:
-                pred = self.f_qfunc.apply(params, x)
-                return  jnp.square(r - pred[a])
+        def loss(params: hk.Params, target_params: hk.Params, data):
+            r = data['r']
+            x = data['x']
+            a = data['a']
+            xp = data['xp']
+            gamma = data['gamma']
 
-        def update(params: hk.Params, opt_state, x, a, xp, r, gamma):
-            grads = jax.grad(loss)(params, x, a, xp, r, gamma)
+            x_pred = self.f_qfunc.apply(params, x)
+            xp_pred = jax.lax.stop_gradient(jnp.max(self.f_qfunc.apply(target_params, xp), axis=1))
+            prev_pred = jnp.take_along_axis(x_pred, jnp.expand_dims(a, axis=1), axis=1).squeeze()
+
+            # print('hello')
+            # print(jnp.square((r + gamma * xp_pred - prev_pred)).shape)
+            return  jnp.mean(jnp.square(r + gamma * xp_pred - prev_pred))
+
+        def update(params: hk.Params, target_params: hk.Params, opt_state, data):
+            grads = jax.grad(loss)(params, target_params, data)
             updates, opt_state = self.f_opt.update(grads, opt_state)
             params = optax.apply_updates(params, updates)
             return params, opt_state
@@ -54,25 +60,34 @@ class QLearner_ImageNN_funcs():
         return
 
 class QLearner_ImageNN():
-    def __init__(self, image_size: Tuple[int, int], num_actions: int):
+    def __init__(self, image_size: Tuple[int, int], num_actions: int, learning_rate: float):
+        # One color channel for B&W
         self.image_size: int = image_size
         self.num_actions: int = num_actions
-        # For now, flatten the image
-        self.input_size = image_size[0] * image_size[1]
+        self.funcs = QLearner_ImageNN_funcs(num_actions, learning_rate)
 
-        self.funcs = QLearner_ImageNN_funcs(num_actions)
-
-        dummy_state = jnp.zeros(self.input_size)
+        dummy_state = jnp.zeros((1, *self.image_size))
         self.params = self.funcs.f_qfunc.init(jax.random.PRNGKey(42), dummy_state)
         self.opt_state = self.funcs.f_opt.init(self.params)
+
+        self.target_params = copy.deepcopy(self.params)
+
+        self.update_interval = 100
+        self.update_count = 0
     
     def get_action_values(self, x: npt.ArrayLike) -> np.ndarray:
-        action_values = self.funcs.f_get_q_values(self.params, x.flatten())
+        action_values = self.funcs.f_get_q_values(self.params, x)
         return action_values
 
-    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
-        self.params, self.opt_state = self.funcs.f_update(self.params, self.opt_state, x, a, xp, r, env_gamma)
+    def update(self, data):
+
+        self.params, self.opt_state = self.funcs.f_update(self.params, self.target_params, self.opt_state, data)
+
+        self.update_count += 1
+        if self.update_count % self.update_interval == 0:
+            self.target_params = copy.deepcopy(self.params)
         return self.params
+    
 
 class QLearner():
     def __init__(self, num_state_features: int, num_actions: int):

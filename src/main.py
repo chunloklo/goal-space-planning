@@ -19,6 +19,9 @@ from src.utils.run_utils import experiment_completed, InvalidRunException, save_
 import argparse
 import tqdm
 
+from jax.config import config
+config.update("jax_debug_nans", True)
+
 # Logging info level logs for visibility.
 logging.basicConfig(level=logging.INFO)
 

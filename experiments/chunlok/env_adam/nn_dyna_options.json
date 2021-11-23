@@ -2,10 +2,10 @@
     "experiment_name": "DynaOptions_NN_Test",
     "agent": "DynaOptions_NN",
     "problem": "GrazingWorldAdam",
-    "episodes": 3000,
+    "episodes": 300,
     "metaParameters": {
         "seed": [0],
-        "exploration_phase": [400],
+        "exploration_phase": [0],
         "no_reward_exploration": [false],
         "alpha": [0.1],
         "epsilon": [0.1],
