@@ -40,6 +40,7 @@ class GrazingWorldAdam(GrazingWorld):
         self.start_state = (self.shape[0]-2, 2)
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
+        self.terminal_states = [state[0]*self.shape[1] + state[1] for state in self.terminal_state_positions]
 
     def _limit_coordinates(self, s, a):
         """
