@@ -77,7 +77,9 @@ class GrazingWorld(BaseEnvironment):
         self.start_state = (self.shape[0]-1, 0)
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
-        
+        self.terminal_states = [self.state_encoding(state) for state in self.terminal_state_positions]
+
+
     def start(self):
         self.num_steps = 0
         return self.current_state
@@ -170,4 +172,7 @@ class GrazingWorld(BaseEnvironment):
         if np.ravel_multi_index(coord, self.shape) in wall_grids:
             coord = s
         return coord
+
+    def state_encoding(self,state):
+        return state[0]*self.shape[1]+state[1]
 

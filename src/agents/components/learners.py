@@ -27,13 +27,16 @@ class QLearner():
         delta = target - x_prediction
         self.Q[x, a] += step_size * delta
 
-    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float, reward_bonus=None):
         x_prediction = self.Q[x, a]
         xp_predictions = self.get_action_values(xp)
 
         max_q = np.max(xp_predictions)
+        #print(x,a,xp,r)
         delta = r + env_gamma * max_q - x_prediction
         self.Q[x, a] += step_size * delta
+        if reward_bonus is not None:
+            self.Q += reward_bonus
 
         # Pushing up learner delta for search control
         globals.blackboard['learner_delta'] = delta

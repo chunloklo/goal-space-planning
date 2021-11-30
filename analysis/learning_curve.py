@@ -72,7 +72,7 @@ for en, js in enumerate(json_handles):
 
 
 # axs.set_ylim([-300, 110])
-axs.set_ylim([-100, 100])
+axs.set_ylim([-100, 200])
 axs.spines['top'].set_visible(False)
 if show_legend:
     axs.set_title(f'{key_to_plot} accuracy')

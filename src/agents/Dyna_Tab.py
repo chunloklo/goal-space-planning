@@ -40,8 +40,10 @@ class Dyna_Tab:
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
         self.perturbation_ratio = params['perturbation_ratio']
+        self.Dyna = params["Dyna"]
+        self.bonus_factor = params["bonus_factor"]
 
-        self.tau = np.zeros((self.num_states, self.num_actions))
+        self.tau = np.zeros((self.num_states +1, self.num_actions))
         self.a = -1
         self.x = -1
 
@@ -82,21 +84,32 @@ class Dyna_Tab:
 
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
-            self.tau += 1
-        self.tau[x, a] = 0
+            for i in self.env.terminal_states:
+                self.tau[i,:] += 1
+        
+        reward_bonus=None
+        if self.Dyna == "False":
+            if x in self.env.terminal_states:
+                bonus_factor = 1
+            else:
+                bonus_factor = 1
+            reward_bonus = self.kappa * bonus_factor * np.sqrt(self.tau)
 
         if isinstance(self.behaviour_learner, QLearner):
-            self.behaviour_learner.update(x, a, xp, r, gamma, self.alpha)
+            self.behaviour_learner.update(x, a, xp, r, gamma, self.alpha, reward_bonus)
         elif isinstance(self.behaviour_learner, ESarsaLambda):
             self.behaviour_learner.update(x, a, xp, r, self.get_policy(xp), self.gamma, self.lmbda, self.alpha)
         else:
             raise NotImplementedError()
 
-        # Updating search control. Order is important.
-        self.search_control.update(x, xp)
+        if self.Dyna == "True":
+            # Updating search control
+            self.search_control.update(x, xp)
 
-        self.update_model(x,a,xp,r)  
-        self.planning_step(x, xp)
+            self.update_model(x,a,xp,r)  
+            self.planning_step(x, xp)
+
+        self.tau[x, a] = 0
 
         if (xp != globals.blackboard['terminal_state']):
             ap = self.selectAction(xp)
@@ -129,8 +142,10 @@ class Dyna_Tab:
         
         r += self.kappa * factor * np.sqrt(self.tau[x, a])
 
-        if random.random() < self.perturbation_ratio:
-            xp = random.choice(self.env.selectable_states)
+
+        if self.perturbation_ratio != 0:
+            if random.random() < self.perturbation_ratio:
+                xp = random.choice(self.env.selectable_states)
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.planning_update(x, a, xp, r, discount, self.alpha)

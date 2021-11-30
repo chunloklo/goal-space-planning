@@ -60,7 +60,7 @@ class OneStepWrapper(BaseAgent):
     def step(self, r, sp, t=False):
 
         r = self.no_reward_if_exploring(r)
-
+        #print(r)
         xp = self.rep.encode(sp)
         ap = self.agent.update(self.x, self.a, xp, r, self.gamma)
 

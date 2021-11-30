@@ -34,19 +34,27 @@ class DynaOptions_Tab:
         self.gamma = params['gamma']
         self.kappa = params['kappa']
         self.lmbda = params['lambda']
+
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
 
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
-        self.perturbation_ratio = params['perturbation_ratio']
-        self.perturb_options = params["perturb_options"]
-
         # DO WE NEED THIS?!?!? CAN WE MAKE THIS SOMEWHERE ELSE?
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
         self.a = -1
         self.x = -1
+
+        # for number of planning steps updates
+        self.list_of_totals=[]
+        self.episode_counter = 0
+        self.initial_planning_steps = params['planning_steps']
+        self.allowable_planning_steps = params['planning_steps']
+        self.reward_buffer = 20
+        self.sum_planning_steps = 0
+
+
 
         # +1 accounts for the terminal state
         if self.behaviour_alg == 'QLearner':
@@ -87,9 +95,11 @@ class DynaOptions_Tab:
             a, _ = options.get_option_info(x, options.from_action_to_option_index(o, self.num_actions), self.options)
         else:
             a=o
+
         return o,a
 
     def update(self, x, o, a, xp, r, gamma):
+
         self.state_visitations[x] += 1
 
         # Exploration bonus tracking
@@ -142,10 +152,6 @@ class DynaOptions_Tab:
         if (o < self.num_actions):
             # Generating the experience from the action_model
             xp, r = self.action_model.predict(x, o)
-            if self.perturb_options == "ActionsOnly" or self.perturb_options == "LastOptionState":
-                if random.random() < self.perturbation_ratio:
-                    xp = random.choice(self.env.selectable_states)
-
             discount = self.gamma
         else:
             # Generating the experience from the option model
@@ -170,14 +176,6 @@ class DynaOptions_Tab:
 
         # xp could be none if the transition probability errored out
         if xp != None:
-
-            if self.perturb_options == "True":
-                if random.random() < self.perturbation_ratio:
-                    xp = random.choice(self.env.selectable_states)
-            if self.perturb_options == "LastOptionState" and xp in self.env.termination_states:
-                if random.random()< self.perturbation_ratio:
-                    xp = random.choice(self.env.selectable_states)
-
             if isinstance(self.behaviour_learner, QLearner):
                 self.behaviour_learner.planning_update(x, o, xp, r, discount, self.alpha)
             elif isinstance(self.behaviour_learner, ESarsaLambda):
@@ -219,7 +217,35 @@ class DynaOptions_Tab:
             for a in available_actions: 
                 self._planning_update(plan_x, a)
 
-    def agent_end(self, x, o, a, r, gamma):
+    def planning_steps_update(self, total_reward):
+        if len(self.list_of_totals) == self.reward_buffer:
+            self.list_of_totals.pop(0)
+        self.list_of_totals.append(total_reward)
+        average_return = sum(self.list_of_totals) / len(self.list_of_totals)
+        if abs(average_return)<1:
+            average_return = 1
+
+        if abs(average_return - total_reward) > (max(self.list_of_totals) - min(self.list_of_totals))/len(self.list_of_totals) and self.planning_steps < self.allowable_planning_steps:
+            self.planning_steps +=1
+        else:
+            if self.planning_steps>1:
+                self.planning_steps -=1
+
+        self.sum_planning_steps += self.planning_steps
+        self.episode_counter +=1
+        self.average_planning_steps = self.sum_planning_steps / self.episode_counter
+
+        if self.average_planning_steps < self.initial_planning_steps:
+            self.allowable_planning_steps += 1
+        else:
+            if self.allowable_planning_steps >2:
+                self.allowable_planning_steps -= 1
+
+        print("current_psteps", self.planning_steps, "allowable psteps:", self.allowable_planning_steps, "average psteps", self.average_planning_steps)
+
+    def agent_end(self, x, o, a, r, gamma, total_reward):
+
+        self.planning_steps_update( total_reward)
         self.update(x, o, a, globals.blackboard['terminal_state'], r, gamma)
         self.behaviour_learner.episode_end()
         self.option_model.episode_end()
@@ -227,3 +253,4 @@ class DynaOptions_Tab:
         # Logging state visitation
         globals.collector.collect('state_visitation', np.copy(self.state_visitations))   
         self.state_visitations[:] = 0
+

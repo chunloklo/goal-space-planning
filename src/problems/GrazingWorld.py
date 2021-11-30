@@ -2,6 +2,7 @@ from src.problems.BaseProblem import BaseProblem
 from src.environments.GrazingWorld import GrazingWorld as GWEnv
 from src.environments.GrazingWorldSimple import GrazingWorldSimple as GWSimpleEnv
 from src.environments.GrazingWorldAdam import GrazingWorldAdam as GWEnvAdam
+from src.environments.GrazingWorldAltered import GrazingWorldAltered as GWEnvAltered
 from PyFixedReps.TileCoder import TileCoder
 from PyFixedReps.Tabular import Tabular
 from src.utils.options import load_option
@@ -44,3 +45,15 @@ class GrazingWorldAdam(BaseProblem):
         self.gamma = self.params['gamma']
 
         globals.blackboard['terminal_state'] = 96
+
+class GrazingWorldAltered(BaseProblem):
+    def __init__(self, exp, idx, seed: int):
+        super().__init__(exp, idx, seed)
+        self.env = GWEnvAdam(self.seed, reward_sequence_length=self.params['reward_sequence_length'], initial_learning=self.params['exploration_phase'])
+        self.actions = 4
+        self.options = get_options("GrazingAltered")
+        self.rep = Tabular(self.env.shape, self.actions)
+        self.features = self.rep.features()
+        self.gamma = self.params['gamma']
+
+        globals.blackboard['terminal_state'] = 216

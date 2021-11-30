@@ -1,9 +1,9 @@
 {
-    "agent": "DynaOptions_Tab",
+    "agent": "Dyna_Tab",
     "problem": "GrazingWorldAdam",
     "episodes": 3000,
     "metaParameters": {
-        "seed": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],
+        "seed": [20,21,22,23,24,25,26,27,28,29],
         "exploration_phase": [200],
         "no_reward_exploration": [true],
         "alpha": [0.3,0.5,0.7,0.9],
@@ -12,13 +12,15 @@
         "search_control": ["random"],
         "option_model_alg": ["sutton"],
         "gamma": [1.0],
-        "kappa": [1.2,1.1,1,0.9,0.8,0.7,0.6,0.5, 0.4],
+        "kappa": [0.0001,0.001],
         "lambda": [0.9],
         "planning_steps": [5],
         "model_planning_steps": [0],
         "reward_sequence_length" : [500],
-        "experiment_name" : ["perturbed_model"],
-        "perturbation_ratio" : [0.0005, 0.001,0.005,0.01],
-        "perturb_options" : ["True", "ActionsOnly", "LastOptionState"]
+        "experiment_name" : ["Q"],
+        "perturbation_ratio" : [0],
+        "perturb_options" : ["False"],
+        "bonus_factor": [0.0,0.001],
+        "Dyna": ["False"]
     }
 }

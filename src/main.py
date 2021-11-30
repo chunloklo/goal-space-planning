@@ -50,6 +50,7 @@ problem = Problem(exp, idx, seed)
 agent = problem.getAgent()
 env = problem.getEnvironment()
 
+
 experiment_old_format = pushup_metaParameters(exp_json)
 
 if args.overwrite == True:
@@ -86,6 +87,7 @@ try:
     if args.progress:
         episode_iter = tqdm.tqdm(episode_iter)
     for episode in episode_iter:
+        #print("episode", episode)
         glue.total_reward = 0
         glue.runEpisode(max_steps)
         if agent.FA()!="Tabular":
@@ -103,6 +105,9 @@ except InvalidRunException as e:
 # I'm pretty sure we need to subsample this especially once we have a larger dataset.
 datum = globals.collector.all_data['return']
 max_return = globals.collector.all_data['max_return']
+
+
+
 
 save_obj = {
     'datum': datum,

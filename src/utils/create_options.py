@@ -182,6 +182,131 @@ def get_options(option_name):
                         option_4_term_set, policy_selection,
                         termination_condition, num_actions)
         return [option1, option2, option3, option4]
+
+
+    elif "Maze" in option_name:
+        num_states = 296
+        num_actions = 4
+        policy_option_1 = {
+
+            0:   RIGHT, 1: RIGHT,   2: RIGHT,   3: RIGHT,   4: RIGHT,   5: RIGHT,   6: RIGHT,   7: RIGHT,   8: RIGHT,   9: RIGHT,   10: RIGHT,
+            11:  UP,    12: RIGHT,  13: RIGHT,  14: RIGHT,  15: RIGHT,  16: RIGHT,  17: RIGHT,  18: RIGHT,  19: RIGHT,  20: RIGHT,  21: UP, 
+            22:  UP,    23: RIGHT,  24: RIGHT,  25: RIGHT,  26: RIGHT,  27: RIGHT,  28: RIGHT,  29: RIGHT,  30: RIGHT,  31: RIGHT,  32: UP, 
+            33:  UP,    34: DOWN,   35: DOWN,   36: DOWN,   37: DOWN,   38: DOWN,   39: DOWN,   40: DOWN,   41: DOWN,   42: DOWN,   43: DOWN, 
+            44:  UP,    45: LEFT,   46: LEFT,   47: LEFT,   48: LEFT,   49: LEFT,   50: LEFT,   51: LEFT,   52: LEFT,   53: LEFT,   54: LEFT, 
+            55:  UP,    56: LEFT,   57: LEFT,   58: LEFT,   59: LEFT,   60: LEFT,   61: LEFT,   62: LEFT,   63: LEFT,   64: LEFT,   65: UP, 
+            66:  UP,    67: LEFT,   68: LEFT,   69: LEFT,   70: LEFT,   71: LEFT,   72: LEFT,   73: LEFT,   74: LEFT,   75: LEFT,   76: UP,
+            77:  DOWN,  78: DOWN,   79: DOWN,   80: DOWN,   81: DOWN,   82: DOWN,   83: DOWN,   84: DOWN,   85: DOWN,   86: DOWN,   87: UP, 
+            88:  RIGHT, 89: RIGHT,  90: RIGHT,  91: RIGHT,  92: RIGHT,  93: RIGHT,  94: RIGHT,  95: RIGHT,  96: RIGHT,  97: RIGHT,  98: UP,
+            99:  UP,    100: RIGHT, 101: RIGHT, 102: RIGHT, 103: RIGHT, 104: RIGHT, 105: RIGHT, 106: RIGHT, 107: RIGHT, 108: RIGHT, 109: UP, 
+            110: UP,    111: RIGHT, 112: RIGHT, 113: RIGHT, 114: RIGHT, 115: RIGHT, 116: RIGHT, 117: RIGHT, 118: RIGHT, 119: RIGHT, 120: UP, 
+            121: UP,    122: DOWN,  123: DOWN,  124: DOWN,  125: DOWN,  126: DOWN,  127: DOWN,  128: DOWN,  129: DOWN,  130: DOWN,  131: DOWN, 
+            132: UP,    133: LEFT,  134: LEFT,  135: LEFT,  136: LEFT,  137: LEFT,  138: LEFT,  139: LEFT,  140: LEFT,  141: LEFT,  142: LEFT, 
+            143: UP,    144: LEFT,  145: LEFT,  146: LEFT,  147: LEFT,  148: LEFT,  149: LEFT,  150: LEFT,  151: LEFT,  152: LEFT,  153: UP, 
+            154: UP,    155: LEFT,  156: LEFT,  157: LEFT,  158: LEFT,  159: LEFT,  160: LEFT,  161: LEFT,  162: LEFT,  163: LEFT,  164: UP,
+            165: DOWN,  166: DOWN,  167: DOWN,  168: DOWN,  169: DOWN,  170: DOWN,  171: DOWN,  172: DOWN,  173: DOWN,  174: DOWN,  175: UP, 
+            176: RIGHT, 177: RIGHT, 178: RIGHT, 179: RIGHT, 180: RIGHT, 181: RIGHT, 182: RIGHT, 183: RIGHT, 184: RIGHT, 185: RIGHT, 186: UP, 
+            187: UP,    188: RIGHT, 189: RIGHT, 190: RIGHT, 191: RIGHT, 192: RIGHT, 193: RIGHT, 194: RIGHT, 195: RIGHT, 196: RIGHT, 197: UP, 
+            198: UP,    199: RIGHT, 200: RIGHT, 201: RIGHT, 202: RIGHT, 203: RIGHT, 204: RIGHT, 205: RIGHT, 206: RIGHT, 207: RIGHT, 208: UP,
+            209: UP,    210: DOWN,  211: DOWN,  212: DOWN,  213: DOWN,  214: DOWN,  215: DOWN,  216: DOWN,  217: DOWN,  218: DOWN,  219: DOWN, 
+            220: UP,    221: LEFT,  222: LEFT,  223: LEFT,  224: LEFT,  225: LEFT,  226: LEFT,  227: LEFT,  228: LEFT,  229: LEFT,  230: LEFT, 
+            231: UP,    232: LEFT,  233: LEFT,  234: LEFT,  235: LEFT,  236: LEFT,  237: LEFT,  238: LEFT,  239: LEFT,  240: LEFT,  241: UP, 
+            242: UP,    243: LEFT,  244: LEFT,  245: LEFT,  246: LEFT,  247: LEFT,  248: LEFT,  249: LEFT,  250: LEFT,  251: LEFT,  252: UP, 
+            253: DOWN,  254: DOWN , 255: DOWN,  256: DOWN,  257: DOWN,  258: DOWN,  259: DOWN,  260: DOWN,  261: DOWN,  262: DOWN,  263: UP, 
+            264: RIGHT, 265: RIGHT, 266: RIGHT, 267: RIGHT, 268: RIGHT, 269: RIGHT, 270: RIGHT, 271: RIGHT, 272: RIGHT, 273: RIGHT, 274: UP, 
+            275: RIGHT, 276: RIGHT, 277: RIGHT, 278: RIGHT, 279: RIGHT, 280: RIGHT, 281: RIGHT, 282: RIGHT, 283: RIGHT, 284: RIGHT, 285: UP, 
+            286: RIGHT, 287: RIGHT, 288: RIGHT, 289: RIGHT, 290: RIGHT, 291: RIGHT, 292: RIGHT, 293: RIGHT, 294: RIGHT, 295: RIGHT, 296: UP 
+            
+        }
+        
+        term_set = [10]
+
+        def policy_selection(policy, state):
+            return policy[state]
+
+        def termination_condition(termination_set, state):
+
+            if state in termination_set:
+                return True
+            return False
+
+        option1 = QOption([x for x in range(num_states)], policy_option_1,
+                        term_set, policy_selection,
+                        termination_condition, num_actions)
+
+        return [option1]
+
+    #unfinished
+    elif "GrazingAltered" in option_name:
+        num_states = 215
+        num_actions = 4
+        policy_option_1 = {
+
+            0:  RIGHT, 1: DOWN,   2:  LEFT,   3: LEFT, 4: LEFT, 5: LEFT,  6: LEFT,   7: LEFT,   8: LEFT,   9: LEFT,   10: LEFT,  11: LEFT,
+            12: RIGHT, 13: RIGHT, 14: RIGHT,  15: UP,  16: LEFT,17: LEFT, 18: LEFT,  19: LEFT,  20: LEFT,  21: LEFT,  22: LEFT,  23: LEFT,
+            24: RIGHT, 25: RIGHT, 26: RIGHT,  27: UP,  28: UP,  29: UP,   30: LEFT,  31: UP,    32: UP,    33: UP,    34: UP,    35: UP, 
+            36: RIGHT, 37: RIGHT, 38: RIGHT,  39: UP,  40: UP,  41: UP,   42: LEFT,  43: LEFT,  44: RIGHT, 45: UP,    46: UP,    47: UP,    
+            48: RIGHT, 49: RIGHT, 50: RIGHT,  51: UP,  52: UP,  53: UP,   54: LEFT,  55: LEFT,  56: LEFT,  57: UP,    58: UP,    59: UP, 
+            60: RIGHT, 61: RIGHT, 62: RIGHT,  63: UP,  64: UP,  65: UP,   66: LEFT,  67: LEFT,  68: LEFT,  69: UP,    70: UP,    71: UP,
+            72: RIGHT, 73: RIGHT, 74: RIGHT,  75: UP,  76: UP,  77: UP,   78: LEFT,  79: LEFT,  80: LEFT,  81: LEFT,  82: UP,    83: UP,
+            84: RIGHT, 85: RIGHT, 86: RIGHT,  87: UP,  88: UP,  89: UP,   90: LEFT,  91: LEFT,  92: LEFT,  93: LEFT,  94: UP,    95: UP 
+            
+        }
+        
+        term_set = [13,31,81]
+
+        def policy_selection(policy, state):
+            return policy[state]
+
+        def termination_condition(termination_set, state):
+
+            if state in termination_set:
+                return True
+            return False
+
+        option1 = QOption([x for x in range(num_states)], policy_option_1,
+                        term_set, policy_selection,
+                        termination_condition, num_actions)
+                        
+        policy_option_2 = {
+
+            0:  RIGHT, 1: RIGHT,  2:  RIGHT,  3: RIGHT,  4: RIGHT,  5: RIGHT,  6: RIGHT,  7: DOWN,   8: LEFT,   9: LEFT,   10: LEFT,  11: LEFT,
+            12: RIGHT, 13: RIGHT, 14: RIGHT,  15: RIGHT, 16: RIGHT, 17: RIGHT, 18: RIGHT, 19: DOWN,  20: LEFT,  21: LEFT,  22: LEFT,  23: LEFT,
+            24: RIGHT, 25: RIGHT, 26: RIGHT,  27: UP,    28: UP,    29: UP,    30: LEFT,  31: UP,    32: UP,    33: UP,    34: UP,    35: UP, 
+            36: RIGHT, 37: RIGHT, 38: RIGHT,  39: UP,    40: UP,    41: UP,    42: LEFT,  43: LEFT,  44: RIGHT, 45: UP,    46: UP,    47: UP,    
+            48: RIGHT, 49: RIGHT, 50: RIGHT,  51: UP,    52: UP,    53: UP,    54: LEFT,  55: LEFT,  56: RIGHT, 57: UP,    58: UP,    59: UP, 
+            60: RIGHT, 61: RIGHT, 62: RIGHT,  63: UP,    64: UP,    65: UP,    66: LEFT,  67: LEFT,  68: RIGHT, 69: UP,    70: UP,    71: UP,
+            72: RIGHT, 73: RIGHT, 74: RIGHT,  75: UP,    76: UP,    77: UP,    78: LEFT,  79: LEFT,  80: UP,    81: RIGHT, 82: UP,    83: UP,
+            84: RIGHT, 85: RIGHT, 86: RIGHT,  87: UP,    88: UP,    89: UP,    90: LEFT,  91: LEFT,  92: UP,    93: RIGHT, 94: UP,    95: UP 
+            
+        }
+        
+
+        option2 = QOption([x for x in range(num_states)], policy_option_2,
+                        term_set, policy_selection,
+                        termination_condition, num_actions)
+
+        policy_option_3 = {
+
+            0:  RIGHT, 1: RIGHT,  2:  RIGHT,  3: RIGHT,  4: RIGHT,  5: RIGHT,  6: RIGHT,  7: RIGHT,   8: RIGHT,  9: DOWN,  10: DOWN,  11: DOWN,
+            12: RIGHT, 13: RIGHT, 14: RIGHT,  15: RIGHT, 16: RIGHT, 17: RIGHT, 18: RIGHT, 19: RIGHT,  20: RIGHT, 21: DOWN, 22: DOWN,  23: DOWN,
+            24: RIGHT, 25: RIGHT, 26: RIGHT,  27: DOWN,  28: DOWN,  29: DOWN,  30: LEFT,  31: UP,     32: UP,    33: DOWN, 34: DOWN,  35: DOWN, 
+            36: RIGHT, 37: RIGHT, 38: RIGHT,  39: DOWN,  40: DOWN,  41: DOWN,  42: LEFT,  43: LEFT,   44: RIGHT, 45: DOWN, 46: DOWN,  47: DOWN,    
+            48: RIGHT, 49: RIGHT, 50: RIGHT,  51: RIGHT, 52: RIGHT, 53: RIGHT, 54: RIGHT, 55: RIGHT,  56: RIGHT, 57: DOWN, 58: DOWN,  59: DOWN, 
+            60: RIGHT, 61: RIGHT, 62: RIGHT,  63: RIGHT, 64: RIGHT, 65: RIGHT, 66: RIGHT, 67: RIGHT,  68: RIGHT, 69: DOWN, 70: LEFT,  71: LEFT,
+            72: RIGHT, 73: RIGHT, 74: RIGHT,  75: RIGHT, 76: RIGHT, 77: RIGHT, 78: RIGHT, 79: RIGHT,  80: RIGHT, 81: DOWN, 82: LEFT,  83: LEFT,
+            84: RIGHT, 85: RIGHT, 86: RIGHT,  87: RIGHT, 88: RIGHT, 89: RIGHT, 90: RIGHT, 91: RIGHT,  92: RIGHT, 93: UP,   94: LEFT,  95: LEFT 
+            
+        }
+
+        option3 = QOption([x for x in range(num_states)], policy_option_3,
+                        term_set, policy_selection,
+                        termination_condition, num_actions)
+
+        return [option1, option2, option3]
+
+
+
     else:
         raise NotImplementedError()
 
