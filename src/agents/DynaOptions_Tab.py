@@ -174,7 +174,7 @@ class DynaOptions_Tab:
             if self.perturb_options == "True":
                 if random.random() < self.perturbation_ratio:
                     xp = random.choice(self.env.selectable_states)
-            if self.perturb_options == "LastOptionState" and xp in self.env.termination_states:
+            if self.perturb_options == "LastOptionState" and xp in self.env.terminal_states:
                 if random.random()< self.perturbation_ratio:
                     xp = random.choice(self.env.selectable_states)
 
