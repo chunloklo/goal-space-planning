@@ -26,107 +26,11 @@ import numpy as np
 from src.utils.json_handling import get_sorted_dict , get_param_iterable_runs
 from src.utils.formatting import create_file_name, create_folder
 from src.utils import analysis_utils
-
-def _get_corner_loc(offsetx: int, offsety: int, loc_type: str):
-    if (loc_type == 'center'):
-        return [0.5 + offsetx, 0.5 + offsety]
-    if (loc_type == 'top_left'):
-        return [0.0 + offsetx, 0.0 + offsety]
-    if (loc_type == 'top_right'):
-        return [1.0 + offsetx, 0.0 + offsety]
-    if (loc_type == 'bottom_left'):
-        return [0.0 + offsetx, 1.0 + offsety]
-    if (loc_type == 'bottom_right'):
-        return [1.0 + offsetx, 1.0 + offsety]
-
-# Returns a list of patch paths corresponding to each action in the q value
-def _get_q_value_patch_paths(offsetx: int, offsety: int) -> list:
-    center = _get_corner_loc(offsetx, offsety, 'center')
-    top_left = _get_corner_loc(offsetx, offsety, 'top_left')
-    top_right = _get_corner_loc(offsetx, offsety, 'top_right')
-    bottom_left = _get_corner_loc(offsetx, offsety, 'bottom_left')
-    bottom_right = _get_corner_loc(offsetx, offsety, 'bottom_right')
-
-    top_action_path = [center, top_left, top_right, center]
-    bottom_action_path = [center, bottom_left, bottom_right, center]
-    right_action_path = [center, bottom_right, top_right, center]
-    left_action_path = [center, bottom_left, top_left, center]
-
-    action_path_map = [top_action_path, right_action_path, bottom_action_path, left_action_path]
-
-    return action_path_map
-
-def get_action_offset(magnitude: float):
-    # UP RIGHT DOWN LEFT
-    return [[0.0, -magnitude], [magnitude, 0.0], [0.0, magnitude], [-magnitude, 0.0]]
-
-def get_text_location(offsetx:int, offsety:int, action: int):
-    center = [0.5 + offsetx, 0.5 + offsety]
-    text_offset_mag = 0.3
-    text_offset = get_action_offset(text_offset_mag)
-    x = center[0] + text_offset[action][0]
-    y = center[1] + text_offset[action][1]
-    return (x, y)
+from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_text_location, prompt_user_for_file_name, get_action_offset, scale_value, _plot_init, prompt_episode_display_range
+from src.analysis.plot_utils import get_x_range
 
 COLUMN_MAX = 7
 ROW_MAX = 7
-
-def _plot_init(ax, center_arrows: bool = False):
-    ax.set_xlim(0, COLUMN_MAX)
-    ax.set_ylim(0, ROW_MAX)
-    ax.invert_yaxis()
-
-    texts = []
-    patches = []
-    arrows = []
-    for r in range(ROW_MAX):
-        texts.append([])
-        patches.append([])
-        arrows.append([])
-        for c in range(COLUMN_MAX):
-            texts[r].append([])
-            patches[r].append([])
-
-            # Getting action triangle patches
-            action_path_map = _get_q_value_patch_paths(c, r)
-
-            for a in range(4):
-                font = {
-                    'size': 8
-                }
-                text_location = get_text_location(c, r ,a)
-                # 'p' is just placeholder text
-                texts[r][c].append(ax.text(text_location[0], text_location[1], 'p', fontdict = font, va='center', ha='center'))
-
-                # placeholder color
-                color = "blue"
-                path = action_path_map[a]
-                patch = ax.add_patch(PathPatch(Path(path), facecolor=color, ec='None'))
-                patches[r][c].append(patch)
-
-            # Getting default arrow. Making sure that this gets put on top of the patches
-            center = [0.5 + r, 0.5 + c]
-            if center_arrows:
-                arrow = ax.arrow(center[0], center[1], 0.25, 0.25, width=0.025)
-                arrows[r].append(arrow)
-
-    
-    if (center_arrows):
-        return texts, patches, arrows
-    
-    return texts, patches
-
-def scale_value(value: float, min_val:float, max_val:float):
-    percentage = (value - min_val) / (max_val - min_val)
-    percentage = np.cbrt(percentage)
-    return percentage
-
-def get_experiment_name():
-    experiment_name = input("Give the input for experiment name (extension will be appended): ")
-
-    while (len(experiment_name) == 0):
-        experiment_name = input("Please enter an experiment name that is longer than 0 length: ")
-    return experiment_name
 
 def generatePlot(json_handle):
     data = load_experiment_data(json_handle)
@@ -139,17 +43,18 @@ def generatePlot(json_handle):
     data = np.mean(data, axis=0)
     print(data.shape)
 
-    # data = load_experiment_data(exp_path, file_name)
-
-    experiment_name = get_experiment_name()
-
-    anim_file_name = f'{experiment_name}_action_values.mp4'
+    # Getting file name
+    anim_file_name = prompt_user_for_file_name('_action_values.mp4')
     save_path = "./visualizations/"
     save_folder = os.path.splitext(save_path)[0]
     save_file = save_folder + f'/{anim_file_name}'
+    print(f'Visualization will be saved in {save_file}')
 
     if (not os.path.isdir(save_folder)):
         os.makedirs(save_folder)
+
+    # Getting episode range
+    start_frame, max_frame, interval = prompt_episode_display_range(0, data.shape[0], max(data.shape[0] // 100, 1))
 
     # Using a simple way of determining whether options are used.
     # Note that this might not work in the future if we do something separate, but it works for now
@@ -169,22 +74,16 @@ def generatePlot(json_handle):
 
     colormap = cm.get_cmap('viridis')
 
-    texts, patches, arrows = _plot_init(ax, center_arrows=True)
+    texts, patches, arrows = _plot_init(ax, columns = COLUMN_MAX, rows = ROW_MAX, center_arrows=True)
     
 
     if hasOptions:
         ax_options.set_xlim(0, COLUMN_MAX)
         ax_options.set_ylim(0, ROW_MAX)
         ax_options.invert_yaxis()
-        texts_options, patches_options = _plot_init(ax_options)
+        texts_options, patches_options = _plot_init(ax_options, columns = COLUMN_MAX, rows = ROW_MAX, center_arrows=True)
     
-    # max_frames = 20
-    # interval = 1
-    start_frame = 2000
-    max_frame = 2500
-    interval = 10
-
-    wall_indices = []
+    wall_indices = [12, 14, 24, 25, 26, 30, 32, 42, 43, 44 ]
 
     min_val = np.min(np.delete(data[start_frame:max_frame], wall_indices, axis=1))
     max_val = np.max(data[start_frame:max_frame])
@@ -192,6 +91,8 @@ def generatePlot(json_handle):
 
 
     frames = range(start_frame, max_frame, interval)
+
+    x_range = list(get_x_range(0, data.shape[0], 500))
 
     print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
     pbar = tqdm(total=max_frame - start_frame)
@@ -201,7 +102,7 @@ def generatePlot(json_handle):
         # print(q_values)
 
 
-        ax.set_title(f"episode: {i}")
+        ax.set_title(f"episode: {x_range[i]}")
 
         for r in range(ROW_MAX):
             for c in range(COLUMN_MAX):
@@ -230,7 +131,7 @@ def generatePlot(json_handle):
                     arrows[r][c] = arrow
 
                 for a in range(4):
-                    scaled_value = scale_value(q_value[a], min_val, max_val)
+                    scaled_value = scale_value(q_value[a], min_val, max_val, post_process_func=lambda x: x)
                     patches[r][c][a].set_facecolor(colormap(scaled_value))
                     # colors = ["red", "green", "blue", "orange"]
                     # patches[i][j][a].set_facecolor(colors[a])
@@ -279,7 +180,6 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("usage : python analysis/process_data.py <list of json files")
         exit()
-
 
     json_handle = get_json_handle()
 

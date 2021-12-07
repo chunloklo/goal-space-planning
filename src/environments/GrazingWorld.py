@@ -1,5 +1,6 @@
 import numpy as np
 from RlGlue import BaseEnvironment
+from src.environments.RewardSchedules import ConstantRewardSchedule, CyclingRewardSchedule
 from src.utils import globals
 import random
 from src.utils.run_utils import InvalidRunException
@@ -28,7 +29,7 @@ class GrazingWorld(BaseEnvironment):
         self.il_counter = -1
         self.special_goal_nums = [1,2]
         self.num_steps = None
-        self.error_max_steps = 5000
+        self.error_max_steps = 10000000
         """
         dictionary to keep track of goals
             position: position on the grid
@@ -37,24 +38,31 @@ class GrazingWorld(BaseEnvironment):
             iterators: to keep track where we are in the reward sequence
         """
         self.goals = {
+            # Default rewards
             1:{
                 "position" : (2,2),
-                "reward" : 100,
-                "current_reward":0,
-                "reward_sequence_length": self.reward_sequence_length,
-                "iterator" : 0
+                "schedule": CyclingRewardSchedule([0, 100.0], self.reward_sequence_length, cycle_offset=0, cycle_type='episode'),
             },
             2:{
                 "position" : (2,size-3),
-                "reward" : 50,
-                "current_reward":0,
-                "reward_sequence_length": self.reward_sequence_length,
-                "iterator" : int(self.reward_sequence_length/2)
+                "schedule": CyclingRewardSchedule([0, 50.0], self.reward_sequence_length, cycle_offset= self.reward_sequence_length // 2, cycle_type='episode'),
             },
             3:{
                 "position" : (size-3,size-3),
-                "current_reward":1,
-            }
+                "schedule": ConstantRewardSchedule(0),
+            } 
+            # 1:{
+            #     "position" : (2,2),
+            #     "schedule": CyclingRewardSchedule([0, 2.0], 80000, cycle_offset=0, cycle_type='step'),
+            # },
+            # 2:{
+            #     "position" : (2,size-3),
+            #     "schedule": CyclingRewardSchedule([0, 1.0], 80000, cycle_offset=40000, cycle_type='step'),
+            # },
+            # 3:{
+            #     "position" : (size-3,size-3),
+            #     "schedule": ConstantRewardSchedule(0),
+            # } 
         }
 
         self.step_to_goals = {
@@ -71,6 +79,7 @@ class GrazingWorld(BaseEnvironment):
         }
 
         self.step_penalty = -1
+        # self.step_penalty = -0.1
         self.nS = np.prod(self.shape)
         self.nA = 4
         #self.start_state_index = np.ravel_multi_index((self.shape[0]-1, 0), self.shape)
@@ -89,40 +98,17 @@ class GrazingWorld(BaseEnvironment):
     # give the rewards associated with a given state, action, next state tuple
     def rewards(self, s, terminal):
         if terminal:
-            rewards = [self.goals[i]["current_reward"] for i in range(1,4)]
+            rewards = [self.goals[i]["schedule"]() for i in range(1,4)]
             globals.collector.collect('goal_rewards', rewards)  
             best_goal_num = np.argmax(rewards) + 1
-            globals.collector.collect('max_return', self.goals[best_goal_num]["current_reward"] + self.step_to_goals[best_goal_num] * self.step_penalty)  
+            globals.collector.collect('max_return', self.goals[best_goal_num]["schedule"]() + self.step_to_goals[best_goal_num] * self.step_penalty)  
             for i in range(1,4):
                 if self.goals[i]["position"]==tuple(s):
-                    globals.collector.collect('end_goal', i)  
-                    return self.goals[i]["current_reward"]
+                    globals.collector.collect('end_goal', i) 
+                    return self.goals[i]["schedule"]()
         else:
             return self.step_penalty
-            
-    # if iterator reached the end of sequence, generate new sequence and flip reward amount for both goals with not fixed rewards
-    def update_goals(self):
-        if self.il_counter < self.initial_learning:
-            self.il_counter +=1
-            increment_iter = False
-        else:
-            increment_iter = True
-        for i in range(1,3):
-            if self.goals[i]["iterator"] == self.goals[i]["reward_sequence_length"]:
-                self.gen_reward_sequence(i,self.goals[i]["current_reward"] )
-                self.goals[i]["iterator"] = 0
-            else:
-                if increment_iter  and i in self.special_goal_nums:
-                    self.goals[i]["iterator"] += 1
-
-
-    def gen_reward_sequence(self,terminal_state, previous_terminal_reward):
-        #self.goals[terminal_state]["reward_sequence_length"] =  np.random.poisson(lam=self.reward_sequence_length)
-        if previous_terminal_reward == 0:
-            self.goals[terminal_state]["current_reward"] = self.goals[terminal_state]["reward"]
-        else:
-            self.goals[terminal_state]["current_reward"] = 0
-
+        
     # get the next state and termination status
     def next_state(self, s, a):
         # list of terminal state positions (top left, right, and bottom right)    
@@ -139,8 +125,6 @@ class GrazingWorld(BaseEnvironment):
         s = self.current_state
         sp, t = self.next_state(s, self.action_encoding[a])
         r = self.rewards(s, t)
-        if t:
-            self.update_goals()
         return (r, sp, t)
 
     def _limit_coordinates(self, s, a):

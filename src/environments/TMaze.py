@@ -3,6 +3,7 @@ from RlGlue import BaseEnvironment
 from src.utils import globals
 import random
 from src.utils.run_utils import InvalidRunException
+from src.environments.RewardSchedules import ConstantRewardSchedule, CyclingRewardSchedule
 
 UP = 0
 RIGHT = 1
@@ -39,17 +40,11 @@ class TMaze(BaseEnvironment):
         self.goals = {
             1:{
                 "position" : (6,0),
-                "reward" : 100,
-                "current_reward":0,
-                "reward_sequence_length": self.reward_sequence_length,
-                "iterator" : 0
+                "schedule" : CyclingRewardSchedule([0, 100], self.reward_sequence_length, cycle_type='step')
             },
             2:{
                 "position" : (6,6),
-                "reward" : 100,
-                "current_reward": 100,
-                "reward_sequence_length": self.reward_sequence_length,
-                "iterator" : 0
+                "schedule" : CyclingRewardSchedule([100, 0], self.reward_sequence_length, cycle_type='step')
             },
         }
 
@@ -101,33 +96,16 @@ class TMaze(BaseEnvironment):
     # give the rewards associated with a given state, action, next state tuple
     def rewards(self, s, terminal):
         if terminal:
-            rewards = [self.goals[i]["current_reward"] for i in range(1,3)]
+            rewards = [self.goals[i]["schedule"]() for i in self.goals.keys()]
             globals.collector.collect('goal_rewards', rewards)  
             best_goal_num = np.argmax(rewards) + 1
-            globals.collector.collect('max_return', self.goals[best_goal_num]["current_reward"] + self.step_to_goals[best_goal_num] * self.step_penalty)  
+            globals.collector.collect('max_return', self.goals[best_goal_num]["schedule"]() + self.step_to_goals[best_goal_num] * self.step_penalty)  
             for i in range(1,4):
                 if self.goals[i]["position"]==tuple(s):
-                    globals.collector.collect('end_goal', i)  
-                    return self.goals[i]["current_reward"]
+                    globals.collector.collect('end_goal', i) 
+                    return self.goals[i]["schedule"]()
         else:
             return self.step_penalty
-            
-    # if iterator reached the end of sequence, generate new sequence and flip reward amount for both goals with not fixed rewards
-    def update_goals(self):
-        if self.il_counter < self.initial_learning:
-            self.il_counter +=1
-            increment_iter = False
-        else:
-            increment_iter = True
-        for i in range(1,3):
-            if self.goals[i]["iterator"] == self.goals[i]["reward_sequence_length"]:
-                self.gen_reward_sequence(i,self.goals[i]["current_reward"] )
-                self.goals[i]["iterator"] = 0
-            else:
-                if increment_iter  and i in self.special_goal_nums:
-                    self.goals[i]["iterator"] += 1
-        # print(f'g1: {self.goals[1]["current_reward"]}, g2: {self.goals[2]["current_reward"]}')
-
 
     def gen_reward_sequence(self,terminal_state, previous_terminal_reward):
         #self.goals[terminal_state]["reward_sequence_length"] =  np.random.poisson(lam=self.reward_sequence_length)
@@ -152,8 +130,6 @@ class TMaze(BaseEnvironment):
         s = self.current_state
         sp, t = self.next_state(s, self.action_encoding[a])
         r = self.rewards(s, t)
-        if t:
-            self.update_goals()
         return (r, sp, t)
 
     def _limit_coordinates(self, s, a):

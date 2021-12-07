@@ -85,7 +85,7 @@ def load_different_runs(json_handle):
                 arr = zeo_common.zodb_loader(zeo_common.get_db_key(i))
             else:
                 arr = pkl_loader(filename)
-            return_data.append( arr['datum'])
+            return_data.append( arr['return'])
             max_returns.append( arr['max_return'])
         except Exception as e:
             print(f'Run not valid.')

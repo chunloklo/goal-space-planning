@@ -29,8 +29,8 @@ from src.utils import analysis_utils
 from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_text_location, prompt_user_for_file_name, get_action_offset, scale_value, _plot_init, prompt_episode_display_range
 from src.analysis.plot_utils import get_x_range
 
-COLUMN_MAX = 12
-ROW_MAX = 8
+COLUMN_MAX = 7
+ROW_MAX = 7
 
 def generatePlot(json_handle):
     data = load_experiment_data(json_handle)
@@ -38,13 +38,13 @@ def generatePlot(json_handle):
     # print(return_data)
     # Processing data here so the dimensions are correct
     print(data.keys())
-    data = data["Q"]
-    data = data[:, 0, :, :, :]
+    data = data["policy_agreement"]
+    data = data[:, 0, :, :]
     data = np.mean(data, axis=0)
     print(data.shape)
 
     # Getting file name
-    anim_file_name = prompt_user_for_file_name('_action_values.mp4')
+    anim_file_name = prompt_user_for_file_name('_policy_agreement.mp4')
     save_path = "./visualizations/"
     save_folder = os.path.splitext(save_path)[0]
     save_file = save_folder + f'/{anim_file_name}'
@@ -56,32 +56,12 @@ def generatePlot(json_handle):
     # Getting episode range
     start_frame, max_frame, interval = prompt_episode_display_range(0, data.shape[0], max(data.shape[0] // 100, 1))
 
-    # Using a simple way of determining whether options are used.
-    # Note that this might not work in the future if we do something separate, but it works for now
-    hasOptions = data.shape[-1] > 4
-
-    num_options = data.shape[-1] - 4
-
-    # fig = plt.figure()
-    if hasOptions:
-        fig, axes = plt.subplots(1, 2, figsize=(32, 16))
-        ax = axes[0]
-        ax_options = axes[1]
-        
-    else:
-        fig, axes = plt.subplots(1, figsize=(16, 16))
-        ax = axes
+    fig, axes = plt.subplots(1, figsize=(16, 16))
+    ax = axes
 
     colormap = cm.get_cmap('viridis')
 
     texts, patches, arrows = _plot_init(ax, columns = COLUMN_MAX, rows = ROW_MAX, center_arrows=True)
-    
-
-    if hasOptions:
-        ax_options.set_xlim(0, COLUMN_MAX)
-        ax_options.set_ylim(0, ROW_MAX)
-        ax_options.invert_yaxis()
-        texts_options, patches_options = _plot_init(ax_options, columns = COLUMN_MAX, rows = ROW_MAX, center_arrows=True)
     
     wall_indices = [12, 14, 24, 25, 26, 30, 32, 42, 43, 44 ]
 
@@ -98,7 +78,7 @@ def generatePlot(json_handle):
     pbar = tqdm(total=max_frame - start_frame)
     def draw_func(i):
         pbar.update(i - start_frame - pbar.n)
-        q_values = data[i, :, :]
+        q_values = data[i, :]
         # print(q_values)
 
 
@@ -106,7 +86,9 @@ def generatePlot(json_handle):
 
         for r in range(ROW_MAX):
             for c in range(COLUMN_MAX):
-                q_value = q_values[r * COLUMN_MAX + c, :]
+                q_value = [q_values[r * COLUMN_MAX + c]] * 4
+                # print(q_value)
+
                 action = np.argmax(q_value)
                 arrow_magnitude = 0.0625
                 width = 0.025
@@ -136,12 +118,6 @@ def generatePlot(json_handle):
                     # colors = ["red", "green", "blue", "orange"]
                     # patches[i][j][a].set_facecolor(colors[a])
                     texts[r][c][a].set_text(round(q_value[a], 2))
-
-                if hasOptions:
-                    for a in range(num_options):
-                        scaled_value = scale_value(q_value[a + 4], min_val, max_val)
-                        patches_options[r][c][a].set_facecolor(colormap(scaled_value))
-                        texts_options[r][c][a].set_text(round(q_value[a + 4], 2))
         return
 
     animation = FuncAnimation(fig, draw_func, frames=frames)
@@ -180,7 +156,6 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("usage : python analysis/process_data.py <list of json files")
         exit()
-
 
     json_handle = get_json_handle()
 

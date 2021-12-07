@@ -19,6 +19,7 @@ from src.utils.run_utils import experiment_completed, InvalidRunException, save_
 import argparse
 import tqdm
 
+# Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
 from jax.config import config
 config.update("jax_debug_nans", True)
 
@@ -80,44 +81,56 @@ except AttributeError:
     else:
         wrapper = OneStepWrapper(agent, problem)
 
+
+save_logger_keys = ['Q', 'slow_Q', 'policy_agreement', 'reward']
+print(f'Saved logger keys: {save_logger_keys}')
+
 glue = RlGlue(wrapper, env)
 # print("run:",run)
 # Run the experiment
 rewards = []
 try:
-    episode_iter = range(exp.episodes)
-    if args.progress:
-        episode_iter = tqdm.tqdm(episode_iter)
-    for episode in episode_iter:
-        glue.total_reward = 0
-        glue.runEpisode(max_steps)
-        globals.collector.collect('return', glue.total_reward)
-    globals.collector.reset()
+    if exp.episodes > 0:
+        episode_iter = range(exp.episodes)
+        if args.progress:
+            episode_iter = tqdm.tqdm(episode_iter)
+        for episode in episode_iter:
+            glue.total_reward = 0
+            glue.runEpisode(max_steps)
+            globals.collector.collect('return', glue.total_reward)
+        globals.collector.reset()
+    elif exp.episodes == -1:
+        globals.blackboard['step_logging_interval'] = 500
+        print('Running with steps rather than episodes')
+        if (exp.max_steps == 0):
+            raise ValueError('Running with step limit but max_steps is 0')
+        
+        step_iter = range(exp.max_steps)
+        if args.progress:
+            step_iter = tqdm.tqdm(step_iter)
+        
+        is_terminal = True
+        for step in step_iter:
+            if is_terminal:
+                globals.collector.collect('return', glue.total_reward)
+                is_terminal = False
+                glue.total_reward = 0
+                glue.start()
+            _, _, _, is_terminal = glue.step()
+        globals.collector.reset()
+    else:
+        raise NotImplementedError(f'Running {exp.episodes} episodes is not supported. Please either run with > 0 for fixed number of episodes or -1 to limit by step count instead')
 except InvalidRunException as e:
     save_error(experiment_old_format, e)
     logging.info(f"Experiment errored {json_file} : {idx}, Time Taken : {time.time() - t_start}")
     exit(0)
 
-# I'm pretty sure we need to subsample this especially once we have a larger dataset.
-datum = globals.collector.all_data['return']
-max_return = globals.collector.all_data['max_return']
+save_obj = {}
 
-save_obj = {
-    'datum': datum,
-    'max_return': max_return,
-    # Debug info. Comment me out if doing a big sweep I hope
-    'Q': globals.collector.all_data['Q'],
-    # 'action_preferences': globals.collector.all_data['action_preferences'],
-    # 'policy_switch': globals.collector.all_data['policy_switch'],
-    # 'skipped_states': globals.collector.all_data['skipped_states'],
-    # 'state_visitation': globals.collector.all_data['state_visitation'],
-    # 'model_r': globals.collector.all_data['model_r'],
-    # 'model_discount': globals.collector.all_data['model_discount'],
-    # 'model_transition': globals.collector.all_data['model_transition'],
-    # 'end_goal': globals.collector.all_data['end_goal'],
-    # 'goal_rewards': globals.collector.all_data['goal_rewards'],
-    # 'action_selected': globals.collector.all_data['action_selected'],
-}
+# I'm pretty sure we need to subsample this especially once we have a larger dataset.
+# [2021-12-03 chunlok] this subsampling should probably be done in the logging step rather than afterwards
+for k in save_logger_keys:
+    save_obj[k] = globals.collector.all_data[k]
 
 # We likely want to abstract this away from src/main
 cleanup_files(experiment_old_format)

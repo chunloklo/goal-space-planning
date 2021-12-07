@@ -181,9 +181,9 @@ def generatePlot(json_handle):
     
     # max_frames = 20
     # interval = 1
-    start_frame = 0
-    max_frame = 3000
-    interval = 100
+    start_frame = 200
+    max_frame = 1500
+    interval = 10
     frames = range(start_frame, max_frame, interval)
 
     print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')

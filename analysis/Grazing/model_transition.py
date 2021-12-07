@@ -27,8 +27,6 @@ def generatePlot(json_handle):
     print(data.shape)
     data = data[:, 0, :, :, :]
     data = np.mean(data, axis=0)
-    print(data.shape)
-
     # asdasd
     # data = load_experiment_data(exp_path, file_name)
     experiment_name = get_experiment_name()
@@ -48,7 +46,7 @@ def generatePlot(json_handle):
 
     colormap = cm.get_cmap('viridis')
 
-    num_options = 4
+    num_options = 3
 
     fig, axes = plt.subplots(1, num_options, figsize=(16 * num_options, 16))
     ax = axes[0]
@@ -73,7 +71,7 @@ def generatePlot(json_handle):
 
     def draw_func(i):
         pbar.update(i - pbar.n)
-        q_values = data[i, :, :]
+        q_values = data[i, :, :, :]
 
         ax.set_title(f"episode: {i}")
 
@@ -81,7 +79,7 @@ def generatePlot(json_handle):
             for j in range(10):
                 q_value = q_values[i + j * 10, :]
                 # print(q_values.shape)
-                termination_positions = [22,27,77,44]
+                termination_positions = [22,27,77,100]
                 for o in range(num_options):
                     for p in range(len(termination_positions)):
                         scaled_value = scale_value(q_value[o, termination_positions[p]], min_val, max_val)

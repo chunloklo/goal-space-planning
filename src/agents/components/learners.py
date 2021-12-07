@@ -1,6 +1,7 @@
 from typing import Any, List, Dict, Tuple
 import numpy as np
 import numpy.typing as npt
+from optax._src.update import incremental_update
 
 from utils import numpy_utils, param_utils
 from src.agents.components.traces import Trace
@@ -21,9 +22,10 @@ class QLearner_ImageNN_funcs():
 
         def q_function(states):
             mlp = hk.Sequential([
-                hk.Conv2D(40, [4, 4], stride=1), jax.nn.relu,
+                hk.Conv2D(32, [3, 3], stride=1), jax.nn.relu,
                 hk.Flatten(),
-                hk.Linear(20), jax.nn.relu,
+                hk.Linear(64), jax.nn.relu,
+                hk.Linear(32), jax.nn.relu,
                 hk.Linear(self.num_actions),
             ])
             return mlp(states) 
@@ -33,8 +35,8 @@ class QLearner_ImageNN_funcs():
         def get_q_values(params: hk.Params, x: Any):
             action_values = self.f_qfunc.apply(params, x)
             return action_values
-
-        def loss(params: hk.Params, target_params: hk.Params, data):
+        
+        def get_td_errors(params: hk.Params, target_params: hk.Params, data):
             r = data['r']
             x = data['x']
             a = data['a']
@@ -44,19 +46,22 @@ class QLearner_ImageNN_funcs():
             x_pred = self.f_qfunc.apply(params, x)
             xp_pred = jax.lax.stop_gradient(jnp.max(self.f_qfunc.apply(target_params, xp), axis=1))
             prev_pred = jnp.take_along_axis(x_pred, jnp.expand_dims(a, axis=1), axis=1).squeeze()
+            delta = r + gamma * xp_pred - prev_pred
+            return delta
 
-            # print('hello')
-            # print(jnp.square((r + gamma * xp_pred - prev_pred)).shape)
-            return  jnp.mean(jnp.square(r + gamma * xp_pred - prev_pred))
+        def loss(params: hk.Params, target_params: hk.Params, data):
+            td_errors = get_td_errors(params, target_params, data)
+            return  jnp.mean(jnp.square(td_errors)), td_errors
 
         def update(params: hk.Params, target_params: hk.Params, opt_state, data):
-            grads = jax.grad(loss)(params, target_params, data)
+            grads, td_errors = jax.grad(loss, has_aux=True)(params, target_params, data)
             updates, opt_state = self.f_opt.update(grads, opt_state)
             params = optax.apply_updates(params, updates)
-            return params, opt_state
+            return params, opt_state, td_errors
 
         self.f_get_q_values = jax.jit(get_q_values)
-        self.f_update = jax.jit(update)        
+        self.f_update = jax.jit(update)  
+        self.f_get_td_errors = jax.jit(get_td_errors)      
         return
 
 class QLearner_ImageNN():
@@ -70,24 +75,20 @@ class QLearner_ImageNN():
         self.params = self.funcs.f_qfunc.init(jax.random.PRNGKey(42), dummy_state)
         self.opt_state = self.funcs.f_opt.init(self.params)
 
+        # target params for the network
         self.target_params = copy.deepcopy(self.params)
 
-        self.update_interval = 100
-        self.update_count = 0
-    
     def get_action_values(self, x: npt.ArrayLike) -> np.ndarray:
         action_values = self.funcs.f_get_q_values(self.params, x)
         return action_values
-
-    def update(self, data):
-
-        self.params, self.opt_state = self.funcs.f_update(self.params, self.target_params, self.opt_state, data)
-
-        self.update_count += 1
-        if self.update_count % self.update_interval == 0:
-            self.target_params = copy.deepcopy(self.params)
-        return self.params
     
+    def get_td_errors(self, data):
+        return self.funcs.f_get_td_errors(self.params, self.target_params, data)
+
+    def update(self, data, polyak_stepsize:float=0.005):
+        self.params, self.opt_state, td_errors = self.funcs.f_update(self.params, self.target_params, self.opt_state, data)
+        self.target_params = incremental_update(self.params, self.target_params, polyak_stepsize)
+        return self.params, td_errors
 
 class QLearner():
     def __init__(self, num_state_features: int, num_actions: int):
@@ -118,7 +119,7 @@ class QLearner():
         globals.blackboard['learner_delta'] = delta
 
     def episode_end(self):
-        globals.collector.collect('Q', np.copy(self.Q))   
+        # globals.collector.collect('Q', np.copy(self.Q))   
         pass
 
 class ESarsaLambda():

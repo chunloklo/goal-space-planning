@@ -5,8 +5,6 @@ class RlGlue:
         self.last_action = None
         self.last_state = None
         self.total_reward = 0.0
-        self.num_steps = 0
-        self.num_episodes = 0
 
     def start(self):
         s = self.environment.start()
@@ -18,7 +16,6 @@ class RlGlue:
 
     def step(self):
         (reward, s, term) = self.environment.step(self.last_action)
-        self.num_episodes += 1
         obs = self.observationChannel(s)
         self.total_reward += reward
         if term:
@@ -64,7 +61,6 @@ class RlGlue:
         self.start()
         self.num_steps = 0
         while (not is_terminal) and ((max_steps == 0) or (self.num_steps < max_steps)):
-            self.num_steps += 1
             rl_step_result = self.step()
             is_terminal = rl_step_result[3]
         return is_terminal

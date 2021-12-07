@@ -9,6 +9,61 @@ from src.utils.feature_utils import stacked_tabular_features, stacked_features
 from src.utils import globals
 from src.utils import options
 from utils.Option import Option
+import haiku as hk
+import jax
+import optax
+import jax.numpy as jnp
+import copy
+
+class RewardModel_ImageNN_funcs():
+    def __init__(self, learning_rate: float):
+        def r_function(states):
+            mlp = hk.Sequential([
+                hk.Conv2D(40, [4, 4], stride=1), jax.nn.relu,
+                hk.Flatten(),
+                hk.Linear(20), jax.nn.relu,
+                hk.Linear(1),
+            ])
+            return mlp(states) 
+        self.f_rfunc = hk.without_apply_rng(hk.transform(r_function))
+        self.f_opt = optax.adam(learning_rate)
+
+        def get_reward(params: hk.Params, x: Any):
+            reward = self.f_rfunc.apply(params, x)
+            return reward
+
+        def loss(params: hk.Params, data):
+            r = data['r']
+            x = data['x']
+            r_pred = self.f_rfunc.apply(params, x)
+            return  jnp.mean(jnp.square(r - r_pred))
+
+        def update(params: hk.Params, opt_state, data):
+            grads = jax.grad(loss)(params, data)
+            updates, opt_state = self.f_opt.update(grads, opt_state)
+            params = optax.apply_updates(params, updates)
+            return params, opt_state
+
+        self.f_get_r = jax.jit(get_reward)
+        self.f_update = jax.jit(update)        
+        return
+
+class RewardModel_ImageNN():
+    def __init__(self, image_size: Tuple[int, int], learning_rate: float):
+        # One color channel for B&W
+        self.image_size: int = image_size
+        self.funcs = RewardModel_ImageNN_funcs(learning_rate)
+
+        dummy_state = jnp.zeros((1, *self.image_size))
+        self.params = self.funcs.f_rfunc.init(jax.random.PRNGKey(42), dummy_state)
+        self.opt_state = self.funcs.f_opt.init(self.params)
+    
+    def get_reward(self, x: npt.ArrayLike) -> np.ndarray:
+        reward = self.funcs.f_get_r(self.params, x)
+        return reward
+
+    def update(self, data):
+        self.params, self.opt_state = self.funcs.f_update(self.params, self.opt_state, data)
 
 class OptionModel_Sutton_Tabular():
     def __init__(self, num_states: int, num_actions: int, num_options: int, options: List[Option]):

@@ -1,6 +1,37 @@
-from typing import Dict, Tuple
+from typing import Dict, Set, Tuple, Any
 from PyExpUtils.utils.random import sample
 import numpy as np
+
+class DictBuffer():
+    def __init__(self):
+        self.dict_buffer: Dict = {}
+    
+    def update(self, item: Any, priority = 1):
+        prev_len = len(self.dict_buffer.keys())
+        self.dict_buffer[item] = priority
+        new_len = len(self.dict_buffer.keys())
+        # if (prev_len != new_len):
+        #     print(item)
+        #     if (new_len >= 345):
+        #         raise NotImplementedError()
+            
+            
+        # print(len(self.dict_buffer.keys()))
+    
+    def sample(self, random: np.random, num_samples: int, alpha: float=0.5): 
+        items = list(self.dict_buffer.items())
+        priorities = [item[1] for item in items]
+
+        # calculating according to prioritized experience replay
+        # https://arxiv.org/pdf/1511.05952.pdf equation 1
+        exp = np.power(priorities, alpha)
+        probs = exp / np.sum(exp)
+
+        elements = [item[0] for item in items]
+        sample_indices = random.choice(range(len(elements)), size=num_samples, p=probs)
+        samples = [elements[i] for i in sample_indices]
+        return samples
+
 
 class Buffer():
     """Class for efficient buffer implementation when storing various numpy/matrix data
@@ -41,7 +72,7 @@ class Buffer():
 
         return_dict = {}
         for k in self.keys:
-            return_dict[k] = self.buffer[k][sample_indices]
+            return_dict[k] = np.copy(self.buffer[k][sample_indices])
 
         return return_dict
 
