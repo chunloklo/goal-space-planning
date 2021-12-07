@@ -41,11 +41,11 @@ class GrazingWorld(BaseEnvironment):
             # Default rewards
             1:{
                 "position" : (2,2),
-                "schedule": CyclingRewardSchedule([0, 100.0], self.reward_sequence_length, cycle_offset=0, cycle_type='episode'),
+                "schedule": CyclingRewardSchedule([0, 100.0], self.reward_sequence_length, cycle_offset=0, cycle_type='episode', start_pause=initial_learning),
             },
             2:{
                 "position" : (2,size-3),
-                "schedule": CyclingRewardSchedule([0, 50.0], self.reward_sequence_length, cycle_offset= self.reward_sequence_length // 2, cycle_type='episode'),
+                "schedule": CyclingRewardSchedule([0, 50.0], self.reward_sequence_length, cycle_offset= self.reward_sequence_length // 2, cycle_type='episode', start_pause=initial_learning),
             },
             3:{
                 "position" : (size-3,size-3),
