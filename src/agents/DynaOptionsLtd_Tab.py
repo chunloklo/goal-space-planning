@@ -2,7 +2,7 @@
 import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
-from agents.components.learners import ESarsaLambda, QLearner
+from agents.components.learners import ESarsaLambda, QLearner, QLearnerLtd
 from agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue
 from src.utils import globals
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     # Important for forward reference
     from src.problems.BaseProblem import BaseProblem
 
-class DynaOptions_Tab:
+class DynaOptionsLtd_Tab:
     def __init__(self, problem: 'BaseProblem'):
         self.wrapper_class = rlglue.OptionOneStepWrapper
         self.env = problem.getEnvironment()
@@ -42,20 +42,23 @@ class DynaOptions_Tab:
         self.kappa = params['kappa']
         self.lmbda = params['lambda']
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
-        self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
+        self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda', 'QLearnerLtd']) 
 
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
-        self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
+        self.tau = np.zeros((self.num_states, self.num_actions + self.num_options+1))
         self.a = -1
         self.x = -1
+        
+        self.selectable_options = [i for i in range(self.num_actions, self.num_actions + self.num_options + 1)]
 
-        # +1 accounts for the terminal state
         if self.behaviour_alg == 'QLearner':
             self.behaviour_learner = QLearner(self.num_states + 1, self.num_actions + self.num_options)
         elif self.behaviour_alg == 'ESarsaLambda':
             self.behaviour_learner = ESarsaLambda(self.num_states + 1, self.num_actions + self.num_options)
+        elif self.behaviour_alg == 'QLearnerLtd':
+            self.behaviour_learner = QLearnerLtd(self.num_states + 1, self.num_actions + self.num_options +1, self.num_options)
         else:
             raise NotImplementedError(f'behaviour_alg for {self.behaviour_alg} is not implemented')
 
@@ -71,27 +74,34 @@ class DynaOptions_Tab:
 
     def FA(self):
         return "Tabular"
-
     def __str__(self):
         return "DynaQP_OptionIntra_Tab"
 
     def get_policy(self, x: int) -> npt.ArrayLike:
-        probs = np.zeros(self.num_actions + self.num_options)
-        probs += self.epsilon / (self.num_actions + self.num_options)
-        o = np.argmax(self.behaviour_learner.get_action_values(x))
+
+        # print("get_action_values",self.behaviour_learner.get_action_values(x))
+        # print("get_option_values",self.behaviour_learner.get_option_values(x))
+        # print("get_primitive_action_values",self.behaviour_learner.get_primitive_action_values(x))
+
+        probs = np.zeros(self.num_options + 1)
+        probs += self.epsilon / (self.num_options + 1)
+        o = np.argmax(self.behaviour_learner.get_option_values(x))
         probs[o] += 1 - self.epsilon
+
         return probs
 
     # public method for rlglue
     def selectAction(self, s: Any) -> Tuple[int, int] :
         x = self.representation.encode(s)
-        o = self.random.choice(self.num_actions + self.num_options, p = self.get_policy(x))
-
-        if o >= self.num_actions:
-            a, _ = options.get_option_info(x, options.from_action_to_option_index(o, self.num_actions), self.options)
+        o = self.random.choice(self.selectable_options, p = self.get_policy(x))
+        
+        if o < self.num_options :
+            a, _ = options.get_option_info(x, o, self.options)
         else:
-            a=o
-
+            if random.random() < self.epsilon:
+                a = random.randint(0,self.num_actions-1)
+            else:
+                a = np.argmax(self.behaviour_learner.get_primitive_action_values(x))
         return o,a
 
     def update(self, s: Any, o, a, sp: Any, r, gamma, terminal: bool = False):
@@ -103,13 +113,17 @@ class DynaOptions_Tab:
 
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
-            self.tau += 1
-        self.tau[x, o] = 0
+            for i in self.env.terminal_states:
+                self.tau[i,:] += 1
 
+        self.tau[x, o] = 0
+        self.tau[x,a] = 0
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
         elif isinstance(self.behaviour_learner, ESarsaLambda):
             self.behaviour_learner.update(x, o, xp, r, self.get_policy(xp), gamma, self.lmbda, self.alpha)
+        elif isinstance(self.behaviour_learner, QLearnerLtd):
+            self.behaviour_learner.update(x, o,a, xp, r, gamma, self.alpha)
         else:
             raise NotImplementedError()
 
@@ -179,6 +193,8 @@ class DynaOptions_Tab:
                 self.behaviour_learner.planning_update(x, o, xp, r, discount, self.alpha)
             elif isinstance(self.behaviour_learner, ESarsaLambda):
                 self.behaviour_learner.planning_update(x, o, xp, r, self.get_policy(xp), discount, self.alpha)
+            if isinstance(self.behaviour_learner, QLearnerLtd):
+                self.behaviour_learner.planning_update(x, o, o, xp, r, discount, self.alpha)
             else:
                 raise NotImplementedError()
 

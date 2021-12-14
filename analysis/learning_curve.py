@@ -74,6 +74,7 @@ fig, axs = plt.subplots(1, figsize = (6, 4 ), dpi = 300)
 for en, js in enumerate(json_handles):
     run, param , data, max_returns = analysis_utils.find_best(js, data = 'return')
     label_str = f'{param["agent"]} + {param.get("skip_alg", "")}'
+    print(param)
     plot(axs, data = data[key_to_plot], label = f"{label_str}")
     if en == 0:
         if args.cumulative:
@@ -81,10 +82,10 @@ for en, js in enumerate(json_handles):
             # axs.plot(max_returns[0,0,:], label='max return')
         else:
             axs.plot(max_returns[0,0,:], label='max return')
-    #print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
+    print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
 
 
-# axs.set_ylim([-600, 110])
+axs.set_ylim([-100, 110])
 # axs.set_xlim([3250, 3750])
 # axs.set_ylim([-2000, 100])
 axs.spines['top'].set_visible(False)

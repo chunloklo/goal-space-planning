@@ -89,6 +89,7 @@ try:
     if args.progress:
         episode_iter = tqdm.tqdm(episode_iter)
     for episode in episode_iter:
+        print("episode", episode)
         glue.total_reward = 0
         glue.runEpisode(max_steps)
         globals.collector.collect('return', glue.total_reward)

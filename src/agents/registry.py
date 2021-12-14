@@ -5,6 +5,7 @@ from agents.ActorCritic_Tab import ActorCritic_Tab
 from agents.Direct_Tab import Direct_Tab
 from agents.OptionPlanning_Tab import OptionPlanning_Tab
 from agents.DynaOptions_NN import DynaOptions_NN
+from agents.DynaOptionsLtd_Tab import DynaOptionsLtd_Tab
 
 def getAgent(name):
     if name == 'DynaOptions_Tab':
@@ -19,5 +20,7 @@ def getAgent(name):
         return Direct_Tab
     elif name == 'DynaOptions_NN':
         return DynaOptions_NN
+    elif name == 'DynaOptionsLtd_Tab':
+        return DynaOptionsLtd_Tab
     else:
         raise NotImplementedError()

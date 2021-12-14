@@ -97,7 +97,13 @@ class QLearner():
 
     def get_action_values(self, x: int) -> np.ndarray:
         return self.Q[x, :]
-    
+
+    def get_option_values(self, x: int) -> np.ndarray:
+        return self.Q[x, self.num_actions:]
+
+    def get_primitive_action_values(self, x: int) -> np.ndarray:
+        return self.Q[x, :self.num_actions]
+
     def planning_update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
         self.update(x, a, xp, r, env_gamma, step_size)
 
@@ -120,6 +126,66 @@ class QLearner():
     def episode_end(self):
         globals.collector.collect('Q', np.copy(self.Q))   
         pass
+
+
+
+class QLearnerLtd():
+    def __init__(self, num_state_features: int, num_actions: int, num_options: int):
+        self.num_state_features: int = num_state_features
+        self.num_actions: int = num_actions
+        self.Q = np.zeros((self.num_state_features, self.num_actions))
+        self.num_options = num_options
+        self.num_primitive_actions = self.num_actions - self.num_options -1
+
+    def get_action_values(self, x: int) -> np.ndarray:
+        return self.Q[x, :]
+
+    def get_option_values(self, x: int) -> np.ndarray:
+        return self.Q[x, self.num_primitive_actions:]
+
+    def get_primitive_action_values(self, x: int) -> np.ndarray:
+        return self.Q[x, :self.num_primitive_actions]
+
+    def planning_update(self, x: int, o: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+        self.update(x, o, a, xp, r, env_gamma, step_size)
+
+    def target_update(self, x: int, a: int, target: float, step_size: float):
+        x_prediction = self.Q[x, a]
+        delta = target - x_prediction
+        self.Q[x, a] += step_size * delta
+
+    def update(self, x: int, o, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+        # special option is taken, the value of it will be the average of action values
+        # we also update the primitive action value
+
+        
+        if o == self.num_actions-1:
+            x_prediction = self.Q[x, a]
+            xp_predictions = self.get_primitive_action_values(xp)
+
+            max_q = np.max(xp_predictions)
+            delta = r + env_gamma * max_q - x_prediction
+            self.Q[x, a] += step_size * delta
+
+            # Pushing up learner delta for search control
+            globals.blackboard['learner_delta'] = delta
+            self.Q[x,o] = np.average(self.Q[x,:self.num_primitive_actions])
+        else:
+            x_prediction = self.Q[x, o]
+            xp_predictions = self.get_action_values(xp)
+
+            max_q = np.max(xp_predictions)
+            delta = r + env_gamma * max_q - x_prediction
+            self.Q[x, o] += step_size * delta
+
+            # Pushing up learner delta for search control
+            globals.blackboard['learner_delta'] = delta
+
+    def episode_end(self):
+        globals.collector.collect('Q', np.copy(self.Q))   
+        pass
+
+
 
 class ESarsaLambda():
     def __init__(self, num_state_features: int, num_actions: int):
