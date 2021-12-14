@@ -11,6 +11,9 @@ class OneStepWrapper(BaseAgent):
         self.exploration_phase = self.agent.params["exploration_phase"]
         self.no_reward_exploration = self.agent.params.get("no_reward_exploration", False)
         self.num_episodes_passed = 0
+        globals.blackboard['num_episodes_passed'] = self.num_episodes_passed
+        self.num_steps_passed = 0
+        globals.blackboard['num_steps_passed'] = self.num_steps_passed
         self.random = np.random.RandomState(problem.seed)
         self.actions = problem.actions
 
@@ -20,6 +23,14 @@ class OneStepWrapper(BaseAgent):
 
     def __str__(self):
         return self.agent.__str__()
+
+    def _increment_num_steps(self):
+        self.num_steps_passed += 1
+        globals.blackboard['num_steps_passed'] = self.num_steps_passed
+    
+    def _increment_num_episodes(self):
+        self.num_episodes_passed += 1
+        globals.blackboard['num_episodes_passed'] = self.num_episodes_passed
 
     def start(self, s):
         self.s = s
@@ -53,6 +64,7 @@ class OneStepWrapper(BaseAgent):
 
     def step(self, r, sp, t=False):
 
+
         r = self.no_reward_if_exploring(r)
 
         ap = self.agent.update(self.s, self.a, sp, r, self.gamma)
@@ -62,16 +74,16 @@ class OneStepWrapper(BaseAgent):
         self.s = sp
         self.a = ap
 
+        self._increment_num_steps()
         return ap
         
     def end(self, r):
         r = self.no_reward_if_exploring(r)
-
-        self.num_episodes_passed += 1
-        self._update_exploration_phase()
         gamma = 0
         self.agent.agent_end(self.s, self.a, r, gamma)  
-        # reset agent here if necessary (e.g. to clear traces)
+
+        self._increment_num_episodes()
+        self._update_exploration_phase()
 
 class OptionOneStepWrapper(OneStepWrapper):
     def start(self, s):
@@ -91,14 +103,15 @@ class OptionOneStepWrapper(OneStepWrapper):
         self.o = op
         self.a = ap
 
+        self._increment_num_steps()
         return ap
     def end(self, r):
         r = self.no_reward_if_exploring(r)
-
-        self.num_episodes_passed += 1
-        self._update_exploration_phase()
         gamma = 0
         self.agent.agent_end(self.s, self.o, self.a, r, gamma)
+
+        self._increment_num_episodes()
+        self._update_exploration_phase()
 
 class OptionFullExecuteWrapper(OneStepWrapper):
     def start(self, s):
@@ -139,12 +152,16 @@ class OptionFullExecuteWrapper(OneStepWrapper):
         # However, dealing with this will likely involve dealing with an infinite loop of selecting actions,
         # which we avoid for now. The same issue occurs in the start function.
         action = self._get_action(self.s, self.o)
+
+        self._increment_num_steps()
         return action
 
     def end(self, r):
         r = self.no_reward_if_exploring(r)
         
         self.num_episodes_passed += 1
-        self._update_exploration_phase
         gamma = 0  
         self.agent.agent_end(self.s, self.o, r, gamma)
+
+        self._increment_num_episodes()
+        self._update_exploration_phase()

@@ -59,7 +59,7 @@ def get_option_policies_prob(x: int, options: List[Option], num_actions: int) ->
     # this probably belong somewher eelse.
     option_policies = np.zeros((num_options, num_actions))
     for i, option in enumerate(options):
-        if x == globals.blackboard['terminal_state']:
+        if x == None:
             option_policies[i] = 1 / num_actions
         else:
             action, _ = option.step(x)
@@ -67,9 +67,9 @@ def get_option_policies_prob(x: int, options: List[Option], num_actions: int) ->
 
     return option_policies
 
-def get_option_policy_prob(x: int, option: Option, num_actions: int) -> npt.ArrayLike:
+def get_option_policy_prob(x: int, option: Option, num_actions: int, terminal: bool) -> npt.ArrayLike:
     policy = np.zeros(num_actions)
-    if x == globals.blackboard['terminal_state']:
+    if terminal:
         policy = 1 / num_actions
     else:
         action, _ = option.step(x)
@@ -77,11 +77,11 @@ def get_option_policy_prob(x: int, option: Option, num_actions: int) -> npt.Arra
 
     return policy
 
-def get_option_term(xp: int, options: List[Option]) -> npt.ArrayLike:
+def get_option_term(xp: int, options: List[Option], terminal: bool) -> npt.ArrayLike:
     num_options = len(options)
     option_terminations = np.zeros(num_options)
     for i, option in enumerate(options):
-        if xp == globals.blackboard['terminal_state']:
+        if terminal:
             term = 1
         else:
             _, term = option.step(xp)

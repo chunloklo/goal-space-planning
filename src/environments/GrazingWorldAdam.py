@@ -102,3 +102,32 @@ class GrazingWorldAdamImageFeature(BaseRepresentation):
         image[s[0], s[1]] = self._translate('A')
         return image
 
+
+def get_all_transitions():
+    base_token_viz = np.array([ [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                                ['W', 'G', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                                ['W', 'W', 'W', ' ', ' ', ' ', 'W', 'G', 'W', ' ', ' ', ' '],
+                                [' ', ' ', ' ', ' ', ' ', ' ', 'W', 'W', 'W', ' ', ' ', ' '],
+                                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'G', ' ', ' '],
+                                [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']])
+
+    env = GrazingWorldAdam(0)
+    env.start()
+    transitions = []
+    for r in range(8):
+        for c in range(12):
+            for a in range(4):
+                if base_token_viz[r, c] == 'W':
+                    continue
+                s = (r, c)
+                env.current_state = s
+                reward, sp, t = env.step(a)
+                if (t):
+                    gamma = 0
+                    sp = (0, 0)
+                else:
+                    gamma = 1
+                transitions.append((tuple(s), a, tuple(sp), reward, gamma))
+    return transitions
