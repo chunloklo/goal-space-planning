@@ -35,7 +35,6 @@ ROW_MAX = 8
 def generatePlot(json_handle):
     data = load_experiment_data(json_handle)
 
-    # print(return_data)
     # Processing data here so the dimensions are correct
     print(data.keys())
     data = data["Q"]
@@ -44,15 +43,10 @@ def generatePlot(json_handle):
     print(data.shape)
 
     # Getting file name
-    anim_file_name = prompt_user_for_file_name('_action_values.mp4')
-    save_path = "./visualizations/"
-    save_folder = os.path.splitext(save_path)[0]
-    save_file = save_folder + f'/{anim_file_name}'
+    save_file = prompt_user_for_file_name('./visualizations/', 'action_values_', '', 'mp4', timestamp=True)
+    # print(f'Plot will be saved in {anim_file_name}')
+
     print(f'Visualization will be saved in {save_file}')
-
-    if (not os.path.isdir(save_folder)):
-        os.makedirs(save_folder)
-
     # Getting episode range
     start_frame, max_frame, interval = prompt_episode_display_range(0, data.shape[0], max(data.shape[0] // 100, 1))
 
@@ -92,7 +86,7 @@ def generatePlot(json_handle):
 
     frames = range(start_frame, max_frame, interval)
 
-    x_range = list(get_x_range(0, data.shape[0], 500))
+    x_range = list(get_x_range(0, data.shape[0], 1))
 
     print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
     pbar = tqdm(total=max_frame - start_frame)

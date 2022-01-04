@@ -7,7 +7,7 @@ from agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue
 from src.utils import globals
 from src.utils import options, param_utils
-from src.agents.components.models import OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
+from src.agents.components.models import OptionActionModel_Sutton_Tabular, OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
 from src.agents.components.approximators import DictModel
 from PyFixedReps.BaseRepresentation import BaseRepresentation
 import numpy.typing as npt
@@ -64,6 +64,7 @@ class DynaOptions_Tab:
         self.action_model = DictModel()
         if self.model_alg == 'sutton':
             self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
         else:
             raise NotImplementedError(f'option_model_alg for {self.model_alg} is not implemented')
 
@@ -145,6 +146,7 @@ class DynaOptions_Tab:
         self.action_model.update(x, a, xp, r, gamma)
         if isinstance(self.option_model, OptionModel_Sutton_Tabular):
             self.option_model.update(x, a, xp, r, gamma, self.alpha)
+            self.option_action_model.update(x, a, xp, r, gamma, self.alpha)
         else:
             raise NotImplementedError(f'Update for {type(self.option_model)} is not implemented')
 
@@ -221,6 +223,7 @@ class DynaOptions_Tab:
         self.update(s, o, a, None, r, gamma, terminal=True)
         self.behaviour_learner.episode_end()
         self.option_model.episode_end()
+        self.option_action_model.episode_end()
 
         # Logging state visitation
         globals.collector.collect('state_visitation', np.copy(self.state_visitations))   

@@ -1,5 +1,5 @@
 {
-    "experiment_name": "DynaOptions_gpi",
+    "experiment_name": "WAVE_DynaOptions_NN_Test",
     "agent": "DynaOptions_NN",
     "problem": "GrazingWorldAdam",
     "episodes": -1,
@@ -12,7 +12,7 @@
         "epsilon": [0.1],
         "behaviour_alg": ["QLearner"],
         "search_control": ["random"],
-        "option_value_alg": ["None"],
+        "option_value_alg": ["value_shift"],
         "polyak_stepsize": [0.005],
         "gamma": [1.0],
         "kappa": [2.0],

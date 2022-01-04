@@ -1,8 +1,8 @@
 {
     "experiment_name": "representation_refactor_test",
     "agent": "DynaOptions_Tab",
-    "problem": "GrazingWorldAdam",
-    "episodes": 400,
+    "problem": "HMaze",
+    "episodes": 40,
     "metaParameters": {
         "seed": [0],
         "exploration_phase": [400],

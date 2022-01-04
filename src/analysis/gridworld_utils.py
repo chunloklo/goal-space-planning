@@ -2,6 +2,8 @@ import numpy as np
 from typing import Callable, Tuple
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
+from datetime import datetime
+import os
 
 def _get_corner_loc(offsetx: int, offsety: int, loc_type: str):
     if (loc_type == 'center'):
@@ -49,12 +51,25 @@ def scale_value(value: float, min_val:float, max_val:float, post_process_func: C
     percentage = post_process_func(percentage)
     return percentage
 
-def prompt_user_for_file_name(extension: str):
-    experiment_name = input(f"Give the input for experiment name. File name will be '<name>{extension}': ")
+def prompt_user_for_file_name(folder: str, prefix: str, suffix: str, extension: str, timestamp: bool=False):
+    if timestamp:
+        prompt_file_string = f"{prefix}<name>{suffix}--<timestamp>.{extension}"
+    else:
+        prompt_file_string = f"{prefix}<name>{suffix}.{extension}"
+
+    experiment_name = input(f"Give the input for experiment name. File name will be '{prompt_file_string}': ")
 
     while (len(experiment_name) == 0):
         experiment_name = input("Please enter an experiment name that is longer than 0 length: ")
-    return experiment_name + extension
+    
+    # Since we'll be saving this, we're also making sure that the directory exists.
+    os.makedirs(folder, exist_ok=True)
+
+    if timestamp:
+        time_str = datetime.now().strftime("%m-%d-%Y--%H-%M-%S")
+        return f'{folder}/{prefix}{experiment_name}{suffix}--{time_str}.{extension}'
+    else:
+        return f'{folder}/{prefix}{experiment_name}{suffix}.{extension}'
 
 def _plot_init(ax, columns: int, rows: int, center_arrows: bool = False):
     ax.set_xlim(0, columns)

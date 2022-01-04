@@ -55,10 +55,17 @@ for en, js in enumerate(json_handles):
     print(data.shape)
 
     # print(data)
-    x_range = get_x_range(0, data.shape[0], 500)
+    x_range = get_x_range(0, data.shape[0], 1)
     # print(list(x_range))
-    data = list(smoothingAverage(data))
-    axs.plot(x_range, data)
+    for i in range(len(data)):
+        if i > 0:
+            data[i] = data[i] + data[i - 1]
+    # data = list(smoothingAverage(data))
+    # print(js.keys())
+    label_str = ''
+    if 'skip_prob' in js['metaParameters']:
+        label_str = f'skip_prob: {js["metaParameters"]["skip_prob"]}'
+    axs.plot(x_range, data, label=label_str)
 
 
     # plot(axs, data = data)
@@ -78,6 +85,7 @@ for en, js in enumerate(json_handles):
 # axs.set_ylim([-600, 110])
 # axs.set_xlim([3250, 3750])
 # axs.set_ylim([-100, 100])
+axs.legend()
 axs.spines['top'].set_visible(False)
 # if show_legend:
 #     axs.set_title(f'{key_to_plot} accuracy')

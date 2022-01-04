@@ -1,5 +1,5 @@
 {
-    "experiment_name": "tmaze_test",
+    "experiment_name": "tmaze_test_0.25",
     "agent": "Direct_Tab",
     "problem": "TMaze",
     "episodes": -1,
@@ -12,9 +12,10 @@
         "slow_alpha": [0.007],
         "epsilon": [0.2],
         "behaviour_alg": ["QLearner"],
-        "skip_alg": ["None"],
+        "skip_alg": ["Testing"],
         "gamma": [1.0],
         "lambda": [0.9],
+        "skip_prob": [0.1],
         "reward_sequence_length" : [40000]
     }
 }

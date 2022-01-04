@@ -35,22 +35,24 @@ def generatePlot(json_handle):
     # print(return_data)
     # Processing data here so the dimensions are correct
     print(data.keys())
-    data = data["tau"]
-    print(data.shape)
-    data = data[:, 0, :, :]
-    data = np.mean(data, axis=0)
-    print(data.shape)
+    reward_rate = data["reward_rate"]
+    print(reward_rate.shape)
+    reward_rate = reward_rate[0, 0, :]
 
+    max_reward_rate = data["max_reward_rate"]
+    print(max_reward_rate.shape)
+    max_reward_rate = max_reward_rate[0, 0, :]
 
     # Getting file name
-    save_file = prompt_user_for_file_name('./plots/', 'tau_', '', 'png', timestamp=True)
+    save_file = prompt_user_for_file_name('./plots/', 'reward_rate_', '', 'png', timestamp=True)
     print(f'Plot will be saved in {save_file}')
 
-    x_range = get_x_range(0, data.shape[0], 1)
+    x_range = get_x_range(0, reward_rate.shape[0], 1)
 
     plt.figure()
-    plt.ylim([0, 7000])
-    plt.plot(x_range, data, label=[13,31,81])
+    plt.plot(x_range, reward_rate, label='reward_rate')
+
+    plt.plot(x_range, max_reward_rate, label='max_reward_rate')
     plt.legend()
 
     plt.savefig(f'{save_file}', dpi = 300)

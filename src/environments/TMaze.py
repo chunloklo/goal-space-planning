@@ -23,7 +23,7 @@ class TMaze(BaseEnvironment):
     def __init__(self, seed:int, reward_sequence_length=10, initial_learning=0):
         random.seed(1)
         self.size = 7
-        self.shape = (7, 7)
+        self.shape = (self.size, self.size)
         self.reward_sequence_length = reward_sequence_length
         self.initial_learning = initial_learning
         self.il_counter = -1
@@ -39,11 +39,11 @@ class TMaze(BaseEnvironment):
         """
         self.goals = {
             1:{
-                "position" : (6,0),
+                "position" : (self.size - 1,0),
                 "schedule" : CyclingRewardSchedule([0, 100], self.reward_sequence_length, cycle_type='step')
             },
             2:{
-                "position" : (6,6),
+                "position" : (self.size - 1, self.size - 1),
                 "schedule" : CyclingRewardSchedule([100, 0], self.reward_sequence_length, cycle_type='step')
             },
         }
@@ -60,28 +60,32 @@ class TMaze(BaseEnvironment):
             3:(0,-1)
         }
 
-        self.world = [
-            [ '0', '0', '0', '0', '0', '0', '0' ],
-            [ '0', '1', '1', '0', '1', '1', '0' ],
-            [ '0', '1', '1', '0', '1', '1', '0' ],
-            [ '0', '1', '1', '0', '1', '1', '0' ],
-            [ '0', '1', '1', '0', '1', '1', '0' ],
-            [ '0', '1', '1', '0', '1', '1', '0' ],
-            ['G1', '1', '1', '0', '1', '1', 'G2'],
-        ]
+        # Fixed world for 7x7. Moved to variable size
+        # self.world = [
+        #     [ '0', '0', '0', '0', '0', '0', '0' ],
+        #     [ '0', '1', '1', '0', '1', '1', '0' ],
+        #     [ '0', '1', '1', '0', '1', '1', '0' ],
+        #     [ '0', '1', '1', '0', '1', '1', '0' ],
+        #     [ '0', '1', '1', '0', '1', '1', '0' ],
+        #     [ '0', '1', '1', '0', '1', '1', '0' ],
+        #     ['G1', '1', '1', '0', '1', '1', 'G2'],
+        # ]
 
-        self.wall_grids = []
+        # self.world = [['0'] * self.size] * self.size
 
-        for r in range(7):
-            for c in range(7):
-                if self.world[r][c] == '1':
-                    self.wall_grids.append((r, c))
+        assert self.size % 2 == 1
+
+        self.valid_grids = []
+        for r in range(self.size):
+            for c in range(self.size):
+                if r == 0 or c == 0 or c == self.size - 1 or c == self.size // 2:
+                    self.valid_grids.append((r, c))
 
         self.step_penalty = -1
         self.nS = np.prod(self.shape)
         self.nA = 4
         #self.start_state_index = np.ravel_multi_index((self.shape[0]-1, 0), self.shape)
-        self.start_state = (6, 3)
+        self.start_state = (self.size - 1,  self.size // 2)
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,3)]
         
@@ -137,16 +141,16 @@ class TMaze(BaseEnvironment):
         Prevent the agent from falling out of the grid world
         """
         coord = s+a
-        coord[0] = min(coord[0], 6)
+        coord[0] = min(coord[0], self.size - 1)
         coord[0] = max(coord[0], 0)
-        coord[1] = min(coord[1], 6)
+        coord[1] = min(coord[1], self.size - 1)
         coord[1] = max(coord[1], 0)
         """
         deal with potential wall bump
         calculate scalar index of each special goal state, and check that the agent didn't end up moving there
         """
         # print(coord in self.wall_grids)
-        if tuple(coord) in self.wall_grids:
+        if tuple(coord) not in self.valid_grids:
             coord = s
             # print('hit a wall!')
         return coord

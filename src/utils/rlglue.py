@@ -82,6 +82,7 @@ class OneStepWrapper(BaseAgent):
         gamma = 0
         self.agent.agent_end(self.s, self.a, r, gamma)  
 
+        self._increment_num_steps()
         self._increment_num_episodes()
         self._update_exploration_phase()
 
@@ -109,7 +110,8 @@ class OptionOneStepWrapper(OneStepWrapper):
         r = self.no_reward_if_exploring(r)
         gamma = 0
         self.agent.agent_end(self.s, self.o, self.a, r, gamma)
-
+        
+        self._increment_num_steps()
         self._increment_num_episodes()
         self._update_exploration_phase()
 
@@ -163,5 +165,6 @@ class OptionFullExecuteWrapper(OneStepWrapper):
         gamma = 0  
         self.agent.agent_end(self.s, self.o, r, gamma)
 
+        self._increment_num_steps()
         self._increment_num_episodes()
         self._update_exploration_phase()

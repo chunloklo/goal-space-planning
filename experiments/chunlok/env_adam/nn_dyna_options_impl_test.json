@@ -1,22 +1,24 @@
 {
-    "experiment_name": "representation_refactor_test",
-    "agent": "DynaOptions_Tab",
+    "experiment_name": "IMPL_TEST_DynaOptions_NN_Test",
+    "agent": "DynaOptions_NN",
     "problem": "GrazingWorldAdam",
-    "episodes": 400,
+    "episodes": -1,
+    "max_steps": 10000,
     "metaParameters": {
         "seed": [0],
-        "exploration_phase": [400],
+        "exploration_phase": [0],
         "no_reward_exploration": [false],
-        "alpha": [0.7],
+        "alpha": [0.1],
         "epsilon": [0.1],
         "behaviour_alg": ["QLearner"],
         "search_control": ["random"],
         "option_model_alg": ["sutton"],
+        "polyak_stepsize": [0.005],
         "gamma": [1.0],
-        "kappa": [0.9],
+        "kappa": [1.0],
         "lambda": [0.9],
-        "planning_steps": [5],
+        "planning_steps": [1],
         "model_planning_steps": [0],
-        "reward_sequence_length" : [500]
+        "reward_sequence_length" : [1000000]
     }
 }

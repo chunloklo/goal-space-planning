@@ -5,6 +5,9 @@ from src.utils import globals
 import random
 from src.utils.run_utils import InvalidRunException
 from src.environments.GrazingWorld import GrazingWorld
+from src.agents.components.models import OptionActionModel_Sutton_Tabular, OptionModel_Sutton_Tabular
+from src.utils.create_options import get_options
+from typing import Tuple
 
 UP = 0
 RIGHT = 1
@@ -26,20 +29,20 @@ class GrazingWorldAdam(GrazingWorld):
         self.shape = (8, 12)
         self.nS = np.prod(self.shape)
 
-        self.goals[1]['position'] = (1, 1)
-        self.goals[2]['position'] = (2, 7)
-        self.goals[3]['position'] = (6, 9)
+        self.goals[0]['position'] = (1, 1)
+        self.goals[1]['position'] = (2, 7)
+        self.goals[2]['position'] = (6, 9)
 
-        self.step_to_goals = {
-            1: 10,
-            2: 11,
-            3: 7
-        }
+        self.step_to_goals = [
+            10,
+            11,
+            7
+        ]
 
         #self.start_state_index = np.ravel_multi_index((self.shape[0]-1, 0), self.shape)
         self.start_state = (self.shape[0]-2, 2)
         self.current_state = self.start_state
-        self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
+        self.terminal_state_positions = [self.goals[i]["position"] for i in range(len(self.goals))]
 
     def _limit_coordinates(self, s, a):
         """
@@ -55,7 +58,7 @@ class GrazingWorldAdam(GrazingWorld):
         calculate scalar index of each special goal state, and check that the agent didn't end up moving there
         """
         wall_grids = []
-        for i in range(1,3):
+        for i in [0, 1]:
             goal_number = np.ravel_multi_index(np.array(self.goals[i]["position"]), self.shape)
             wall_grids.append(goal_number-1)
             wall_grids.append(goal_number+1)
@@ -77,6 +80,22 @@ class GrazingWorldAdamImageFeature(BaseRepresentation):
                                             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
                                             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'G', ' ', ' '],
                                             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']])
+        self._preload_mapping()
+
+    def _preload_mapping(self):
+        self.representation_map = {}
+
+        for s0 in range(8):
+            for s1 in range(12):
+                        
+                image = np.zeros((8, 12, 1))
+                for r in range(8):
+                    for c in range(12):
+                        image[r, c] = self._translate(self.base_token_viz[r, c])
+
+                image[s0, s1] = self._translate('A')
+
+                self.representation_map[(s0, s1)] = image
 
     def _translate(self, token: str):
         if token == ' ':
@@ -93,14 +112,45 @@ class GrazingWorldAdamImageFeature(BaseRepresentation):
         return (8, 12, 1)
 
     def encode(self, s):
-        image = np.zeros((8, 12, 1))
-        for r in range(8):
-            for c in range(12):
-                image[r, c] = self._translate(self.base_token_viz[r, c])
+        # image = np.zeros((8, 12, 1))
+        # for r in range(8):
+        #     for c in range(12):
+        #         image[r, c] = self._translate(self.base_token_viz[r, c])
 
-        image[s[0], s[1]] = self._translate('A')
-        return image
+        # image[s[0], s[1]] = self._translate('A')
+        # print(s)
+        return self.representation_map[tuple(s)]
+        # return image
 
+def state_index_to_coord(x):
+    s = (x // 12, x % 12)
+    return s
+
+def get_pretrained_option_model() -> Tuple[OptionModel_Sutton_Tabular, OptionActionModel_Sutton_Tabular]:
+    model_r = np.load('src/environments/data/GrazingWorldAdam_OptionModel_r.npy', False)
+    model_discount = np.load('src/environments/data/GrazingWorldAdam_OptionModel_discount.npy', False)
+    model_transition = np.load('src/environments/data/GrazingWorldAdam_OptionModel_transition.npy', False)
+
+    num_states = 8 * 12 
+    num_actions = 4
+    num_options = 3
+    options = get_options('GrazingAdam')
+    
+    option_model = OptionModel_Sutton_Tabular(num_states + 1, num_actions, num_options, options)
+    option_model.reward_model = model_r
+    option_model.discount_model = model_discount
+    option_model.transition_model = model_transition
+
+
+    action_model_r = np.load('src/environments/data/GrazingWorldAdam_ActionOptionModel_r.npy', False)
+    action_model_discount = np.load('src/environments/data/GrazingWorldAdam_ActionOptionModel_discount.npy', False)
+    action_model_transition = np.load('src/environments/data/GrazingWorldAdam_ActionOptionModel_transition.npy', False)
+    
+    action_option_model = OptionActionModel_Sutton_Tabular(num_states + 1, num_actions, num_options, options)
+    action_option_model.reward_model = action_model_r
+    action_option_model.discount_model = action_model_discount
+    action_option_model.transition_model = action_model_transition
+    return option_model, action_option_model
 
 def get_all_transitions():
     base_token_viz = np.array([ [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
