@@ -112,15 +112,7 @@ class GrazingWorldAdamImageFeature(BaseRepresentation):
         return (8, 12, 1)
 
     def encode(self, s):
-        # image = np.zeros((8, 12, 1))
-        # for r in range(8):
-        #     for c in range(12):
-        #         image[r, c] = self._translate(self.base_token_viz[r, c])
-
-        # image[s[0], s[1]] = self._translate('A')
-        # print(s)
         return self.representation_map[tuple(s)]
-        # return image
 
 def state_index_to_coord(x):
     s = (x // 12, x % 12)

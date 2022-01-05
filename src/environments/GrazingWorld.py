@@ -54,11 +54,11 @@ class GrazingWorld(BaseEnvironment):
             # Scaled rewards (for neural network)
             {
                 "position" : (2,2),
-                "schedule": CyclingRewardSchedule([0, 2.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
+                "schedule": CyclingRewardSchedule([0, 1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
             },
             {
                 "position" : (2,size-3),
-                "schedule": CyclingRewardSchedule([0, 1.0], self.reward_sequence_length, cycle_offset=self.reward_sequence_length // 2, cycle_type='step'),
+                "schedule": CyclingRewardSchedule([0, 0.5], self.reward_sequence_length, cycle_offset=self.reward_sequence_length // 2, cycle_type='step'),
             },
             {
                 "position" : (size-3,size-3),

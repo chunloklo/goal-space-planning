@@ -162,30 +162,16 @@ class DynaOptions_NN:
         term_rewards = []
 
         for o in range(self.num_options):
-            if a == None:
-                r, discount, transition_prob = self.option_model.predict(x, o)
-            else:
-                r, discount, transition_prob = self.action_option_model.predict(x, a, o)
-
-            transition_prob = np.clip(transition_prob, a_min = 0, a_max = None)
-            norm = np.linalg.norm(transition_prob, ord=1)
-            if (norm != 0):
-                prob = transition_prob / norm
-                # +1 here accounts for the terminal state
-                xp = self.random.choice(self.num_states + 1, p=prob)
-                try:
-                    xps.append(self.image_representation.encode(state_index_to_coord(xp)))
-                except IndexError as e:
-                    term_valid_options.append(o)
-                    term_rewards.append(r)
-                    continue
-
+            r, discount, sp = self._sample_option(s, o, a)
+            if sp != None:
+                xps.append(self.image_representation.encode(sp))
                 valid_options.append(o)
                 rewards.append(r)
                 discounts.append(discount)
-                
             else:
-                xp = None
+                term_valid_options.append(o)
+                term_rewards.append(r)
+                continue
         
         term_option_values = term_rewards
 
