@@ -1,8 +1,8 @@
 import numpy as np
-from numba import njit
+# from numba import njit
 from PyFixedReps.BaseRepresentation import BaseRepresentation
 
-@njit(cache=True)
+# @njit(cache=True)
 def gaussian_dist(x: np.ndarray, centers: np.ndarray, width: float):
     diff = x - centers
     squared = np.sum(np.square(diff), axis=1)
