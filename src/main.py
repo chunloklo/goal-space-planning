@@ -22,6 +22,7 @@ import tqdm
 # Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
 from jax.config import config
 config.update("jax_debug_nans", True)
+import jax; jax.config.update('jax_platform_name', 'cpu')
 
 # Logging info level logs for visibility.
 logging.basicConfig(level=logging.INFO)
@@ -63,7 +64,7 @@ if experiment_completed(exp_json, args.ignore_error) and not args.overwrite:
     if (args.ignore_error):
         print('Counted run as completed if run errored previously')
     print(f'Run Already Complete - Ending Run')
-    exit()
+    sys.exit(0)
 
 try:
     wrapper_class = agent.wrapper_class
@@ -84,6 +85,7 @@ except AttributeError:
 
 save_logger_keys = ['tau', 'Q', 'max_reward_rate', 'reward_rate']
 # save_logger_keys = ['action_model_r', 'action_model_discount', 'action_model_transition', 'model_r', 'model_discount', 'model_transition']
+# save_logger_keys = []
 
 step_logging_interval = 100
 
@@ -144,3 +146,4 @@ for k in save_logger_keys:
 cleanup_files(experiment_old_format)
 save_data(experiment_old_format, save_obj)
 logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")
+sys.exit(0)
