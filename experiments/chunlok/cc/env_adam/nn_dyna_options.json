@@ -3,7 +3,7 @@
     "agent": "DynaOptions_NN",
     "problem": "GrazingWorldAdam",
     "episodes": -1,
-    "max_steps": 80000,
+    "max_steps": 100,
     "metaParameters": {
         "seed": [0, 1, 2, 3, 4],
         "exploration_phase": [0],

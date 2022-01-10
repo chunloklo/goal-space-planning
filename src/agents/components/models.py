@@ -122,13 +122,16 @@ class OptionModel_Sutton_Tabular():
         self.discount_model = np.zeros((num_states, num_options))
         self.transition_model = np.zeros((num_states, num_options, num_states))
         
-    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float, s:Any=None):
         """updates the model 
         
         Returns:
             Nothing
         """
-        action_consistent_options = options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
+        if s is None:
+            action_consistent_options = options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
+        else:
+            action_consistent_options = options.get_action_consistent_options(s, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
         for action_option in action_consistent_options:
             o = options.from_action_to_option_index(action_option, self.num_actions)
             if env_gamma == 0:
