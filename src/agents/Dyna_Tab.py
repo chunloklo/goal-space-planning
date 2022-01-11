@@ -4,8 +4,8 @@ import numpy.typing as npt
 from PyExpUtils.utils.random import argmax, choice
 import random
 from PyFixedReps.Tabular import Tabular
-from agents.components.learners import ESarsaLambda, QLearner
-from agents.components.search_control import ActionModelSearchControl_Tabular
+from src.agents.components.learners import ESarsaLambda, QLearner
+from src.agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue
 from src.utils import globals
 from src.utils import options, param_utils

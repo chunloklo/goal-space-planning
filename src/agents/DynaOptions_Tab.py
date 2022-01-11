@@ -1,18 +1,18 @@
-
-import numpy as np
+from src.agents.components.learners import ESarsaLambda, QLearner
+from src.agents.components.search_control import ActionModelSearchControl_Tabular
+from src.environments.GrazingWorldAdam import get_pretrained_option_model
 from PyExpUtils.utils.random import argmax, choice
-import random
-from agents.components.learners import ESarsaLambda, QLearner
-from agents.components.search_control import ActionModelSearchControl_Tabular
-from src.utils import rlglue
+from PyFixedReps.BaseRepresentation import BaseRepresentation
+from PyFixedReps.Tabular import Tabular
+from src.agents.components.approximators import DictModel
+from src.agents.components.models import OptionActionModel_Sutton_Tabular, OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
 from src.utils import globals
 from src.utils import options, param_utils
-from src.agents.components.models import OptionActionModel_Sutton_Tabular, OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
-from src.agents.components.approximators import DictModel
-from PyFixedReps.BaseRepresentation import BaseRepresentation
-import numpy.typing as npt
-from PyFixedReps.Tabular import Tabular
+from src.utils import rlglue
 from typing import Dict, Union, Tuple, Any, TYPE_CHECKING
+import numpy as np
+import numpy.typing as npt
+import random
 
 if TYPE_CHECKING:
     # Important for forward reference
@@ -43,6 +43,7 @@ class DynaOptions_Tab:
         self.lmbda = params['lambda']
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
+        self.planning_alg = param_utils.parse_param(params, 'planning_alg', lambda p : p in ['Standard', 'DecisionTime', 'Background']) 
 
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
@@ -63,8 +64,11 @@ class DynaOptions_Tab:
         # Creating models for actions and options
         self.action_model = DictModel()
         if self.model_alg == 'sutton':
-            self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
-            self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            # self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            # self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+
+            # Loading the pretrained model rather than learning from scatch
+            self.option_model, self.option_action_model = get_pretrained_option_model()
         else:
             raise NotImplementedError(f'option_model_alg for {self.model_alg} is not implemented')
 
