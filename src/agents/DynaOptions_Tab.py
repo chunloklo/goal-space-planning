@@ -74,6 +74,7 @@ class DynaOptions_Tab:
 
         # For logging state visitation
         self.state_visitations = np.zeros(self.num_states)
+        self.cumulative_reward = 0
 
     def FA(self):
         return "Tabular"
@@ -132,6 +133,24 @@ class DynaOptions_Tab:
         else:
             # the oa pair doesn't matter if the agent arrived in the terminal state.
             oa_pair = None
+
+
+        # Logging
+        self.cumulative_reward += r
+        if globals.blackboard['num_steps_passed'] % globals.blackboard['step_logging_interval'] == 0:
+            globals.collector.collect('Q', np.copy(self.behaviour_learner.Q)) 
+
+            # Logging state visitation
+            globals.collector.collect('state_visitation', np.copy(self.state_visitations))   
+            self.state_visitations[:] = 0
+
+            # globals.collector.collect('tau', np.copy(self.tau)) 
+            globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
+            # print(f'reward rate: {np.copy(self.cumulative_reward) / globals.blackboard["step_logging_interval"]}')
+            self.cumulative_reward = 0
+
+        return oa_pair
+
 
         return oa_pair
     

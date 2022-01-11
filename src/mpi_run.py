@@ -89,8 +89,8 @@ def run(param: dict, show_progress: bool = False):
 
 
     # save_logger_keys = ['tau', 'Q', 'max_reward_rate', 'reward_rate']
-    save_logger_keys = ['action_model_r', 'action_model_discount', 'action_model_transition', 'model_r', 'model_discount', 'model_transition']
-    # save_logger_keys = []
+    # save_logger_keys = ['action_model_r', 'action_model_discount', 'action_model_transition', 'model_r', 'model_discount', 'model_transition', 'Q']
+    save_logger_keys = ['Q', 'max_reward_rate', 'reward_rate']
 
     step_logging_interval = 100
 
@@ -114,7 +114,7 @@ def run(param: dict, show_progress: bool = False):
                 glue.runEpisode(max_steps)
                 globals.collector.collect('return', glue.total_reward)
             globals.collector.reset()
-        elif exp.episodes == -1:
+        elif exp.episodes <= 0:
             globals.blackboard['step_logging_interval'] = step_logging_interval
             print('Running with steps rather than episodes')
             if (exp.max_steps == 0):
@@ -133,8 +133,6 @@ def run(param: dict, show_progress: bool = False):
                     glue.start()
                 _, _, _, is_terminal = glue.step()
             globals.collector.reset()
-        else:
-            raise NotImplementedError(f'Running {exp.episodes} episodes is not supported. Please either run with > 0 for fixed number of episodes or -1 to limit by step count instead')
     except InvalidRunException as e:
         save_error(param, e)
         logging.info(f"Experiment errored {param} : {idx}, Time Taken : {time.time() - t_start}")

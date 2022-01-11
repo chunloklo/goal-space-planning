@@ -53,6 +53,12 @@ def save_data(experiment: Dict, data: Dict):
         analysis_utils.pkl_saver(data, output_file_name + '.pkl')
     pass
 
+def load_data(experiment: Dict):
+    folder, file = create_file_name(experiment)
+    filename = folder + file + '.pkl'
+    data = analysis_utils.pkl_loader(filename)
+    return data
+
 def experiment_completed(experiment, include_errored=True):
     '''
     Returns True if experiment is yet to be done
