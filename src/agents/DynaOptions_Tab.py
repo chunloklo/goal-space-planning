@@ -48,7 +48,6 @@ class DynaOptions_Tab:
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
-        # DO WE NEED THIS?!?!? CAN WE MAKE THIS SOMEWHERE ELSE?
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
         self.a = -1
         self.x = -1
@@ -80,7 +79,7 @@ class DynaOptions_Tab:
         return "Tabular"
 
     def __str__(self):
-        return "DynaQP_OptionIntra_Tab"
+        return "DynaOptions_Tab"
 
     def get_policy(self, x: int) -> npt.ArrayLike:
         probs = np.zeros(self.num_actions + self.num_options)
@@ -111,7 +110,8 @@ class DynaOptions_Tab:
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
             self.tau += 1
-        self.tau[x, o] = 0
+        
+        self.tau[x, o] = 0  
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
@@ -148,9 +148,6 @@ class DynaOptions_Tab:
             globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
             # print(f'reward rate: {np.copy(self.cumulative_reward) / globals.blackboard["step_logging_interval"]}')
             self.cumulative_reward = 0
-
-        return oa_pair
-
 
         return oa_pair
     
