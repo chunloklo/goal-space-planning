@@ -1,8 +1,9 @@
 #!/bin/sh
 #SBATCH --account=rrg-whitem
 #SBATCH --time=00:00:30
-#SBATCH --ntasks=33
-#SBATCH --mem-per-cpu=256M
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=32
+#SBATCH --mem-per-cpu=1024M
 #SBATCH --mail-user=chunlok@ualberta.ca
 #SBATCH --mail-type=ALL
 source ~/env-38/bin/activate

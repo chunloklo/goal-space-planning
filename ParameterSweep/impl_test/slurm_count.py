@@ -2,6 +2,10 @@ from mpi4py import MPI
 from mpi4py.util import dtlib
 import numpy as np
 import sys
+import mpi4py
+
+mpi4py.rc.thread_level = 'single' # or perhaps 'serialized'
+mpi4py.rc.threads = False
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -11,7 +15,7 @@ np_dtype = dtlib.to_numpy_dtype(datatype)
 itemsize = datatype.Get_size()
 
 N = 1
-win_size = N * itemsize if rank == 0 else 0
+win_size = N * itemsize if rank == 0 else 1
 win = MPI.Win.Allocate(win_size, comm=comm)
 
 buf = np.empty(N, dtype=np_dtype)
