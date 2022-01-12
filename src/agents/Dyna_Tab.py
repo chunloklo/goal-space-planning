@@ -12,7 +12,7 @@ from src.utils import options, param_utils
 from src.agents.components.models import OptionModel_Sutton_Tabular, CombinedModel_ESarsa_Tabular
 from src.agents.components.approximators import DictModel
 from typing import Dict, Union, Tuple, Any, TYPE_CHECKING
-from src.environments.GrazingWorldAdam import get_pretrained_option_model, state_index_to_coord
+from src.environments.GrazingWorldAdam import get_pretrained_option_model, state_index_to_coord, get_all_transitions
 
 if TYPE_CHECKING:
     # Important for forward reference
@@ -73,6 +73,12 @@ class Dyna_Tab:
 
         # Creating models for actions and options
         self.action_model = DictModel()
+        transitions = get_all_transitions()
+        
+        # Prefilling dict buffer so no exploration is needed
+        for t in transitions:
+            # t: s, a, sp, reward. gamma
+            self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
 
         # For logging state visitation
         self.state_visitations = np.zeros(self.num_states)
@@ -87,7 +93,25 @@ class Dyna_Tab:
     def get_policy(self, x: int) -> npt.ArrayLike:
         probs = np.zeros(self.num_actions)
         probs += self.epsilon / (self.num_actions)
-        a = np.argmax(self.behaviour_learner.get_action_values(x))
+
+        if self.option_alg == 'DecisionTime':
+            option_values = self._get_option_action_values(x)
+
+            best_action_option_value = np.max(option_values, axis=0)
+            best_option_value = np.max(best_action_option_value)
+            best_option_action = np.argmax(best_action_option_value)
+
+            action_values = self.behaviour_learner.get_action_values(x)
+            best_action = np.argmax(action_values)
+            best_action_value = np.max(action_values)
+
+            if best_option_value >= best_action_value:
+                a = best_option_action
+            else:
+                a = best_action
+
+        else:    
+            a = np.argmax(self.behaviour_learner.get_action_values(x))
         probs[a] += 1 - self.epsilon
         return probs
 
@@ -98,6 +122,12 @@ class Dyna_Tab:
         return a
 
     def update(self, s, a, sp, r, gamma, terminal: bool = False):
+        if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length'] // 2:
+            # Correcting the one-step model based on 
+
+            for _a in range(self.num_actions):
+                self.update_model(31, _a, self.num_states, 0.5, 0)
+
         x = self.representation.encode(s)
         # Treating the terminal state as an additional state in the tabular setting
         xp = self.representation.encode(sp) if not terminal else self.num_states
@@ -127,6 +157,7 @@ class Dyna_Tab:
         else:
             ap = None
 
+        self.cumulative_reward += r
         if globals.blackboard['num_steps_passed'] % globals.blackboard['step_logging_interval'] == 0:
             globals.collector.collect('Q', np.copy(self.behaviour_learner.Q)) 
 
@@ -139,7 +170,7 @@ class Dyna_Tab:
             # print(f'reward rate: {np.copy(self.cumulative_reward) / globals.blackboard["step_logging_interval"]}')
             self.cumulative_reward = 0
 
-
+        # print(sp, ap)
         return ap
     def update_model(self, x, a, xp, r, gamma):
         """updates the model 
@@ -165,7 +196,7 @@ class Dyna_Tab:
         # Disabling exploration bonus for now
         factor = 0.0
         
-        r += self.kappa * factor * np.sqrt(self.tau[x, a])
+        # r += self.kappa * factor * np.sqrt(self.tau[x, a])
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.planning_update(x, a, xp, r, discount, self.alpha)
@@ -188,19 +219,19 @@ class Dyna_Tab:
     
         return r, discount, xp
 
-    def _get_option_values(self, x):
-        option_values = np.zeros((self.num_actions, self.num_options))
+    def _get_option_action_values(self, x):
+        option_values = np.zeros((self.num_options, self.num_actions))
 
         for o in range(self.num_options):
             for a in range(self.num_actions):
                 r, discount, xp = self._sample_option(x, o, a)
-                option_values[a, o] = r + discount * np.max(self.behaviour_learner.get_action_values(xp))
-        
+                option_values[o, a] = r + discount * np.max(self.behaviour_learner.get_action_values(xp))
+
         return option_values
 
     def _option_planning_update(self, x: int):
-        option_values = self._get_option_values(x)
-        max_option_values = np.max(option_values, axis=1)
+        option_values = self._get_option_action_values(x)
+        max_option_values = np.max(option_values, axis=0)
 
         # Updating towards option values
         max_values = np.maximum(max_option_values, self.behaviour_learner.get_action_values(x))
@@ -233,6 +264,9 @@ class Dyna_Tab:
     def agent_end(self, s, a, r, gamma):
         self.update(s, a, None, r, gamma, terminal=True)
         self.behaviour_learner.episode_end()
+
+        self.option_model.episode_end()
+        self.option_action_model.episode_end()
 
         # Logging state visitation
         globals.collector.collect('state_visitation', np.copy(self.state_visitations))   

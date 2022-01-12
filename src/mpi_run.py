@@ -92,7 +92,7 @@ def run(param: dict, show_progress: bool = False):
     # save_logger_keys = ['action_model_r', 'action_model_discount', 'action_model_transition', 'model_r', 'model_discount', 'model_transition', 'Q']
     save_logger_keys = ['Q', 'max_reward_rate', 'reward_rate']
 
-    step_logging_interval = 100
+    step_logging_interval = param['step_logging_interval']
 
     if show_progress:
         print(f'Saved logger keys: {save_logger_keys}')

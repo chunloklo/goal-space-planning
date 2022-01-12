@@ -12,9 +12,9 @@ def get_parameter_list():
         "problem": ["GrazingWorldAdam"],
         'step_logging_interval': [1],
         "episodes": [0],
-        'max_steps': [2000],
+        'max_steps': [400000],
         "seed": [0],
-        "exploration_phase": [0],
+        "exploration_phase": [400000],
         "no_reward_exploration": [False],
         "alpha": [0.9],
         "epsilon": [0.0],
@@ -24,9 +24,9 @@ def get_parameter_list():
         "gamma": [1.0],
         "kappa": [0.3],
         "lambda": [0.9],
-        "planning_steps": [4],
+        "planning_steps": [5],
         "model_planning_steps": [0],
-        "reward_sequence_length" : [2000],
+        "reward_sequence_length" : [400000],
         "planning_alg": ['Standard']
     }
 

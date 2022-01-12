@@ -64,6 +64,19 @@ class GrazingWorld(BaseEnvironment):
                 "position" : (size-3,size-3),
                 "schedule": ConstantRewardSchedule(0),
             } 
+            # For saving options
+            # {
+            #     "position" : (2,2),
+            #     "schedule": ConstantRewardSchedule(0),
+            # },
+            # {
+            #     "position" : (2,size-3),
+            #     "schedule": ConstantRewardSchedule(0),
+            # },
+            # {
+            #     "position" : (size-3,size-3),
+            #     "schedule": ConstantRewardSchedule(0),
+            # } 
         ]
 
         self.step_to_goals = [
