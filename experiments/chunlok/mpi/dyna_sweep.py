@@ -10,10 +10,11 @@ def get_parameter_list():
         "experiment_name": ["grazingworld_sweep"],
         "agent": ["Dyna_Tab"],
         "problem": ["GrazingWorldAdam"],
+        "reward_schedule": ["goal2_switch"],
         'step_logging_interval': [1],
         "episodes": [0],
-        'max_steps': [2000],
-        "seed": [0],
+        'max_steps': [1000],
+        "seed": list(range(30)),
         "exploration_phase": [0],
         "no_reward_exploration": [False],
         "alpha": [0.9],
@@ -26,7 +27,7 @@ def get_parameter_list():
         "lambda": [0.9],
         "planning_steps": [4],
         "model_planning_steps": [0],
-        "reward_sequence_length" : [2000],
+        "reward_sequence_length" : [500],
         "planning_alg": ['Standard']
     }
 

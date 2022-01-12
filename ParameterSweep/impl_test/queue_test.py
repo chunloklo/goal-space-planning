@@ -43,13 +43,8 @@ if rank == 0:
     win.Unlock(rank=0)
 comm.Barrier()
 
-# sys.stdout.write(
-#         f"Post Barrier : I am process {rank} of {size} on {name}\n")
-
-
 accumulate = np.ones(1, dtype=np_dtype)
 result = np.empty(1, dtype=np_dtype)
-
 
 for _ in range(10):
     win.Lock(rank=0)
@@ -64,39 +59,8 @@ win.Get(result, target_rank=0)
 win.Unlock(rank=0)
 sys.stdout.write(
         f"Removed Lock! I am process {rank} of {size} on {name}. Final Result: {result}\n")
-
-
+        
 sys.exit(0)
-# next_available_param_index = 0
-# num_parameters = 100
-
-# while next_available_param_index < num_parameters:
-#     sys.stdout.write(
-#         f"Waiting for lock! I am process {rank} of {size} on {name}\n")
-#     win.Lock(rank=0)
-#     sys.stdout.write(
-#         f"Obtained lock! I am process {rank} of {size} on {name}\n")
-#     win.Get(buf, target_rank=0)
-#     next_available_param_index = np.copy(buf)
-
-#     buf += 1
-#     win.Put(buf , target_rank=0)
-#     win.Unlock(rank=0)
-#     sys.stdout.write(
-#         f"Removed Lock! I am process {rank} of {size} on {name}. Index {next_available_param_index}\n")
-
-#     # if next_available_param_index > 0: break
-#     if next_available_param_index >= num_parameters:
-#         # You're done!
-#         break
-
-#     sys.stdout.write(
-#         f"Running parameter {next_available_param_index}! I am process {rank} of {size} on {name}\n")
-#     # f = open(f'./slurm_test_results/{next_available_param_index}.txt', 'w')
-#     # f.write("Results for parameter {next_available_param_index}! I am process {rank} of {size} on {name}\n")
-#     # f.close()
-
-
 
 
 

@@ -40,6 +40,7 @@ def run(param: dict, show_progress: bool = False):
     seed = parse_param(param, 'seed', lambda p: isinstance(p, int), default=-1, optional=True)
 
     globals.collector = Collector()
+    globals.param = param
 
     np.random.seed(seed)
 

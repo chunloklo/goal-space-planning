@@ -5,6 +5,8 @@ import sys
 import importlib.util
 import argparse
 
+from common import get_parameter_list_from_file_path, get_run_function_from_file_path
+
 # Parsing arguments
 parser = argparse.ArgumentParser(description='MPI file that is ran on each task that is spawned through mpiexec or similar functions')
 parser.add_argument('parameter_path', help='Path to the Python parameter file that contains a get_parameter_list function that returns a list of parameters to run')
@@ -17,15 +19,9 @@ run_path = args.run_path
 index = args.index
 
 # Getting parameter list from parameter_path
-param_spec = importlib.util.spec_from_file_location("ParamModule", parameter_path)
-ParamModule = importlib.util.module_from_spec(param_spec)
-param_spec.loader.exec_module(ParamModule)
-parameter_list = ParamModule.get_parameter_list()
+parameter_list = get_parameter_list_from_file_path(parameter_path)
 
 # Getting run function from run_path
-run_spec = importlib.util.spec_from_file_location("RunModule", run_path)
-RunModule = importlib.util.module_from_spec(run_spec)
-run_spec.loader.exec_module(RunModule)
-run_func = RunModule.run
+run_func = get_run_function_from_file_path(run_path)
 
 run_func(parameter_list[index], True)

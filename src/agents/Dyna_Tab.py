@@ -122,7 +122,7 @@ class Dyna_Tab:
         return a
 
     def update(self, s, a, sp, r, gamma, terminal: bool = False):
-        if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length'] // 2:
+        if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length']:
             # Correcting the one-step model based on 
 
             for _a in range(self.num_actions):
