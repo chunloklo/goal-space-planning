@@ -1,8 +1,9 @@
 from itertools import product
 import code
+from typing import Dict
 
 # getting a sorted list is important for multiple files agreeing on the same
-def get_sorted_parameter_list_from_dict(parameter_collection_dict: dict[str, list]):
+def get_sorted_parameter_list_from_dict(parameter_collection_dict: Dict[str, list]):
     collection = {}
     lengths = {}
 

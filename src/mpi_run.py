@@ -32,7 +32,9 @@ def run(param: dict, show_progress: bool = False):
     t_start = time.time()
 
     # Logging info level logs for visibility.
-    logging.basicConfig(level=logging.INFO)
+    # level = logging.INFO
+    level = logging.DEBUG
+    logging.basicConfig(level=level)
 
     # Reading params
     max_steps = parse_param(param, 'max_steps', lambda p: p >= 0, default=0, optional=True)
@@ -117,7 +119,7 @@ def run(param: dict, show_progress: bool = False):
             globals.collector.reset()
         elif exp.episodes <= 0:
             globals.blackboard['step_logging_interval'] = step_logging_interval
-            print('Running with steps rather than episodes')
+            logging.debug('Running with steps rather than episodes')
             if (exp.max_steps == 0):
                 raise ValueError('Running with step limit but max_steps is 0')
             
@@ -136,7 +138,7 @@ def run(param: dict, show_progress: bool = False):
             globals.collector.reset()
     except InvalidRunException as e:
         save_error(param, e)
-        logging.info(f"Experiment errored {param} : {idx}, Time Taken : {time.time() - t_start}")
+        logging.critical(f"Experiment errored {param} : {idx}, Time Taken : {time.time() - t_start}")
         return
 
     save_obj = {}

@@ -17,7 +17,7 @@ def get_parameter_list():
         "seed": list(range(30)),
         "exploration_phase": [0],
         "no_reward_exploration": [False],
-        "alpha": [0.9],
+        "alpha": [0.9, 0.7, 0.5, 0.3, 0.1],
         "epsilon": [0.0],
         "behaviour_alg": ["QLearner"],
         "search_control": ["random"],
