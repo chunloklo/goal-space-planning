@@ -2,7 +2,7 @@
 import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
-from agents.components.learners import ESarsaLambda, QLearner
+from agents.components.learners import ESarsaLambda, QLearner, QLearnerGPI
 from agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue
 from src.utils import globals
@@ -18,7 +18,9 @@ if TYPE_CHECKING:
     # Important for forward reference
     from src.problems.BaseProblem import BaseProblem
 
-class DynaOptions_Tab:
+# unfinished
+
+class DynaOptionsGPI_Tab:
     def __init__(self, problem: 'BaseProblem'):
         self.wrapper_class = rlglue.OptionOneStepWrapper
         self.env = problem.getEnvironment()
@@ -42,7 +44,7 @@ class DynaOptions_Tab:
         self.kappa = params['kappa']
         self.lmbda = params['lambda']
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
-        self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
+        self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'QLearnerGPI', 'ESarsaLambda']) 
 
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
@@ -56,6 +58,8 @@ class DynaOptions_Tab:
             self.behaviour_learner = QLearner(self.num_states + 1, self.num_actions + self.num_options)
         elif self.behaviour_alg == 'ESarsaLambda':
             self.behaviour_learner = ESarsaLambda(self.num_states + 1, self.num_actions + self.num_options)
+        elif self.behaviour_alg == 'QLearnerGPI':
+            self.behaviour_learner = QLearnerGPI(self.num_states+1, self.num_actions+self.num_options, self.num_options, problem)
         else:
             raise NotImplementedError(f'behaviour_alg for {self.behaviour_alg} is not implemented')
 
@@ -65,7 +69,7 @@ class DynaOptions_Tab:
             self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
         else:
             raise NotImplementedError(f'option_model_alg for {self.model_alg} is not implemented')
-
+        
         # For logging state visitation
         self.state_visitations = np.zeros(self.num_states)
 
@@ -75,10 +79,19 @@ class DynaOptions_Tab:
     def __str__(self):
         return "DynaQP_OptionIntra_Tab"
 
+    def max_action_max_options(self,x):
+        pi_b = self.behaviour_learner.get_action_values(x)
+        pi_o = self.behaviour_learner.get_option_values(x)
+        
+        # if greatest value is from pi_b, return argmax of that, else return argmax of pi_o + num_actions
+        o = np.argmax(pi_b) if np.max(pi_b) > np.max(pi_o) else np.argmax(pi_o) + self.num_actions 
+        #print(pi_o,pi_b,o)
+        return o
+
     def get_policy(self, x: int) -> npt.ArrayLike:
         probs = np.zeros(self.num_actions + self.num_options)
         probs += self.epsilon / (self.num_actions + self.num_options)
-        o = np.argmax(self.behaviour_learner.get_action_values(x))
+        o = self. max_action_max_options(x)
         probs[o] += 1 - self.epsilon
         return probs
 
@@ -98,16 +111,21 @@ class DynaOptions_Tab:
         x = self.representation.encode(s)
         # Treating the terminal state as an additional state in the tabular setting
         xp = self.representation.encode(sp) if not terminal else self.num_states
-
+        #print(x,o,xp,r)
         self.state_visitations[x] += 1
 
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
             for i in self.env.terminal_states:
                 self.tau[i,:] += 1
+                #print("goal", i, self.behaviour_learner.get_option_values(i))
         self.tau[x, o] = 0
 
+        #print(x,o,xp,r)
+
         if isinstance(self.behaviour_learner, QLearner):
+            self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
+        if isinstance(self.behaviour_learner, QLearnerGPI):
             self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
         elif isinstance(self.behaviour_learner, ESarsaLambda):
             self.behaviour_learner.update(x, o, xp, r, self.get_policy(xp), gamma, self.lmbda, self.alpha)
@@ -117,7 +135,7 @@ class DynaOptions_Tab:
         # Updating search control
         self.search_control.update(x, xp)
 
-        self.update_model(x,a,xp,r,gamma)  
+        self.update_model(x,o,xp,r,gamma)  
         self.planning_step(x, xp)
     
         # not strictly needed because the option action pair shouldn't be used in termination,
@@ -138,19 +156,20 @@ class DynaOptions_Tab:
 
     def update_model(self, x, a, xp, r, gamma):
         """updates the model 
-        
+
         Returns:
             Nothing
         """
         self.action_model.update(x, a, xp, r, gamma)
-        if isinstance(self.option_model, OptionModel_Sutton_Tabular):
-            self.option_model.update(x, a, xp, r, gamma, self.alpha)
-        else:
-            raise NotImplementedError(f'Update for {type(self.option_model)} is not implemented')
+        # if isinstance(self.option_model, OptionModel_Sutton_Tabular):
+        #     self.option_model.update(x, a, xp, r, gamma, self.alpha)
+        # else:
+        #     raise NotImplementedError(f'Update for {type(self.option_model)} is not implemented')
 
     def _planning_update(self, x: int, o: int):
         if (o < self.num_actions):
             # Generating the experience from the action_model
+            #o, _ = options.get_option_info(x, o, self.options)
             xp, r, gamma = self.action_model.predict(x, o)
             discount = gamma
         else:
@@ -177,6 +196,8 @@ class DynaOptions_Tab:
         # xp could be none if the transition probability errored out
         if xp != None:
             if isinstance(self.behaviour_learner, QLearner):
+                self.behaviour_learner.planning_update(x, o, xp, r, discount, self.alpha)
+            if isinstance(self.behaviour_learner, QLearnerGPI):
                 self.behaviour_learner.planning_update(x, o, xp, r, discount, self.alpha)
             elif isinstance(self.behaviour_learner, ESarsaLambda):
                 self.behaviour_learner.planning_update(x, o, xp, r, self.get_policy(xp), discount, self.alpha)
@@ -211,8 +232,8 @@ class DynaOptions_Tab:
             # Pick a random action/option within all eligable action/options
             # I think there should be a better way of doing this...
             visited_actions = self.action_model.visited_actions(plan_x)
-            action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
-            available_actions = visited_actions + action_consistent_options
+            #action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
+            available_actions = visited_actions #+ action_consistent_options
             
             for a in available_actions: 
                 self._planning_update(plan_x, a)
@@ -220,7 +241,7 @@ class DynaOptions_Tab:
     def agent_end(self, s, o, a, r, gamma):
         self.update(s, o, a, None, r, gamma, terminal=True)
         self.behaviour_learner.episode_end()
-        self.option_model.episode_end()
+        #self.option_model.episode_end()
 
         # Logging state visitation
         globals.collector.collect('state_visitation', np.copy(self.state_visitations))   

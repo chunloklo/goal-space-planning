@@ -15,6 +15,10 @@ import jax.numpy as jnp
 import jax
 import optax
 import copy
+from typing import Dict, Union, Tuple, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    # Important for forward reference
+    from src.problems.BaseProblem import BaseProblem
 
 class QLearner_ImageNN_funcs():
     def __init__(self, num_actions: int, learning_rate: float):
@@ -120,6 +124,71 @@ class QLearner():
         max_q = np.max(xp_predictions)
         delta = r + env_gamma * max_q - x_prediction
         self.Q[x, a] += step_size * delta
+
+        # Pushing up learner delta for search control
+        globals.blackboard['learner_delta'] = delta
+
+    def episode_end(self):
+        # globals.collector.collect('Q', np.copy(self.Q))   
+        pass
+
+
+
+class QLearnerGPI():
+    def __init__(self, num_state_features: int, num_actions: int, num_options : int,problem: 'BaseProblem'):
+        self.num_state_features: int = num_state_features
+        self.num_actions: int = num_actions
+        self.num_options = num_options
+        self.Q_O = np.zeros((self.num_state_features, self.num_options))
+        self.Q_b = np.zeros((self.num_state_features, self.num_actions))
+        self.R_O = np.zeros((self.num_state_features, self.num_options))
+        self.num_options = num_options
+        self.num_primitive_actions = self.num_actions - self.num_options
+
+        self.last_action = -1
+
+        self.goal_reward = False
+        self.env = problem.getEnvironment()
+
+    def is_option(self,o):
+        return True if o>= self.num_primitive_actions else False
+
+    def get_option_index(self,o):
+        return o - self.num_primitive_actions
+
+    def get_action_values(self, x: int) -> np.ndarray:
+        return self.Q_b[x, :]
+
+    def get_option_values(self, x: int) -> np.ndarray:
+        return self.Q_O[x, :]
+
+    def get_primitive_action_values(self, x: int) -> np.ndarray:
+        return self.Q_b[x, :self.num_primitive_actions]
+
+    def planning_update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+        self.update(x, a, xp, r, env_gamma, step_size)
+
+    def target_update(self, x: int, a: int, target: float, step_size: float):
+        pass
+
+    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+        if self.is_option(a):
+            
+            a = self.get_option_index(a)
+            current_last_action = self.last_action
+            self.last_action = a
+            if x in self.env.terminal_states: # TODO action consistent options too
+                
+                self.Q_O[:,current_last_action] = r
+            else:
+                self.Q_O[x,a] = np.max(self.Q_O[xp,a]) - r
+
+        x_prediction = self.Q_b[x, a]
+        xp_predictions = self.get_action_values(xp)
+
+        max_q = np.max(xp_predictions)
+        delta = r + env_gamma * max_q - x_prediction
+        self.Q_b[x, a] += step_size * delta                
 
         # Pushing up learner delta for search control
         globals.blackboard['learner_delta'] = delta

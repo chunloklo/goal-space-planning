@@ -169,7 +169,5 @@ class OptionPlanning_Tab:
             else:
                 raise NotImplementedError()
         
-
-
     def agent_end(self, x, a, r, gamma):
         self.update(x, a, globals.blackboard['terminal_state'], r, gamma)

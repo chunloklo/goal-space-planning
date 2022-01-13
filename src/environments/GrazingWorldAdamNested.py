@@ -33,10 +33,12 @@ class GrazingWorldAdamNested(GrazingWorld):
         
         # first nest has 1 env, then 2* as many in each subsequent nest
         
-        if num_nests<2:
+        if self.num_nests<2:
             raise Exception("Number of nests must be greater than 1.")
         self.shape = (self.num_nests**2-1,8, 12)
         self.nS = np.prod(self.shape)
+
+        globals.blackboard["grid_nS"] = self.shape[-1]*self.shape[-2]
 
         self.non_nested_goal_positions = [ (1,1), (2, 7) ]  
 
@@ -48,16 +50,13 @@ class GrazingWorldAdamNested(GrazingWorld):
             for goal in self.non_nested_goal_positions:
                 self.transition_goal_positions.append( tuple(  (i,)  ) + goal) 
 
-
-        self.reward_off_length  = 5* self.reward_sequence_length # so far just done for 1 layer of depth
+        # for 2 layers we have 2**2 goal states, and 5 phases, since we want to have phase for 0 rewards too (phase is a period of timesteps during which one reward is "on")
+        # mostly just works 2 layers with 600 reward sequence length
+        self.phases = (2**self.num_nests+1)
+        self.full_cycle  = self.phases* self.reward_sequence_length # so far just done for 1 layer of depth
         self.goals = dict()
         for grid_no in range(math.floor(self.shape[0]/2), self.shape[0]):
-
-            # so far hard coded. reward sequence length needs to be 600
-            if grid_no == 1:
-                it_start = 2
-            else:
-                it_start = 7
+            it_start = grid_no*(self.phases) -1 
 
             for goal_no in range(1,3):
                 self.goals[(grid_no, goal_no)] = dict()
@@ -67,10 +66,10 @@ class GrazingWorldAdamNested(GrazingWorld):
 
                 if goal_no ==1:
                     self.goals[(grid_no, goal_no)]["reward"] =100
-                    self.goals[(grid_no, goal_no)]["iterator"] = self.reward_off_length - it_start*self.reward_off_length/10
+                    self.goals[(grid_no, goal_no)]["iterator"] = self.full_cycle - (it_start+1)*self.full_cycle/(self.phases*2)
                 elif goal_no == 2:
                     self.goals[(grid_no, goal_no)]["reward"] = 50
-                    self.goals[(grid_no, goal_no)]["iterator"] = self.reward_off_length - (it_start+1)*self.reward_off_length/10
+                    self.goals[(grid_no, goal_no)]["iterator"] = self.full_cycle - it_start*self.full_cycle/(self.phases*2)
 
         for grid_no in range(self.shape[0]):
             self.goals[(grid_no, 3)] = {}
@@ -110,7 +109,7 @@ class GrazingWorldAdamNested(GrazingWorld):
         self.start_state = (0,self.shape[1]-2, 2)
         self.current_state = self.start_state
         self.terminal_state_positions = [self.goals[k]["position"] for k in self.goals.keys()]
-        self.terminal_states = [np.ravel_multi_index(np.array(state), self.shape) for state in self.terminal_state_positions] + [ tuple( (i,) ) + self.third_goal_pos for i in range(self.shape[0])] # goal 3 is terminal state in all levels
+        self.terminal_states = [np.ravel_multi_index(np.array(state), self.shape) for state in self.terminal_state_positions]  # goal 3 is terminal state in all levels
 
         # self.selectable_states = list(range(self.shape[0]*self.shape[1]))
         # for i, wall_grid in enumerate(self.wall_grids):
@@ -162,18 +161,19 @@ class GrazingWorldAdamNested(GrazingWorld):
 
     # give the rewards associated with a given state, action, next state tuple
     def rewards(self, s, terminal):
-        if terminal:
-            for k in self.goals.keys():
-                try:
-                    print(self.goals[k]["position"], self.goals[k]["current_reward"], self.goals[k]["reward_sequence_length"], self.goals[k]["iterator"])
-                except:
-                    print(self.goals[k]["position"], self.goals[k]["current_reward"])
+        if terminal:            
+            # for k in self.goals.keys():
+            #     try:
+            #         print(self.goals[k]["position"],self.goals[k]["reward"],self.goals[k]["current_reward"],self.goals[k]["reward_sequence_length"],self.goals[k]["iterator"])
+            #     except:
+            #         print(self.goals[k]["position"],self.goals[k]["current_reward"])
+
             rewards = [self.goals[k]["current_reward"] for k in self.goals.keys()]
             globals.collector.collect('goal_rewards', rewards)  
             if max(rewards) == 1: # third goal is the only one on:
                 best_goal_num = self.goal_pos_to_goal_num[self.third_goal_pos_full]
             else:
-                for k  in self.goals.keys():
+                for k in self.goals.keys():
                     if self.goals[k]["current_reward"] == max(rewards):
                         best_goal_num = k
             globals.collector.collect('max_return', self.goals[best_goal_num]["current_reward"] + self.step_to_goals[best_goal_num] * self.step_penalty)  
@@ -194,7 +194,10 @@ class GrazingWorldAdamNested(GrazingWorld):
         if increment_iter:
             for k in self.goals.keys():
                 if "iterator" in self.goals[k]:
-                    if self.goals[k]["iterator"] == self.goals[k]["reward_sequence_length"]:
+                    if self.goals[k]["iterator"] == self.goals[k]["reward_sequence_length"] and self.goals[k]["current_reward"] == self.goals[k]["reward"]:
+                        self.gen_reward_sequence(k,self.goals[k]["current_reward"] )
+                        self.goals[k]["iterator"] = 0
+                    elif self.goals[k]["iterator"] == self.goals[k]["reward_sequence_length"]*4 and self.goals[k]["current_reward"] == 0:
                         self.gen_reward_sequence(k,self.goals[k]["current_reward"] )
                         self.goals[k]["iterator"] = 0
                     else:

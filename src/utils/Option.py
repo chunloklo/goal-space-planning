@@ -1,5 +1,6 @@
 from collections import defaultdict
 import numpy as np
+from src.utils import globals
 
 
 class Option:
@@ -21,6 +22,9 @@ class Option:
         return self._termination_condition(self.termination_set, state)
 
     def step(self, state):
+        if state >= globals.blackboard["grid_nS"]:
+            while state >= globals.blackboard["grid_nS"]:
+                state -= globals.blackboard["grid_nS"]
         return self.policy_selection(state), self.termination_condition(state)
 
 

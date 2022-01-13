@@ -73,7 +73,8 @@ key_to_plot = 'return_data' # the key to plot the data
 fig, axs = plt.subplots(1, figsize = (6, 4 ), dpi = 300)
 for en, js in enumerate(json_handles):
     run, param , data, max_returns = analysis_utils.find_best(js, data = 'return')
-    label_str = f'{param["agent"]} + {param.get("skip_alg", "")}'
+    print(param)
+    label_str = f'{param["agent"]}'
     print(param)
     plot(axs, data = data[key_to_plot], label = f"{label_str}")
     if en == 0:
@@ -85,7 +86,7 @@ for en, js in enumerate(json_handles):
     print(key_to_plot, data[key_to_plot]['mean'][-5:], data[key_to_plot]['stderr'][-5:])
 
 
-axs.set_ylim([-100, 110])
+axs.set_ylim([-30, 110])
 # axs.set_xlim([3250, 3750])
 # axs.set_ylim([-2000, 100])
 axs.spines['top'].set_visible(False)

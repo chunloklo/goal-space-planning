@@ -12,7 +12,7 @@ RIGHT = 1
 DOWN = 2
 LEFT = 3
 
-def get_options(option_name):
+def get_options(option_name, nests = 1):
     if "GrazingAdam" in option_name:
         num_states = 95
         num_actions = 4
@@ -182,6 +182,78 @@ def get_options(option_name):
                         option_4_term_set, policy_selection,
                         termination_condition, num_actions)
         return [option1, option2, option3, option4]
+
+    # only for 2 nests
+    elif "Nested" in option_name:
+            num_states = 96*3-1
+            num_actions = 4
+            policy_option_1 = {
+
+                0:  RIGHT, 1: DOWN,   2:  LEFT,   3: LEFT, 4: LEFT, 5: LEFT,  6: LEFT,   7: LEFT,   8: LEFT,   9: LEFT,   10: LEFT,  11: LEFT,
+                12: RIGHT, 13: RIGHT, 14: RIGHT,  15: UP,  16: LEFT,17: LEFT, 18: LEFT,  19: LEFT,  20: LEFT,  21: LEFT,  22: LEFT,  23: LEFT,
+                24: RIGHT, 25: RIGHT, 26: RIGHT,  27: UP,  28: UP,  29: UP,   30: LEFT,  31: UP,    32: UP,    33: UP,    34: UP,    35: UP, 
+                36: RIGHT, 37: RIGHT, 38: RIGHT,  39: UP,  40: UP,  41: UP,   42: LEFT,  43: LEFT,  44: RIGHT, 45: UP,    46: UP,    47: UP,    
+                48: RIGHT, 49: RIGHT, 50: RIGHT,  51: UP,  52: UP,  53: UP,   54: LEFT,  55: LEFT,  56: LEFT,  57: UP,    58: UP,    59: UP, 
+                60: RIGHT, 61: RIGHT, 62: RIGHT,  63: UP,  64: UP,  65: UP,   66: LEFT,  67: LEFT,  68: LEFT,  69: UP,    70: UP,    71: UP,
+                72: RIGHT, 73: RIGHT, 74: RIGHT,  75: UP,  76: UP,  77: UP,   78: LEFT,  79: LEFT,  80: LEFT,  81: LEFT,  82: UP,    83: UP,
+                84: RIGHT, 85: RIGHT, 86: RIGHT,  87: UP,  88: UP,  89: UP,   90: LEFT,  91: LEFT,  92: LEFT,  93: LEFT,  94: UP,    95: UP 
+                
+            }
+            
+            term_set = [109, 127, 205, 223, 81, 177, 273]
+
+            def policy_selection(policy, state):
+                return policy[state]
+
+            def termination_condition(termination_set, state):
+
+                if state in termination_set:
+                    return True
+                return False
+
+            option1 = QOption([x for x in range(num_states)], policy_option_1,
+                            term_set, policy_selection,
+                            termination_condition, num_actions)
+                            
+            policy_option_2 = {
+
+                0:  RIGHT, 1: RIGHT,  2:  RIGHT,  3: RIGHT,  4: RIGHT,  5: RIGHT,  6: RIGHT,  7: DOWN,   8: LEFT,   9: LEFT,   10: LEFT,  11: LEFT,
+                12: RIGHT, 13: RIGHT, 14: RIGHT,  15: RIGHT, 16: RIGHT, 17: RIGHT, 18: RIGHT, 19: DOWN,  20: LEFT,  21: LEFT,  22: LEFT,  23: LEFT,
+                24: RIGHT, 25: RIGHT, 26: RIGHT,  27: UP,    28: UP,    29: UP,    30: LEFT,  31: UP,    32: UP,    33: UP,    34: UP,    35: UP, 
+                36: RIGHT, 37: RIGHT, 38: RIGHT,  39: UP,    40: UP,    41: UP,    42: LEFT,  43: LEFT,  44: RIGHT, 45: UP,    46: UP,    47: UP,    
+                48: RIGHT, 49: RIGHT, 50: RIGHT,  51: UP,    52: UP,    53: UP,    54: LEFT,  55: LEFT,  56: RIGHT, 57: UP,    58: UP,    59: UP, 
+                60: RIGHT, 61: RIGHT, 62: RIGHT,  63: UP,    64: UP,    65: UP,    66: LEFT,  67: LEFT,  68: RIGHT, 69: UP,    70: UP,    71: UP,
+                72: RIGHT, 73: RIGHT, 74: RIGHT,  75: UP,    76: UP,    77: UP,    78: LEFT,  79: LEFT,  80: UP,    81: RIGHT, 82: UP,    83: UP,
+                84: RIGHT, 85: RIGHT, 86: RIGHT,  87: UP,    88: UP,    89: UP,    90: LEFT,  91: LEFT,  92: UP,    93: RIGHT, 94: UP,    95: UP 
+                
+            }
+            
+
+            option2 = QOption([x for x in range(num_states)], policy_option_2,
+                            term_set, policy_selection,
+                            termination_condition, num_actions)
+
+            policy_option_3 = {
+
+                0:  RIGHT, 1: RIGHT,  2:  RIGHT,  3: RIGHT,  4: RIGHT,  5: RIGHT,  6: RIGHT,  7: RIGHT,   8: RIGHT,  9: DOWN,  10: DOWN,  11: DOWN,
+                12: RIGHT, 13: RIGHT, 14: RIGHT,  15: RIGHT, 16: RIGHT, 17: RIGHT, 18: RIGHT, 19: RIGHT,  20: RIGHT, 21: DOWN, 22: DOWN,  23: DOWN,
+                24: RIGHT, 25: RIGHT, 26: RIGHT,  27: DOWN,  28: DOWN,  29: DOWN,  30: LEFT,  31: UP,     32: UP,    33: DOWN, 34: DOWN,  35: DOWN, 
+                36: RIGHT, 37: RIGHT, 38: RIGHT,  39: DOWN,  40: DOWN,  41: DOWN,  42: LEFT,  43: LEFT,   44: RIGHT, 45: DOWN, 46: DOWN,  47: DOWN,    
+                48: RIGHT, 49: RIGHT, 50: RIGHT,  51: RIGHT, 52: RIGHT, 53: RIGHT, 54: RIGHT, 55: RIGHT,  56: RIGHT, 57: DOWN, 58: DOWN,  59: DOWN, 
+                60: RIGHT, 61: RIGHT, 62: RIGHT,  63: RIGHT, 64: RIGHT, 65: RIGHT, 66: RIGHT, 67: RIGHT,  68: RIGHT, 69: DOWN, 70: LEFT,  71: LEFT,
+                72: RIGHT, 73: RIGHT, 74: RIGHT,  75: RIGHT, 76: RIGHT, 77: RIGHT, 78: RIGHT, 79: RIGHT,  80: RIGHT, 81: DOWN, 82: LEFT,  83: LEFT,
+                84: RIGHT, 85: RIGHT, 86: RIGHT,  87: RIGHT, 88: RIGHT, 89: RIGHT, 90: RIGHT, 91: RIGHT,  92: RIGHT, 93: UP,   94: LEFT,  95: LEFT 
+                
+            }
+
+            option3 = QOption([x for x in range(num_states)], policy_option_3,
+                            term_set, policy_selection,
+                            termination_condition, num_actions)
+
+            return [option1, option2, option3]
+
+
+
     else:
         raise NotImplementedError()
 

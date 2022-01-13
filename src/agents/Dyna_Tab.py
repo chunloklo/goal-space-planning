@@ -87,12 +87,15 @@ class Dyna_Tab:
         # Treating the terminal state as an additional state in the tabular setting
         xp = self.representation.encode(sp) if not terminal else self.num_states
 
-
+       
+        
         self.state_visitations[x] += 1
 
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
-            self.tau += 1
+            print(self.env.terminal_states)
+            for i in self.env.terminal_states:
+                self.tau[i,:] += 1
         self.tau[x, a] = 0
 
         if isinstance(self.behaviour_learner, QLearner):

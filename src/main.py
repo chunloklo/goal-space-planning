@@ -82,7 +82,8 @@ except AttributeError:
         wrapper = OneStepWrapper(agent, problem)
 
 
-save_logger_keys = ['Q', 'slow_Q', 'policy_agreement', 'reward']
+# save_logger_keys = ['Q', 'slow_Q', 'policy_agreement', 'reward']
+save_logger_keys = ['max_return','return']
 print(f'Saved logger keys: {save_logger_keys}')
 
 glue = RlGlue(wrapper, env)
@@ -90,22 +91,12 @@ glue = RlGlue(wrapper, env)
 # Run the experiment
 rewards = []
 try:
-<<<<<<< HEAD
-    episode_iter = range(exp.episodes)
-    if args.progress:
-        episode_iter = tqdm.tqdm(episode_iter)
-    for episode in episode_iter:
-        print("episode", episode)
-        glue.total_reward = 0
-        glue.runEpisode(max_steps)
-        globals.collector.collect('return', glue.total_reward)
-    globals.collector.reset()
-=======
     if exp.episodes > 0:
         episode_iter = range(exp.episodes)
         if args.progress:
             episode_iter = tqdm.tqdm(episode_iter)
         for episode in episode_iter:
+            # print("episode", episode)
             glue.total_reward = 0
             glue.runEpisode(max_steps)
             globals.collector.collect('return', glue.total_reward)
@@ -131,7 +122,6 @@ try:
         globals.collector.reset()
     else:
         raise NotImplementedError(f'Running {exp.episodes} episodes is not supported. Please either run with > 0 for fixed number of episodes or -1 to limit by step count instead')
->>>>>>> 8ac634975947b6ed67a18ac55fda9fb1aea6f1fb
 except InvalidRunException as e:
     save_error(experiment_old_format, e)
     logging.info(f"Experiment errored {json_file} : {idx}, Time Taken : {time.time() - t_start}")

@@ -42,6 +42,8 @@ class GrazingWorldAdam(GrazingWorld):
         self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,4)]
         self.terminal_states = [state[0]*self.shape[1] + state[1] for state in self.terminal_state_positions]
 
+        globals.blackboard["grid_nS"] = self.shape[-1]*self.shape[-2]
+
     def _limit_coordinates(self, s, a):
         """
         Prevent the agent from falling out of the grid world

@@ -74,6 +74,7 @@ def process_data_interface(json_handles):
             else:
                 return_data, max_returns = analysis_utils.load_different_runs(i)
                 mean_return_data, stderr_return_data = process_runs(return_data)
+
                 return_data = {
                     'mean' : mean_return_data,
                     'stderr' : stderr_return_data
