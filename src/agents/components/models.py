@@ -65,6 +65,52 @@ class RewardModel_ImageNN():
     def update(self, data):
         self.params, self.opt_state = self.funcs.f_update(self.params, self.opt_state, data)
 
+class OptionActionModel_Sutton_Tabular():
+    def __init__(self, num_states: int, num_actions: int, num_options: int, options: List[Option]):
+        self.num_states: int = num_states
+        self.num_actions: int = num_actions
+        self.num_options: int = num_options
+        self.options = options
+        
+        self.reward_model = np.zeros((num_states, num_actions, num_options))
+        self.discount_model = np.zeros((num_states, num_actions, num_options))
+        self.transition_model = np.zeros((num_states, num_actions, num_options, num_states))
+        
+    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+        """updates the model 
+        
+        Returns:
+            Nothing
+        """
+
+        for o in range(self.num_options):
+            if env_gamma == 0:
+                option_termination = 1
+                # If terminating, what the options do at xp doesn't matter, so just set to some number
+                ap = 0
+            else:
+                ap, option_termination = self.options[o].step(xp)
+
+            self.reward_model[x, a, o] += step_size * (r + env_gamma * (1 - option_termination) * self.reward_model[xp, ap, o] - self.reward_model[x, a, o])
+            self.discount_model[x, a, o] += step_size * (option_termination + (1 - option_termination) * env_gamma * self.discount_model[xp, ap, o] - self.discount_model[x, a, o])
+            
+            xp_onehot = numpy_utils.create_onehot(self.num_states, xp)
+            # Note that this update is NOT discounted. Use in conjunction with self.option_discount to form the planning estimate
+            self.transition_model[x, a, o] += step_size * ((option_termination * xp_onehot) + (1 - option_termination) * self.transition_model[xp, ap, o] - self.transition_model[x, a, o]) 
+
+    def predict(self, x: npt.ArrayLike, a:int, o: int) -> Any:
+        reward = self.reward_model[x, a, o]
+        discount = self.discount_model[x, a, o]
+        next_state_prob = self.transition_model[x, a, o]
+        return reward, discount, next_state_prob
+
+    def episode_end(self):
+        # Logging
+        globals.collector.collect('action_model_r', np.copy(self.reward_model))
+        globals.collector.collect('action_model_discount', np.copy(self.discount_model))
+        globals.collector.collect('action_model_transition', np.copy(self.transition_model))
+        pass
+
 class OptionModel_Sutton_Tabular():
     def __init__(self, num_states: int, num_actions: int, num_options: int, options: List[Option]):
         self.num_states: int = num_states
@@ -76,13 +122,16 @@ class OptionModel_Sutton_Tabular():
         self.discount_model = np.zeros((num_states, num_options))
         self.transition_model = np.zeros((num_states, num_options, num_states))
         
-    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float):
+    def update(self, x: int, a: int, xp: int, r: float, env_gamma: float, step_size: float, s:Any=None):
         """updates the model 
         
         Returns:
             Nothing
         """
-        action_consistent_options = options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
+        if s is None:
+            action_consistent_options = options.get_action_consistent_options(x, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
+        else:
+            action_consistent_options = options.get_action_consistent_options(s, a, self.options, convert_to_actions=True, num_actions=self.num_actions)
         for action_option in action_consistent_options:
             o = options.from_action_to_option_index(action_option, self.num_actions)
             if env_gamma == 0:

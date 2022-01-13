@@ -1,0 +1,26 @@
+{
+    "experiment_name": "WAVE_DynaOptions_NN_Test",
+    "agent": "DynaOptions_NN",
+    "problem": "GrazingWorldAdam",
+    "episodes": -1,
+    "max_steps": 60000,
+    "metaParameters": {
+        "seed": [0],
+        "exploration_phase": [0],
+        "no_reward_exploration": [false],
+        "alpha": [0.1],
+        "epsilon": [0.1],
+        "behaviour_alg": ["QLearner"],
+        "search_control": ["random"],
+        "option_model_alg": ["sutton"],
+        "polyak_stepsize": [0.005],
+        "gamma": [1.0],
+        "kappa": [0.0],
+        "kappa_interval": [10000],
+        "priority_alpha": [0.1],
+        "lambda": [0.9],
+        "planning_steps": [1],
+        "model_planning_steps": [0],
+        "reward_sequence_length" : [1000000]
+    }
+}

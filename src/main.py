@@ -22,6 +22,7 @@ import tqdm
 # Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
 from jax.config import config
 config.update("jax_debug_nans", True)
+import jax; jax.config.update('jax_platform_name', 'cpu')
 
 # Logging info level logs for visibility.
 logging.basicConfig(level=logging.INFO)
@@ -63,7 +64,7 @@ if experiment_completed(exp_json, args.ignore_error) and not args.overwrite:
     if (args.ignore_error):
         print('Counted run as completed if run errored previously')
     print(f'Run Already Complete - Ending Run')
-    exit()
+    sys.exit(0)
 
 try:
     wrapper_class = agent.wrapper_class
@@ -82,9 +83,17 @@ except AttributeError:
         wrapper = OneStepWrapper(agent, problem)
 
 
-# save_logger_keys = ['Q', 'slow_Q', 'policy_agreement', 'reward']
-save_logger_keys = ['max_return','return']
-print(f'Saved logger keys: {save_logger_keys}')
+save_logger_keys = ['tau', 'Q', 'max_reward_rate', 'reward_rate']
+# save_logger_keys = ['action_model_r', 'action_model_discount', 'action_model_transition', 'model_r', 'model_discount', 'model_transition']
+# save_logger_keys = []
+
+step_logging_interval = 100
+
+if (args.progress):
+    print(f'Saved logger keys: {save_logger_keys}')
+    if exp.episodes == -1:
+        print(f'Logging interval: {step_logging_interval}, num steps: {exp.max_steps}')
+    input("Confirm run?")
 
 glue = RlGlue(wrapper, env)
 # print("run:",run)
@@ -102,7 +111,7 @@ try:
             globals.collector.collect('return', glue.total_reward)
         globals.collector.reset()
     elif exp.episodes == -1:
-        globals.blackboard['step_logging_interval'] = 500
+        globals.blackboard['step_logging_interval'] = step_logging_interval
         print('Running with steps rather than episodes')
         if (exp.max_steps == 0):
             raise ValueError('Running with step limit but max_steps is 0')
@@ -138,3 +147,4 @@ for k in save_logger_keys:
 cleanup_files(experiment_old_format)
 save_data(experiment_old_format, save_obj)
 logging.info(f"Experiment Done {json_file} : {idx}, Time Taken : {time.time() - t_start}")
+sys.exit(0)

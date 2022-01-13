@@ -188,7 +188,7 @@ slurm_file = f"#!/bin/sh\n" \
             f"#SBATCH --ntasks={args.ntasks}\n" \
             f"#SBATCH --mem-per-cpu={memory}M\n" \
             f"{email_str}" \
-            f"source ~/env/bin/activate\n" \
+            f"source ~/env-38/bin/activate\n" \
             f"cd {cwd}\n" \
             f"export PYTHONPATH={cwd}:$PYTHONPATH\n" \
             f"{command}"

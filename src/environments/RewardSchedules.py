@@ -33,7 +33,6 @@ class CyclingRewardSchedule():
         try:
             timeline_location = globals.blackboard['num_episodes_passed'] if self.cycle_type == 'episode' else globals.blackboard['num_steps_passed']
         except Exception as e:
-            print(type(e))
             timeline_location = 0
 
         if timeline_location < self.start_pause:

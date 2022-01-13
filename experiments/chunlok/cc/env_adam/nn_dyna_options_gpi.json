@@ -1,0 +1,27 @@
+{
+    "experiment_name": "cc_nn_graze_sweep",
+    "agent": "DynaOptions_NN",
+    "problem": "GrazingWorldAdam",
+    "episodes": -1,
+    "max_steps": 80000,
+    "metaParameters": {
+        "seed": [0, 1, 2, 3, 4],
+        "exploration_phase": [0],
+        "no_reward_exploration": [false],
+        "alpha": [1e-2, 1e-3, 1e-4, 1e-5],
+        "epsilon": [0.1],
+        "behaviour_alg": ["QLearner"],
+        "search_control": ["random"],
+        "option_value_alg": ["action_selection"],
+        "polyak_stepsize": [0.005],
+        "gamma": [1.0],
+        "kappa": [1.1],
+        "kappa_interval": [2000, 4000, 8000],
+        "priority_alpha": [0.0, 0.1],
+        "lambda": [0.9],
+        "planning_steps": [1],
+        "model_planning_steps": [0],
+        "reward_sequence_length" : [40000],
+        "batch_size": [8]
+    }
+}

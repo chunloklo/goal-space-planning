@@ -1,4 +1,4 @@
-from typing import Any, List, Dict, Tuple
+from typing import Any, List, Dict, Literal, Tuple
 import numpy as np
 import numpy.typing as npt
 from optax._src.update import incremental_update
@@ -52,6 +52,27 @@ class QLearner_ImageNN_funcs():
             prev_pred = jnp.take_along_axis(x_pred, jnp.expand_dims(a, axis=1), axis=1).squeeze()
             delta = r + gamma * xp_pred - prev_pred
             return delta
+        
+        def loss_option_target(params: hk.Params, target_params: hk.Params, data):
+            # There is some copypasta here which isn't great. 
+            r = data['r']
+            x = data['x']
+            a = data['a']
+            xp = data['xp']
+            gamma = data['gamma']
+            option_q_sa = data['best_option_q_sa']
+
+            x_pred = self.f_qfunc.apply(params, x)
+            xp_pred = jax.lax.stop_gradient(jnp.max(self.f_qfunc.apply(target_params, xp), axis=1))
+            prev_pred = jnp.take_along_axis(x_pred, jnp.expand_dims(a, axis=1), axis=1).squeeze()
+            td_errors = jnp.maximum(r + gamma * xp_pred, option_q_sa) - prev_pred
+            return jnp.mean(jnp.square(td_errors)), td_errors
+
+        def update_option_target(params: hk.Params, target_params: hk.Params, opt_state, data):
+            grads, td_errors = jax.grad(loss_option_target, has_aux=True)(params, target_params, data)
+            updates, opt_state = self.f_opt.update(grads, opt_state)
+            params = optax.apply_updates(params, updates)
+            return params, opt_state, td_errors
 
         def loss(params: hk.Params, target_params: hk.Params, data):
             td_errors = get_td_errors(params, target_params, data)
@@ -63,9 +84,27 @@ class QLearner_ImageNN_funcs():
             params = optax.apply_updates(params, updates)
             return params, opt_state, td_errors
 
+
+        # For the shift update
+        def shift_loss(params: hk.Params, data):
+            # There is some copypasta here which isn't great. 
+            x = data['x']
+            best_option_values = data['best_option_values']
+
+            x_pred = self.f_qfunc.apply(params, x)
+            return jnp.mean(jnp.square(x_pred - jnp.maximum(jax.lax.stop_gradient(x_pred), best_option_values)))
+        
+        def shift_update(params: hk.Params, opt_state, data):
+            grads = jax.grad(shift_loss)(params, data)
+            updates, opt_state = self.f_opt.update(grads, opt_state)
+            params = optax.apply_updates(params, updates)
+            return params, opt_state
+
         self.f_get_q_values = jax.jit(get_q_values)
         self.f_update = jax.jit(update)  
-        self.f_get_td_errors = jax.jit(get_td_errors)      
+        self.f_update_target = jax.jit(update_option_target)
+        self.f_get_td_errors = jax.jit(get_td_errors)
+        self.f_shift_update = jax.jit(shift_update)      
         return
 
 class QLearner_ImageNN():
@@ -85,12 +124,26 @@ class QLearner_ImageNN():
     def get_action_values(self, x: npt.ArrayLike) -> np.ndarray:
         action_values = self.funcs.f_get_q_values(self.params, x)
         return action_values
+
+    def get_target_action_values(self, x: npt.ArrayLike) -> np.ndarray:
+        action_values = self.funcs.f_get_q_values(self.target_params, x)
+        return action_values
     
     def get_td_errors(self, data):
         return self.funcs.f_get_td_errors(self.params, self.target_params, data)
 
-    def update(self, data, polyak_stepsize:float=0.005):
-        self.params, self.opt_state, td_errors = self.funcs.f_update(self.params, self.target_params, self.opt_state, data)
+    def shift_update(self, data):
+        self.params, self.opt_state = self.funcs.f_shift_update(self.params, self.opt_state, data)
+
+    def update(self, data, polyak_stepsize:float=0.005, update_type: Literal['None', 'base_target']='None'):
+        if update_type == 'None':
+            update_func = self.funcs.f_update
+        elif update_type == 'base_target':
+            update_func = self.funcs.f_update_target
+        else:
+            raise NotImplementedError()
+
+        self.params, self.opt_state, td_errors = update_func(self.params, self.target_params, self.opt_state, data)
         self.target_params = incremental_update(self.params, self.target_params, polyak_stepsize)
         return self.params, td_errors
 

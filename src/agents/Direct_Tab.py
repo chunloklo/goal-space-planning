@@ -43,8 +43,9 @@ class Direct_Tab:
         self.epsilon = params['epsilon']
         self.gamma = params['gamma']
         self.lmbda = params['lambda']
+        self.skip_prob = params['skip_prob']
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
-        self.skip_alg = param_utils.parse_param(params, 'skip_alg', lambda p : p in ['Testing', 'None'], default='None', optional=False) 
+        self.skip_alg = param_utils.parse_param(params, 'skip_alg', lambda p : p in ['Testing', 'None', 'Learning'], default='None', optional=False) 
         # self.test_alg = param_utils.parse_param(params, 'test_alg', lambda p : p in ['skip_state', None], default=None, optional=True) 
         self.a = -1
         self.x = -1
@@ -91,19 +92,9 @@ class Direct_Tab:
     def get_policy(self, x: int) -> npt.ArrayLike:
         probs = np.zeros(self.num_actions)
         probs += self.epsilon / (self.num_actions)
-        
-        slow_action_values = self.slow_behaviour_learner.get_action_values(x)
-        slow_q = np.max(slow_action_values)
-        slow_a = np.argmax(slow_action_values)
 
-        fast_action_values = self.behaviour_learner.get_action_values(x)
-        fast_q = np.max(fast_action_values)
-        fast_a = np.argmax(fast_action_values)
-
-        if (slow_q > fast_q):
-            a = slow_a
-        else:
-            a = fast_a
+        action_values = self.behaviour_learner.get_action_values(x)
+        a = np.argmax(action_values)
 
         probs[a] += 1 - self.epsilon
         return probs
@@ -152,11 +143,12 @@ class Direct_Tab:
         if self.skip_alg == 'Testing':
             # if self.random.uniform(0, 1) < self.policy_agreement[x]:
             #     skip_condition = True
-            skip_condition = False
-
-        if xp not in [3]:
-            skip_condition = True
-    
+            if xp not in [self.env.size // 2]:
+                if self.random.uniform(0, 1) < self.skip_prob:
+                    skip_condition = True
+        
+        if self.skip_alg == 'Learning':
+            pass
 
         if terminal:
             skip_condition = False
@@ -169,11 +161,12 @@ class Direct_Tab:
             # print(f'x:{x} prior_x:{self.prior_x} xp:{xp}')
             learn_x = self.prior_x
             learn_a = self.prior_a
-            r += self.interim_r
+            learn_r = r + self.interim_r
             self.interim_r = 0
-            self.learning_update(learn_x, learn_a, xp, r, gamma)
+            self.learning_update(learn_x, learn_a, xp, learn_r, gamma)
 
-            # print(f'x:{learn_x} a: {a} xp:{xp}')
+            # if learn_x == 32:
+            #     print(f'x:{learn_x} a:{learn_a} xp:{xp} gamma:{gamma}')
 
         new_q_values = self.behaviour_learner.get_action_values(x)
 
@@ -212,16 +205,19 @@ class Direct_Tab:
             # if not skip_condition:
             if skip_condition:
                 # ap = np.argmax(self.slow_behaviour_learner.get_action_values(xp))
-                if xp in [10, 17, 24, 31, 38, 45]:
+                
+                if xp % self.env.size == self.env.size // 2:
                     ap = 0
-                elif xp in [0, 7, 14, 21, 28, 35, 42]:
+                elif xp % self.env.size == 0:
                     ap = 2
-                elif xp in [6, 13, 20, 27, 34, 41, 48]:
+                elif xp % self.env.size == self.env.size - 1:
                     ap = 2 
-                elif xp in [1, 2]:
+                elif xp < self.env.size and xp < self.env.size // 2:
                     ap = 3
-                elif xp in [4, 5]:
+                elif xp < self.env.size and xp > self.env.size // 2:
                     ap = 1
+                else:
+                    raise ValueError(f'xp is {xp} sp: {sp}')
             else:
                 ap = self.selectAction(sp)
             # else:
@@ -242,6 +238,8 @@ class Direct_Tab:
             self.prior_x = xp
             self.prior_a = ap
 
+            # print(f'{self.prior_x} a: {self.prior_a}')
+
         self.cumulative_reward += r
         if globals.blackboard['num_steps_passed'] % globals.blackboard['step_logging_interval'] == 0:
             globals.collector.collect('Q', np.copy(self.behaviour_learner.Q))
@@ -249,6 +247,7 @@ class Direct_Tab:
             globals.collector.collect('policy_agreement', np.copy(self.policy_agreement))
             globals.collector.collect('reward', np.copy(self.cumulative_reward))
 
+            # print(self.cumulative_reward)
             self.cumulative_reward = 0
 
         return ap

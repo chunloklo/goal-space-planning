@@ -83,6 +83,32 @@ tar -xvf results.tar.bz2
 python analysis/learning_curve.py experiments/example/*.json
 ```
 
+## Getting a Compute Canada Node
+Drop this shell script into your project folder
+```
+#!/bin/sh
+#SBATCH --time=23:58:00
+#SBATCH --mem=186G
+#SBATCH --cpus-per-task=48
+#SBATCH --account=rrg-whitem
+#SBATCH --mail-type=ALL
+#SBATCH --nodes=1
+python sleep.py
+```
+
+where `sleepy.py` is 
+```
+import time
+
+while True:
+    time.sleep(60)
+```
+then, run `sbatch <script>.sh`.
+
+Run `sq`. It will list the node that has been queued, once it’s running, ssh in to the node number (starts with cdr)
+`ssh cdr<numbers>`
+
+
 
 ---
 ## Dependencies

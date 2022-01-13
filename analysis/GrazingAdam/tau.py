@@ -43,17 +43,13 @@ def generatePlot(json_handle):
 
 
     # Getting file name
-    file_name = prompt_user_for_file_name('_tau.png')
-    save_path = "./plots/"
-    save_folder = os.path.splitext(save_path)[0]
-    save_file = save_folder + f'/{file_name}'
+    save_file = prompt_user_for_file_name('./plots/', 'tau_', '', 'png', timestamp=True)
     print(f'Plot will be saved in {save_file}')
 
-    os.makedirs(save_folder, exist_ok=True)
-
-    x_range = get_x_range(0, data.shape[0], 500)
+    x_range = get_x_range(0, data.shape[0], 1)
 
     plt.figure()
+    plt.ylim([0, 7000])
     plt.plot(x_range, data, label=[13,31,81])
     plt.legend()
 

@@ -8,8 +8,10 @@ temp/
 processed/
 plots/
 
-# ignore python caches
+# Default env folder for virtual env
 env/
+
+# ignore python caches
 __pycache__
 *.pyc
 
@@ -24,3 +26,6 @@ test.json
 
 # Slurm output files
 *.out
+
+.DS_STORE
+.python-version

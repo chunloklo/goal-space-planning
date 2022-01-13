@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Optional, Sequence
-from numba import njit
+# from numba import njit
 from PyFixedReps.BaseRepresentation import BaseRepresentation
 
 class Tabular(BaseRepresentation):

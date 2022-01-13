@@ -1,0 +1,21 @@
+{
+    "experiment_name": "tmaze_test_0.5",
+    "agent": "Direct_Tab",
+    "problem": "TMaze",
+    "episodes": -1,
+    "max_steps": 200000,
+    "metaParameters": {
+        "seed": [0],
+        "exploration_phase": [0],
+        "no_reward_exploration": [true],
+        "alpha": [0.7],
+        "slow_alpha": [0.007],
+        "epsilon": [0.2],
+        "behaviour_alg": ["QLearner"],
+        "skip_alg": ["Testing"],
+        "gamma": [1.0],
+        "lambda": [0.9],
+        "skip_prob": [0.75],
+        "reward_sequence_length" : [40000]
+    }
+}
