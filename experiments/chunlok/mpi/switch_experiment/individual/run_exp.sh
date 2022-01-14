@@ -1,4 +1,2 @@
-mpiexec -n 8 python ParameterSweep/run_mpi.py src/mpi_run.py experiments/chunlok/mpi/switch_experiment/individual/dyna_backgroundgpi_sweep.py
-mpiexec -n 8 python ParameterSweep/run_mpi.py src/mpi_run.py experiments/chunlok/mpi/switch_experiment/individual/dyna_gpi_sweep.py
-mpiexec -n 8 python ParameterSweep/run_mpi.py src/mpi_run.py experiments/chunlok/mpi/switch_experiment/individual/dyna_sweep.py
-mpiexec -n 8 python ParameterSweep/run_mpi.py src/mpi_run.py experiments/chunlok/mpi/switch_experiment/individual/dynaoptions_sweep.py
+mpiexec -n 8 python sweep_configs/run_mpi.py src/run_experiment.py experiments/chunlok/mpi/switch_experiment/individual/dyna_backgroundgpi_only_low_init_sweep.py
+mpiexec -n 8 python sweep_configs/run_mpi.py src/run_experiment.py experiments/chunlok/mpi/switch_experiment/individual/dyna_backgroundgpi_only_sweep.py

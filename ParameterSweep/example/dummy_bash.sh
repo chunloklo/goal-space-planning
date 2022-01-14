@@ -1,1 +1,0 @@
-mpiexec -n 4 python ParameterSweep/run_mpi.py ParameterSweep/example/dummy_param.py ParameterSweep/example/dummy_run.py

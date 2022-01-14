@@ -20,14 +20,17 @@ from src.utils.run_utils import experiment_completed, InvalidRunException, save_
 import argparse
 import tqdm
 
-# Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
-from jax.config import config
+import jax
 from src.utils.param_utils import parse_param
 
 
-def run(param: dict, aux_config):
-    config.update("jax_debug_nans", True)
-    config.update('jax_platform_name', 'cpu')
+def run(param: dict, aux_config={}):
+    
+    if aux_config.get('jax_debug_nans', False):
+        # Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
+        jax.config.update("jax_debug_nans", True)
+
+    jax.config.update('jax_platform_name', 'cpu')
 
     show_progress = aux_config.get('show_progress', False)
 
@@ -49,7 +52,7 @@ def run(param: dict, aux_config):
     np.random.seed(seed)
 
     # [chunlok 2022-1-10] Massaging pararameter dict into the old experiment model parameters format.
-    # This is clunky, but needed since we're dependent on the ExperimentModel for much of our initiations,
+    # This is clunky, but needed since we're dependent on the ExperimentModel for much of our initialization,
     # which has a specific paradigm on what an experiment is.
     # TODO: Need to rip out the experiment description/model from much of the code. There's too much
     # assumption in that code to make things work well with other pieces of code.

@@ -37,3 +37,6 @@ A common way to perform sweeps is through grid-search. `generate_configs.get_sor
 ## IMPORTANT: Deterministic configuration list 
 It is imperative that the order of your configuration list is deterministic. When running with MPI, a copy of the configuration list will be created by each task and each task gets assigned configurations to run based on its index in the list. If the list is not deterministic, there is no guarantees that all configurations in the list will be ran.
 
+## Running on Compute Canada
+Example scripts on how to use this library to run configuration sweeps can be found in `sweep_configs/compute_canada`.
+

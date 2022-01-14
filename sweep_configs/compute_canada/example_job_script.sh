@@ -7,4 +7,4 @@
 #SBATCH --mail-type=ALL
 source ~/env-38/bin/activate
 cd /project/6010404/chunlok/dyna-options
-mpiexec python ParameterSweep/run_mpi.py experiments/chunlok/mpi/dyna_sweep.py src/mpi_run.py 
+mpiexec python sweep_configs/run_mpi.py src/run_experiment.py experiments/chunlok/mpi/dyna_sweep.py 
