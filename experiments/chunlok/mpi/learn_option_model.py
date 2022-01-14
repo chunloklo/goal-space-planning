@@ -2,10 +2,10 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-from ParameterSweep.parameters import get_sorted_parameter_list_from_dict
+from sweep_configs.generate_configs import get_sorted_configuration_list_from_dict
 
-# get_parameter_list function is required for 
-def get_parameter_list():
+# get_configuration_list function is required for 
+def get_configuration_list():
     parameter_dict = {
         "experiment_name": ["grazingworld_sweep"],
         "agent": ["Dyna_Tab"],
@@ -30,5 +30,5 @@ def get_parameter_list():
         "planning_alg": ['Standard']
     }
 
-    parameter_list = get_sorted_parameter_list_from_dict(parameter_dict)
+    parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)
     return parameter_list

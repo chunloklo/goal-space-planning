@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # Parsing arguments
     parser = argparse.ArgumentParser(description='Produces the action values video for GrazingWorld Adam')
-    parser.add_argument('parameter_path', help='path to the Python parameter file that contains a get_parameter_list function that returns a list of parameters to run')
+    parser.add_argument('parameter_path', help='path to the Python parameter file that contains a get_configuration_list function that returns a list of parameters to run')
     args = parser.parse_args()
 
     parameter_path = args.parameter_path
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     param_spec = importlib.util.spec_from_file_location("ParamModule", parameter_path)
     ParamModule = importlib.util.module_from_spec(param_spec)
     param_spec.loader.exec_module(ParamModule)
-    parameter_list = ParamModule.get_parameter_list()
+    parameter_list = ParamModule.get_configuration_list()
 
     data = run_utils.load_data(parameter_list[0])
 

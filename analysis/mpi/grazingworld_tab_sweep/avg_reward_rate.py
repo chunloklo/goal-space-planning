@@ -7,14 +7,14 @@ import argparse
 from src.utils import run_utils
 import importlib.util
 from copy import copy
-from ParameterSweep.analysis.sweep_info import group_configs
+from sweep_configs.analysis import group_configs
 import numpy as np
 from pprint import pprint
 import matplotlib
 from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_text_location, prompt_user_for_file_name, get_file_name, scale_value, _plot_init, prompt_episode_display_range
 from src.analysis.plot_utils import load_experiment_data, get_json_handle, get_x_range
 import matplotlib.pyplot as plt
-from ParameterSweep.common import get_parameter_list_from_file_path
+from sweep_configs.common import get_configuration_list_from_file_path
 
 from src.analysis.plot_utils import load_parameter_list_data, get_mean_std, mean_chunk_data
 
@@ -39,7 +39,7 @@ def get_perf(parameter_list):
 STEP_SIZE = 20
 
 def plot_best_reward_rate(ax, param_file_name: str, label: str):
-    parameter_list = get_parameter_list_from_file_path(param_file_name)
+    parameter_list = get_configuration_list_from_file_path(param_file_name)
 
     # grouping configs based on seeds
     grouped_params = group_configs(parameter_list, ['seed'])
@@ -60,7 +60,7 @@ def plot_best_reward_rate(ax, param_file_name: str, label: str):
     ax.fill_between(x_range, mean + std, mean - std, alpha=0.25, color=line[0].get_color())
 
 def plot_max_reward_rate(ax, param_file_name: str):
-    parameter_list = get_parameter_list_from_file_path(param_file_name)
+    parameter_list = get_configuration_list_from_file_path(param_file_name)
     
     # doesn't matter what we do here.
     max_reward_rate = load_max_reward_rate(parameter_list[0])
