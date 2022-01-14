@@ -10,12 +10,12 @@ This library's run files takes in paths to multiple python files in order to mak
 `run_mpi.py` is designed to be ran with MPI and will run all configurations returned from `get_configuration_list` in parallel in the number of nodes available.
 
 Example command:
-```mpiexec -n 8 python run_mpi.py <configuration_list_file> <run_function_file>```
+```mpiexec -n 8 python run_mpi.py <run_function_file> <configuration_list_file> ```
 
 `run_single.py` is designed to be a debugging file that allows you to run a single configuration from the configuration list before using `run_mpi.py`. It allows you to specify exactly which index you want to run from your configuration list.
 
 Example command:
-```python run_single.py <configuration_list_file> <run_function_file> <index>```
+```python run_single.py <run_function_file> <configuration_list_file> <index>```
 
 ## Auxiliary configurations
 On occasions, especially with your debug experiments, you might want to run your experiment with a set of auxiliary parameters that doesn't affect the experiment results. For example, you might want to show debug information, progress, or print-outs on local runs of your experiment, or you might want debug information from your sweep experiments. Auxiliary configurations allows you to provide a set of additional parameters to your experiment for these cases. 
@@ -24,7 +24,7 @@ On occasions, especially with your debug experiments, you might want to run your
 
 To add an auxiliary configuration, create a python file with a function named `get_auxiliary_configuration`, and provide the path to the file when running as the third positional argument.
 
-Example `python run_single.py <configuration_list_file> <run_function_file> <aux_config_file> <index>`
+Example `python run_single.py <run_function_file> <configuration_list_file> <aux_config_file> <index>`
 
 Then, you need to modify `run` in your run file such that it accepts arguments in the form of `run(config, aux_config=<Default>)`.
 
