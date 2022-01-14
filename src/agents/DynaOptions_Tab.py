@@ -1,18 +1,18 @@
-
-import numpy as np
+from src.agents.components.learners import ESarsaLambda, QLearner
+from src.agents.components.search_control import ActionModelSearchControl_Tabular
+from src.environments.GrazingWorldAdam import get_pretrained_option_model, get_all_transitions
 from PyExpUtils.utils.random import argmax, choice
-import random
-from agents.components.learners import ESarsaLambda, QLearner
-from agents.components.search_control import ActionModelSearchControl_Tabular
-from src.utils import rlglue
+from PyFixedReps.BaseRepresentation import BaseRepresentation
+from PyFixedReps.Tabular import Tabular
+from src.agents.components.approximators import DictModel
+from src.agents.components.models import OptionActionModel_Sutton_Tabular, OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
 from src.utils import globals
 from src.utils import options, param_utils
-from src.agents.components.models import OptionActionModel_Sutton_Tabular, OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
-from src.agents.components.approximators import DictModel
-from PyFixedReps.BaseRepresentation import BaseRepresentation
-import numpy.typing as npt
-from PyFixedReps.Tabular import Tabular
+from src.utils import rlglue
 from typing import Dict, Union, Tuple, Any, TYPE_CHECKING
+import numpy as np
+import numpy.typing as npt
+import random
 
 if TYPE_CHECKING:
     # Important for forward reference
@@ -47,7 +47,6 @@ class DynaOptions_Tab:
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
-        # DO WE NEED THIS?!?!? CAN WE MAKE THIS SOMEWHERE ELSE?
         self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
         self.a = -1
         self.x = -1
@@ -62,20 +61,32 @@ class DynaOptions_Tab:
 
         # Creating models for actions and options
         self.action_model = DictModel()
+        transitions = get_all_transitions()
+        
+        # Prefilling dict buffer so no exploration is needed
+        for t in transitions:
+            # t: s, a, sp, reward. gamma
+            self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
+
+
         if self.model_alg == 'sutton':
-            self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
-            self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            # self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            # self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+
+            # Loading the pretrained model rather than learning from scatch
+            self.option_model, self.option_action_model = get_pretrained_option_model()
         else:
             raise NotImplementedError(f'option_model_alg for {self.model_alg} is not implemented')
 
         # For logging state visitation
         self.state_visitations = np.zeros(self.num_states)
+        self.cumulative_reward = 0
 
     def FA(self):
         return "Tabular"
 
     def __str__(self):
-        return "DynaQP_OptionIntra_Tab"
+        return "DynaOptions_Tab"
 
     def get_policy(self, x: int) -> npt.ArrayLike:
         probs = np.zeros(self.num_actions + self.num_options)
@@ -101,12 +112,19 @@ class DynaOptions_Tab:
         # Treating the terminal state as an additional state in the tabular setting
         xp = self.representation.encode(sp) if not terminal else self.num_states
 
+        if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length']:
+            # Correcting the one-step model based on 
+
+            for _a in range(self.num_actions):
+                self.update_model(31, _a, self.num_states, 0.5, 0)
+
         self.state_visitations[x] += 1
 
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
             self.tau += 1
-        self.tau[x, o] = 0
+        
+        self.tau[x, o] = 0  
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
@@ -128,6 +146,21 @@ class DynaOptions_Tab:
         else:
             # the oa pair doesn't matter if the agent arrived in the terminal state.
             oa_pair = None
+
+
+        # Logging
+        self.cumulative_reward += r
+        if globals.blackboard['num_steps_passed'] % globals.blackboard['step_logging_interval'] == 0:
+            globals.collector.collect('Q', np.copy(self.behaviour_learner.Q)) 
+
+            # Logging state visitation
+            globals.collector.collect('state_visitation', np.copy(self.state_visitations))   
+            self.state_visitations[:] = 0
+
+            # globals.collector.collect('tau', np.copy(self.tau)) 
+            globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
+            # print(f'reward rate: {np.copy(self.cumulative_reward) / globals.blackboard["step_logging_interval"]}')
+            self.cumulative_reward = 0
 
         return oa_pair
     
@@ -174,7 +207,7 @@ class DynaOptions_Tab:
             factor = 1
         else:
             factor = 0.0
-        r += self.kappa * factor * np.sqrt(self.tau[x, o])
+        # r += self.kappa * factor * np.sqrt(self.tau[x, o])
 
         # xp could be none if the transition probability errored out
         if xp != None:
@@ -216,8 +249,9 @@ class DynaOptions_Tab:
             action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
             available_actions = visited_actions + action_consistent_options
             
-            for a in available_actions: 
-                self._planning_update(plan_x, a)
+            a = self.random.choice(available_actions)
+            # for a in available_actions: 
+            self._planning_update(plan_x, a)
 
     def agent_end(self, s, o, a, r, gamma):
         self.update(s, o, a, None, r, gamma, terminal=True)

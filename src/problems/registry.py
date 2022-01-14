@@ -1,4 +1,4 @@
-from environments.GrazingWorldSimple import GrazingWorldSimple
+from src.environments.GrazingWorldSimple import GrazingWorldSimple
 from src.problems.MountainCar import MountainCar
 from src.problems.GrazingWorld import GrazingWorld, GrazingWorldWithMiddleOption, GrazingWorldSimple, GrazingWorldAdam
 from src.problems.TMaze import TMaze

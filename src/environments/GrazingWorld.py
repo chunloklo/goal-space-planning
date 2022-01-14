@@ -37,34 +37,55 @@ class GrazingWorld(BaseEnvironment):
             reward_sequence: generate reward sequences of both top goals to start with 0, lenght according to poisson dist.
             iterators: to keep track where we are in the reward sequence
         """
-        self.goals = [
-            # Default rewards
-            # {
-            #     "position" : (2,2),
-            #     "schedule": CyclingRewardSchedule([0, 100.0], self.reward_sequence_length, cycle_offset=0, cycle_type='episode', start_pause=initial_learning),
-            # },
-            # {
-            #     "position" : (2,size-3),
-            #     "schedule": CyclingRewardSchedule([0, 50.0], self.reward_sequence_length, cycle_offset= self.reward_sequence_length // 2, cycle_type='episode', start_pause=initial_learning),
-            # },
-            # {
-            #     "position" : (size-3,size-3),
-            #     "schedule": ConstantRewardSchedule(0),
-            # } 
-            # Scaled rewards (for neural network)
-            {
-                "position" : (2,2),
-                "schedule": CyclingRewardSchedule([0, 1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
-            },
-            {
-                "position" : (2,size-3),
-                "schedule": CyclingRewardSchedule([0, 0.5], self.reward_sequence_length, cycle_offset=self.reward_sequence_length // 2, cycle_type='step'),
-            },
-            {
-                "position" : (size-3,size-3),
-                "schedule": ConstantRewardSchedule(0),
-            } 
-        ]
+        self.reward_schedule = globals.param['reward_schedule']
+        if self.reward_schedule == 'cyclic':
+            self.goals = [
+                {
+                    "position" : (2,2),
+                    "schedule": CyclingRewardSchedule([0, 1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
+                },
+                {
+                    "position" : (2,size-3),
+                    "schedule": CyclingRewardSchedule([0, 0.5], self.reward_sequence_length, cycle_offset=self.reward_sequence_length // 2, cycle_type='step'),
+                },
+                {
+                    "position" : (size-3,size-3),
+                    "schedule": ConstantRewardSchedule(0),
+                } 
+            ]
+        elif self.reward_schedule == 'goal2_switch':
+            self.goals = [
+                {
+                    "position" : (2,2),
+                    "schedule": ConstantRewardSchedule(0),
+                },
+                {
+                    "position" : (2,size-3),
+                    "schedule": CyclingRewardSchedule([0, 0.5], self.reward_sequence_length, cycle_type='step', repeat=False),
+                },
+                {
+                    "position" : (size-3,size-3),
+                    "schedule": ConstantRewardSchedule(0),
+                } 
+            ]
+        elif self.reward_schedule == 'zero_debug':
+            self.goals = [
+                #For saving options
+                {
+                    "position" : (2,2),
+                    "schedule": ConstantRewardSchedule(0),
+                },
+                {
+                    "position" : (2,size-3),
+                    "schedule": ConstantRewardSchedule(0),
+                },
+                {
+                    "position" : (size-3,size-3),
+                    "schedule": ConstantRewardSchedule(0),
+                } 
+            ]
+        else:
+            raise NotImplementedError(f'"reward_schedule" {self.reward_schedule} not implemented in GrazingWorld')
 
         self.step_to_goals = [
             13,

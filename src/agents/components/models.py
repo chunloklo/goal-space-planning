@@ -2,13 +2,13 @@ from typing import Any, List, Dict, Tuple
 import numpy as np
 import numpy.typing as npt
 
-from utils import numpy_utils, param_utils
+from src.utils import numpy_utils, param_utils
 from src.agents.components.traces import Trace
 from src.agents.components.approximators import TabularApproximator
 from src.utils.feature_utils import stacked_tabular_features, stacked_features
 from src.utils import globals
 from src.utils import options
-from utils.Option import Option
+from src.utils.Option import Option
 import haiku as hk
 import jax
 import optax

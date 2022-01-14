@@ -29,3 +29,7 @@ test.json
 
 .DS_STORE
 .python-version
+
+# ignoring built version of mpi4py.
+# This is for when you build mpi4py from source.
+mpi4py-3.1.3

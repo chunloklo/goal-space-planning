@@ -60,7 +60,7 @@ class RlGlue:
         
         self.start()
         self.num_steps = 0
-        while (not is_terminal) and ((max_steps == 0) or (self.num_steps < max_steps)):
+        while (not is_terminal) and ((max_steps <= 0) or (self.num_steps < max_steps)):
             rl_step_result = self.step()
             is_terminal = rl_step_result[3]
         return is_terminal

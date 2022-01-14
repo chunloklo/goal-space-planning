@@ -12,3 +12,6 @@ collector = None
 
 global blackboard
 blackboard = {}
+
+global param
+param = None

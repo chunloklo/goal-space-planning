@@ -51,6 +51,13 @@ def scale_value(value: float, min_val:float, max_val:float, post_process_func: C
     percentage = post_process_func(percentage)
     return percentage
 
+def get_file_name(folder: str, name: str, extension: str, timestamp: bool=False):
+    if timestamp:
+        time_str = datetime.now().strftime("%m-%d-%Y--%H-%M-%S")
+        return f'{folder}/{name}--{time_str}.{extension}'
+    else:
+        return f'{folder}/{name}.{extension}'
+
 def prompt_user_for_file_name(folder: str, prefix: str, suffix: str, extension: str, timestamp: bool=False):
     if timestamp:
         prompt_file_string = f"{prefix}<name>{suffix}--<timestamp>.{extension}"
