@@ -8,7 +8,7 @@ sys.path.append(os.getcwd())
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from src.utils.json_handling import get_sorted_dict
-from utils import analysis_utils
+from src.utils import analysis_utils
 from src.utils.formatting import get_folder_name, create_folder
 
 agent_colors={

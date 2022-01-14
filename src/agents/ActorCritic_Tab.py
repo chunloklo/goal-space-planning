@@ -4,15 +4,13 @@ import numpy.typing as npt
 from PyExpUtils.utils.random import argmax, choice
 import random
 from PyFixedReps.Tabular import Tabular
-from agents.components.learners import ESarsaLambda, QLearner
-from agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue, feature_utils
 from src.utils import globals
 from src.utils import options, param_utils
 from src.agents.components.models import OptionModel_Sutton_Tabular, CombinedModel_ESarsa_Tabular
 from src.agents.components.approximators import TabularApproximator
-from utils import numpy_utils
-from utils.numpy_utils import create_onehot
+from src.utils import numpy_utils
+from src.utils.numpy_utils import create_onehot
 
 class ActorCritic_Tab:
     def __init__(self, features: int, actions: int, params: Dict, seed: int, options, env):

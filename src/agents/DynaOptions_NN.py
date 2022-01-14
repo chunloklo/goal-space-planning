@@ -2,9 +2,9 @@
 import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
-from agents.components.learners import ESarsaLambda, QLearner, QLearner_ImageNN
-from agents.components.search_control import ActionModelSearchControl_Tabular
-from environments.GrazingWorldAdam import GrazingWorldAdamImageFeature, get_pretrained_option_model, state_index_to_coord
+from src.agents.components.learners import ESarsaLambda, QLearner, QLearner_ImageNN
+from src.agents.components.search_control import ActionModelSearchControl_Tabular
+from src.environments.GrazingWorldAdam import GrazingWorldAdamImageFeature, get_pretrained_option_model, state_index_to_coord
 from src.utils import rlglue
 from src.utils import globals
 from src.utils import options, param_utils

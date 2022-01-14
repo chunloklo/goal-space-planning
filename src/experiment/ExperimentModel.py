@@ -10,7 +10,6 @@ class ExperimentModel(ExperimentDescription):
 
         self.max_steps = d.get('max_steps', 0)
         self.episodes = d.get('episodes')
-        self.runs = d.get('runs')
 
 def load(path=None):
     path = path if path is not None else sys.argv[1]
@@ -18,4 +17,8 @@ def load(path=None):
         d = json.load(f)
 
     exp = ExperimentModel(d, path)
+    return exp
+
+def load_from_params(params: dict):
+    exp = ExperimentModel(params, None)
     return exp
