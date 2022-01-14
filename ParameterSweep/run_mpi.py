@@ -11,22 +11,25 @@ import argparse
 import numpy as np
 import sys
 
-from common import get_parameter_list_from_file_path, get_run_function_from_file_path
+from common import get_parameter_list_from_file_path, get_run_function_from_file_path, add_common_args, get_aux_config_from_file_path, run_with_optional_aux_config
 
 # Parsing arguments
 parser = argparse.ArgumentParser(description='MPI file that is ran on each task that is spawned through mpiexec or similar functions')
-parser.add_argument('parameter_path', help='path to the Python parameter file that contains a get_parameter_list function that returns a list of parameters to run')
-parser.add_argument('run_path', help='path to the Python run file that contains a run(parameter: dict) function that runs the experiment with the specified parameters')
+parser = add_common_args(parser)
 args = parser.parse_args()
 
 parameter_path = args.parameter_path
 run_path = args.run_path
+aux_config_path = args.aux_config_path
 
 # Getting parameter list from parameter_path
 parameter_list = get_parameter_list_from_file_path(parameter_path)
 
 # Getting run function from run_path
 run_func = get_run_function_from_file_path(run_path)
+
+# Getting auxiliary config from auxiliary config path
+aux_config = get_aux_config_from_file_path(aux_config_path)
 
 # Standard MPI info
 comm = MPI.COMM_WORLD
@@ -39,6 +42,9 @@ name = MPI.Get_processor_name()
 # Each task, when done with their previous job, will grab the top available number and run it.
 # This is repeated until the entire parameter list is ran
 
+# This is a little janky storing the counter integer as a 0D np array
+# However, this is taken off the mpi4py doc, and debugging on CC is a pain
+# Plus it works, so it stays for now.
 datatype = MPI.UINT64_T
 np_dtype = dtlib.to_numpy_dtype(datatype)
 itemsize = datatype.Get_size()
@@ -77,7 +83,7 @@ while result <= max_param_index:
         break
 
     # Otherwise, run the function 
-    run_func(parameter_list[int(result)])
-    
+    run_with_optional_aux_config(int(result), aux_config)
+
 sys.exit(0)
 

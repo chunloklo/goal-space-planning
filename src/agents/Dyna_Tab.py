@@ -49,8 +49,9 @@ class Dyna_Tab:
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
-        self.option_alg = param_utils.parse_param(params, 'option_alg', lambda p : p in ['None', 'DecisionTime', 'Background']) 
+        self.option_alg = param_utils.parse_param(params, 'option_alg', lambda p : p in ['None', 'DecisionTime', 'Background', 'OnlyBackground', 'OnlyDecisionTime']) 
 
+        self.q_init = param_utils.parse_param(params, 'q_init', lambda p: True, default=0, optional=True)
         # Instantiating option models
         # self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
         # self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
@@ -66,6 +67,7 @@ class Dyna_Tab:
         # +1 accounts for the terminal state
         if self.behaviour_alg == 'QLearner':
             self.behaviour_learner = QLearner(self.num_states + 1, self.num_actions)
+            self.behaviour_learner.Q[:] = self.q_init
         elif self.behaviour_alg == 'ESarsaLambda':
             self.behaviour_learner = ESarsaLambda(self.num_states + 1, self.num_actions)
         else:
@@ -94,7 +96,7 @@ class Dyna_Tab:
         probs = np.zeros(self.num_actions)
         probs += self.epsilon / (self.num_actions)
 
-        if self.option_alg == 'DecisionTime':
+        if self.option_alg in ['DecisionTime', 'OnlyDecisionTime']:
             option_values = self._get_option_action_values(x)
 
             best_action_option_value = np.max(option_values, axis=0)
@@ -122,11 +124,30 @@ class Dyna_Tab:
         return a
 
     def update(self, s, a, sp, r, gamma, terminal: bool = False):
-        if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length']:
-            # Correcting the one-step model based on 
+        if globals.param['reward_schedule'] == 'goal2_switch':
 
-            for _a in range(self.num_actions):
-                self.update_model(31, _a, self.num_states, 0.5, 0)
+            if globals.blackboard['num_steps_passed'] == 0:
+                # Correcting the one-step model based on 
+
+                for _a in range(self.num_actions):
+                    _x = 81
+                    _xp = self.num_states
+                    _r = 0.0
+                    _gamma = 0
+                    self.update_model(_x, _a, _xp, _r, _gamma)
+                    self.behaviour_learner.update(_x, _a, _xp, _r, _gamma, self.alpha)
+
+            if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length']:
+                # Correcting the one-step model based on 
+
+                for _a in range(self.num_actions):
+                    _x = 31
+                    _xp = self.num_states
+                    _r = 0.5
+                    _gamma = 0
+                    self.update_model(_x, _a, _xp, _r, _gamma)
+                    self.behaviour_learner.update(_x, _a, _xp, _r, _gamma, self.alpha)
+
 
         x = self.representation.encode(s)
         # Treating the terminal state as an additional state in the tabular setting
@@ -186,17 +207,16 @@ class Dyna_Tab:
         xp, r, gamma = self.action_model.predict(x, a)
         discount = gamma
 
-        # Exploration bonus for +
-        # These states are specifically for GrazingWorldAdam
-        # if x in [13,31,81]:
-        #     factor = 1
-        # else:
-        #     factor = 0.0
-
-        # Disabling exploration bonus for now
-        factor = 0.0
         
-        # r += self.kappa * factor * np.sqrt(self.tau[x, a])
+        if globals.param['reward_schedule'] == 'goal2_switch':
+            pass
+        else:
+            # Exploration bonus for +
+            if x in [13,31,81]:
+                factor = 1
+            else:
+                factor = 0.0
+            r += self.kappa * factor * np.sqrt(self.tau[x, a])
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.planning_update(x, a, xp, r, discount, self.alpha)
@@ -245,18 +265,20 @@ class Dyna_Tab:
             Nothing
         """
 
-        sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
+        if self.option_alg not in ['OnlyBackground', 'OnlyDecisionTime']:
+            sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
 
-        for i in range(self.planning_steps):
-            plan_x = sample_states[i]
-            visited_actions = self.action_model.visited_actions(plan_x)
-            for a in visited_actions: 
-                self._planning_update(plan_x, a)
+            for i in range(self.planning_steps):
+                plan_x = sample_states[i]
+                visited_actions = self.action_model.visited_actions(plan_x)
+                for a in visited_actions: 
+                    self._planning_update(plan_x, a)
 
-        # Option planning update
-        sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
 
-        if self.option_alg == 'Background':
+        if self.option_alg in ['Background', 'OnlyBackground']:
+            # Option planning update
+            sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
+
             for plan_x in sample_states:
                 self._option_planning_update(plan_x)
 

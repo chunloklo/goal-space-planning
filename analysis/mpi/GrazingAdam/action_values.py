@@ -196,7 +196,12 @@ if __name__ == "__main__":
     param_spec.loader.exec_module(ParamModule)
     parameter_list = ParamModule.get_parameter_list()
 
+    parameter_list = list(filter(lambda x: x['alpha']==1.0, parameter_list))
+
     data = run_utils.load_data(parameter_list[0])
+    # print(parameter_list[0])
+    # print(parameter_list[10])
+    # adas
 
     generatePlot(data)
 

@@ -59,11 +59,12 @@ def load_data(experiment: Dict):
     data = analysis_utils.pkl_loader(filename)
     return data
 
-def experiment_completed(experiment, include_errored=True):
+def experiment_completed(experiment, include_errored=True, pushup=True):
     '''
     Returns True if experiment is yet to be done
     '''
-    experiment = pushup_metaParameters(experiment)
+    if pushup:
+        experiment = pushup_metaParameters(experiment)
 
     if zeo_common.use_zodb():
         exists = zeo_common.zodb_check_exists(experiment)

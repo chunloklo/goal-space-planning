@@ -25,15 +25,17 @@ from jax.config import config
 from src.utils.param_utils import parse_param
 
 
-def run(param: dict, show_progress: bool = False):
+def run(param: dict, aux_config):
     config.update("jax_debug_nans", True)
     config.update('jax_platform_name', 'cpu')
+
+    show_progress = aux_config.get('show_progress', False)
 
     t_start = time.time()
 
     # Logging info level logs for visibility.
     # level = logging.INFO
-    level = logging.DEBUG
+    level = logging.CRITICAL
     logging.basicConfig(level=level)
 
     # Reading params

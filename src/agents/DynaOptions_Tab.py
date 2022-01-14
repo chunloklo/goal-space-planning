@@ -1,6 +1,6 @@
 from src.agents.components.learners import ESarsaLambda, QLearner
 from src.agents.components.search_control import ActionModelSearchControl_Tabular
-from src.environments.GrazingWorldAdam import get_pretrained_option_model
+from src.environments.GrazingWorldAdam import get_pretrained_option_model, get_all_transitions
 from PyExpUtils.utils.random import argmax, choice
 from PyFixedReps.BaseRepresentation import BaseRepresentation
 from PyFixedReps.Tabular import Tabular
@@ -43,7 +43,6 @@ class DynaOptions_Tab:
         self.lmbda = params['lambda']
         self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
-        self.planning_alg = param_utils.parse_param(params, 'planning_alg', lambda p : p in ['Standard', 'DecisionTime', 'Background']) 
 
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
@@ -62,6 +61,14 @@ class DynaOptions_Tab:
 
         # Creating models for actions and options
         self.action_model = DictModel()
+        transitions = get_all_transitions()
+        
+        # Prefilling dict buffer so no exploration is needed
+        for t in transitions:
+            # t: s, a, sp, reward. gamma
+            self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
+
+
         if self.model_alg == 'sutton':
             # self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
             # self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
@@ -104,6 +111,12 @@ class DynaOptions_Tab:
         x = self.representation.encode(s)
         # Treating the terminal state as an additional state in the tabular setting
         xp = self.representation.encode(sp) if not terminal else self.num_states
+
+        if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length']:
+            # Correcting the one-step model based on 
+
+            for _a in range(self.num_actions):
+                self.update_model(31, _a, self.num_states, 0.5, 0)
 
         self.state_visitations[x] += 1
 
@@ -194,7 +207,7 @@ class DynaOptions_Tab:
             factor = 1
         else:
             factor = 0.0
-        r += self.kappa * factor * np.sqrt(self.tau[x, o])
+        # r += self.kappa * factor * np.sqrt(self.tau[x, o])
 
         # xp could be none if the transition probability errored out
         if xp != None:
@@ -236,8 +249,9 @@ class DynaOptions_Tab:
             action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
             available_actions = visited_actions + action_consistent_options
             
-            for a in available_actions: 
-                self._planning_update(plan_x, a)
+            a = self.random.choice(available_actions)
+            # for a in available_actions: 
+            self._planning_update(plan_x, a)
 
     def agent_end(self, s, o, a, r, gamma):
         self.update(s, o, a, None, r, gamma, terminal=True)
