@@ -8,7 +8,7 @@ import argparse
 from src.utils import run_utils
 import importlib.util
 from copy import copy
-from sweep_configs.analysis import group_configs
+from analysis_common.configs import group_configs
 import numpy as np
 from pprint import pprint
 import matplotlib
@@ -17,7 +17,9 @@ from src.analysis.plot_utils import load_experiment_data, get_json_handle, get_x
 import matplotlib.pyplot as plt
 from sweep_configs.common import get_configuration_list_from_file_path
 
-from src.analysis.plot_utils import load_parameter_list_data, get_mean_std, mean_chunk_data, window_smoothing
+from src.analysis.plot_utils import load_configuration_list_data
+from analysis_common.process_line import get_mean_std, mean_chunk_data
+
 
 # You can likely cache this for better performance later.
 def load_reward_rate(param):
@@ -33,7 +35,7 @@ def load_max_reward_rate(param):
     return data[0]
     
 def get_perf(parameter_list):
-    data = np.array(load_parameter_list_data(parameter_list, load_reward_rate))
+    data = np.array(load_configuration_list_data(parameter_list, load_reward_rate))
     return np.mean(data)
 
 
@@ -52,7 +54,7 @@ def plot_best_reward_rate(ax, param_file_name: str, label: str):
 
     # data = load_parameter_list_data(grouped_params[best_index][1], load_reward_rate)
 
-    data = load_parameter_list_data([parameter_list[0]], load_reward_rate)
+    data = load_configuration_list_data([parameter_list[0]], load_reward_rate)
 
 
     for run_data in data:

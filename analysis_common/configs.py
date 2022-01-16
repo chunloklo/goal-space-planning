@@ -4,7 +4,7 @@ from copy import copy
 from tqdm import tqdm
 import numpy as np
 
-# Useful classes and methods for organizing and viewing configs
+# Useful classes and methods for organizing and viewing configurations
 
 class SweepInfo:
 

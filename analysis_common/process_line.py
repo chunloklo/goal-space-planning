@@ -1,5 +1,4 @@
 import numpy as np 
-from typing import Callable, Dict
 
 def get_mean_std(data: np.array):
     """
@@ -38,8 +37,4 @@ def mean_chunk_data(data: np.array, chunk_size: int, axis=0) -> np.array:
         return mean_chunk
 
     data = np.concatenate([get_mean_chunk(start_index) for start_index in iter_range], axis=axis)
-    return data
-
-def load_parameter_list_data(parameter_list: list[Dict], load_func: Callable):
-    data = [load_func(param) for param in parameter_list]
     return data
