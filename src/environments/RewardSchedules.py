@@ -11,7 +11,7 @@ class ConstantRewardSchedule():
         return self.constant
 
 class CyclingRewardSchedule():
-    def __init__(self, rewards: List[float], duration: int, cycle_offset: int = 0, cycle_type:Literal['episode', 'step']='episode', start_pause: int=0):
+    def __init__(self, rewards: List[float], duration: int, cycle_offset: int = 0, cycle_type:Literal['episode', 'step']='episode', start_pause: int=0, repeat=True):
         """[summary]
 
         Args:
@@ -20,6 +20,7 @@ class CyclingRewardSchedule():
             cycle_offset (int, optional): [description]. Defaults to 0. Offset in cycle you want to start with (by cycleType)
             cycle_type (Literal['episode', 'step', optional): [description]. Defaults to 'episode'. Whether the reward cycles based on steps or episodes
             start_pause (int): Number of iterations to pause the cycle in the beginning before starting
+            repeat (bool): Whether the reward schedule should stop switching between rewards when it reaches the end of the reward list
         """
         
         self.rewards = rewards
@@ -27,6 +28,7 @@ class CyclingRewardSchedule():
         self.cycle_offset = cycle_offset
         self.cycle_type = param_utils.check_valid(cycle_type, lambda x: x in ['episode', 'step'])
         self.start_pause = start_pause
+        self.repeat = repeat
         pass
 
     def __call__(self):
@@ -42,5 +44,8 @@ class CyclingRewardSchedule():
         
         timeline_location += self.cycle_offset
 
-        rewards_location = (timeline_location // self.duration) % len(self.rewards)
+        if self.repeat:
+            rewards_location = (timeline_location // self.duration) % len(self.rewards)
+        else:
+            rewards_location = min((timeline_location // self.duration), len(self.rewards) - 1)
         return self.rewards[rewards_location]

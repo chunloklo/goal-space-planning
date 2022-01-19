@@ -1,6 +1,8 @@
 import sys
 from src.utils.json_handling import get_sorted_dict , get_param_iterable_runs
 from src.utils import analysis_utils
+import numpy as np 
+from typing import Callable, Dict
 
 def get_json_handle():
     json_files = sys.argv[1:] # all the json files
@@ -25,6 +27,21 @@ def load_experiment_data(json_handle, load_keys: list = None):
     # Messy right now, but its okay
     return return_data
 
-
 def get_x_range(start: int, num_logs: int, interval: int):
     return range(start, start + num_logs * interval, interval)
+
+def window_smoothing(data: np.array, window_size: int):
+    smoothed_data = np.zeros(data.shape)
+    # print(data.shape)
+
+    for i in range(data.shape[0]):
+        start_index = min(i, data.shape[0] - window_size)
+        end_index =  min(data.shape[0], start_index + window_size)
+        # print(start_index, end_index)
+        smoothed_data[i] = np.mean(data[start_index: end_index])
+    # sadas
+    return smoothed_data
+
+def load_configuration_list_data(parameter_list: list[Dict], load_func: Callable):
+    data = [load_func(param) for param in parameter_list]
+    return data

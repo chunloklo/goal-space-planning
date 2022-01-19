@@ -1,7 +1,7 @@
 from typing import Any, Callable, List, Dict, Tuple, Literal
 import numpy as np
 import numpy.typing as npt
-from utils import numpy_utils, param_utils, globals
+from src.utils import numpy_utils, param_utils, globals
 from src.utils.run_utils import InvalidRunException
 
 # Right now for action values only. Need additional params and implementation if we want something different

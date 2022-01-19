@@ -1,7 +1,7 @@
 from typing import Any, Callable, List, Dict, Tuple, Literal
 import numpy as np
 import numpy.typing as npt
-from agents.components.approximators import DictModel
+from src.agents.components.approximators import DictModel
 from src.utils import numpy_utils, globals
 from src.utils import globals
 

@@ -1,4 +1,5 @@
 # Tabular Agents with Options
+<<<<<<< HEAD
 from agents.DynaOptions_Tab import DynaOptions_Tab
 from agents.Dyna_Tab import Dyna_Tab
 from agents.ActorCritic_Tab import ActorCritic_Tab
@@ -7,6 +8,14 @@ from agents.OptionPlanning_Tab import OptionPlanning_Tab
 from agents.DynaOptions_NN import DynaOptions_NN
 from agents.DynaOptionsLtd_Tab import DynaOptionsLtd_Tab
 from agents.DynaOptionsGPI_Tab import DynaOptionsGPI_Tab
+=======
+from src.agents.DynaOptions_Tab import DynaOptions_Tab
+from src.agents.Dyna_Tab import Dyna_Tab
+from src.agents.ActorCritic_Tab import ActorCritic_Tab
+from src.agents.Direct_Tab import Direct_Tab
+from src.agents.OptionPlanning_Tab import OptionPlanning_Tab
+from src.agents.DynaOptions_NN import DynaOptions_NN
+>>>>>>> 9d2c90e88615c7109933b30709b317bef489d473
 
 def getAgent(name):
     if name == 'DynaOptions_Tab':

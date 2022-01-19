@@ -1,4 +1,4 @@
-from experiment.ExperimentModel import ExperimentModel
+from src.experiment.ExperimentModel import ExperimentModel
 from src.agents.registry import getAgent
 from typing import Any
 

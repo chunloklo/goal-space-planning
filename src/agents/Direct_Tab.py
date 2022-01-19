@@ -5,14 +5,14 @@ import numpy.typing as npt
 from PyExpUtils.utils.random import argmax, choice
 import random
 from PyFixedReps.Tabular import Tabular
-from agents.components.learners import ESarsaLambda, QLearner
-from agents.components.search_control import ActionModelSearchControl_Tabular
+from src.agents.components.learners import ESarsaLambda, QLearner
+from src.agents.components.search_control import ActionModelSearchControl_Tabular
 from src.utils import rlglue
 from src.utils import globals
 from src.utils import options, param_utils
 from src.agents.components.models import OptionModel_Sutton_Tabular, CombinedModel_ESarsa_Tabular
 from src.agents.components.approximators import DictModel
-from utils import numpy_utils
+from src.utils import numpy_utils
 
 from typing import Any, TYPE_CHECKING
 
