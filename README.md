@@ -2,6 +2,14 @@
 ## Template based on https://github.com/andnp/rl-control-template
 
 ---
+## Installing Jax on MacOS
+Currently (2022-01-18), the only published wheel for MacOS is for python 3.9/3.10. The python wheel for 3.8 has not yet been published but should be build-able. For more details, follow this [thread](https://github.com/google/jax/issues/5501).
+
+```
+pip install -U pip
+pip install -U https://storage.googleapis.com/jax-releases/mac/jaxlib-0.1.74-cp39-none-macosx_11_0_arm64.whl
+```
+
 ## Description of the GrazingWorld Environment
 
 ![Grazing World Ascii Art](/images/asciiart.png "Grazing World")

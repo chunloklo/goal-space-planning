@@ -1,7 +1,9 @@
 from typing import Any, Callable, List, Tuple
+from analysis_common.cache import cache_local_file
 from analysis_common.configs import group_configs
 import numpy as np
 from src.utils import run_utils
+from sweep_configs.common import get_configuration_list_from_file_path
 
 # Some common functions for analysis specific for this project
 
@@ -35,11 +37,13 @@ def get_best_grouped_param(grouped_params: list[Tuple[Any, List]]) -> Tuple[Tupl
         Tuple[Any, int, float, list[float]]: Best config group, best index, best performance, list of performances
     """
     perfs = [np.mean([get_performance(config) for config in config_list]) for _, config_list in grouped_params]
+    rank = np.argsort(-np.array(perfs))
 
-    best_index = np.argmax(perfs)
+    
+    best_index = rank[0]
     best_perf = np.max(perfs)
 
-    return grouped_params[best_index], best_index, best_perf, perfs
+    return grouped_params[rank[0]], best_index, best_perf, perfs, rank
 
 def plot_mean_ribbon(ax, mean, std, x_range, color=None, label=None):
     line = ax.plot(x_range, mean, label=label, color=color)

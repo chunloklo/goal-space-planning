@@ -59,15 +59,14 @@ def pushup_metaParameters(experiment):
         experiment[k] = metaParams[k]
     return experiment
 
+# [chunlok 2022-01-17] There's additional work here needed to make sure that this hashing gives us reasonable results
+# for non-string/int/float keys. This seems to be working fine though, so we'll just tackle that when the time comes.
 def create_file_name(experiment: dict, sub_folder = 'results'):
-    '''
-    We will make folder names with agent and problem and then appends the rest fo the config
-    return the folder and filename
-    '''
-    folder = f"{experiment['experiment_name']}/{experiment['agent']}/{experiment['problem']}"
+    # Storing data in folder with experiment_name
+    folder = f"{experiment['experiment_name']}"
     keys = list(experiment.keys())
-    keys.remove("agent")
-    keys.remove("problem")
+    keys.remove('experiment_name')
+
     # make filename
     keys = sorted(keys)
     file_name = ''
@@ -78,13 +77,15 @@ def create_file_name(experiment: dict, sub_folder = 'results'):
             file_name += f"{k}_{deseriazlie_dict_to_name(experiment[k])}_"
         else:
             if isinstance(experiment[k], list):
+                raise NotImplementedError('List is not supported when hashing dictionary names')
                 continue
             file_name += f"{k}_{experiment[k]}_"
+    
     file_name = file_name[:-1] # give only the name
     folder = f'{os.getcwd()}/{sub_folder}/{folder}/'
 
     # return folder, file_name
-    return folder ,hash_name(file_name)
+    return folder, hash_name(file_name)
 
 def get_folder_name(experiments, sub_folder = 'results'):
     folder = f"{experiments['experiment_name']}/{experiments['agent']}/{experiments['problem']}"

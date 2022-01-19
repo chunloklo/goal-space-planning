@@ -34,9 +34,9 @@ class GrazingWorldAdam(GrazingWorld):
         self.goals[2]['position'] = (6, 9)
 
         self.step_to_goals = [
-            10,
             11,
-            7
+            12,
+            8
         ]
 
         #self.start_state_index = np.ravel_multi_index((self.shape[0]-1, 0), self.shape)

@@ -1,6 +1,9 @@
 # sweep_configs
 This is a small library for running many independent experiments to sweep over different configurations. It's designed to do just that, and nothing more.
 
+## Requirements
+This library requires MPI, `mpi4py` and `numpy` to be installed.
+
 ## Overview
 This library's run files takes in paths to multiple python files in order to make this happen. For each collection of experiments that you want to run, you need the following 2 things:
 

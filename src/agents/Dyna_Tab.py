@@ -49,18 +49,18 @@ class Dyna_Tab:
         search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
         self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
         
-        self.option_alg = param_utils.parse_param(params, 'option_alg', lambda p : p in ['None', 'DecisionTime', 'Background', 'OnlyBackground', 'OnlyDecisionTime']) 
+        self.option_alg = param_utils.parse_param(params, 'option_alg', lambda p : p in ['None', 'DecisionTime', 'Background', 'OnlyBackground', 'OnlyDecisionTime', 'OnlyBackground_MaxAction']) 
 
         self.q_init = param_utils.parse_param(params, 'q_init', lambda p: True, default=0, optional=True)
         # Instantiating option models
         # self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
         # self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
 
-        # Loading the pretrained model rather than learning from scatch.
+        # Loading the pretrained model rather than learning from scratch.
         # This is specifically for GrazingWorldAdam
         self.option_model, self.option_action_model = get_pretrained_option_model()
 
-        self.tau = np.zeros((self.num_states, self.num_actions))
+        self.tau = np.zeros(self.num_states)
         self.a = -1
         self.x = -1
 
@@ -126,28 +126,17 @@ class Dyna_Tab:
     def update(self, s, a, sp, r, gamma, terminal: bool = False):
         if globals.param['reward_schedule'] == 'goal2_switch':
 
-            if globals.blackboard['num_steps_passed'] == 0:
-                # Correcting the one-step model based on 
-
-                for _a in range(self.num_actions):
-                    _x = 81
-                    _xp = self.num_states
-                    _r = 0.0
-                    _gamma = 0
-                    self.update_model(_x, _a, _xp, _r, _gamma)
-                    self.behaviour_learner.update(_x, _a, _xp, _r, _gamma, self.alpha)
-
             if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length']:
                 # Correcting the one-step model based on 
 
+                _x = 31
+                _xp = self.num_states
+                _r = 0.5
+                _gamma = 0
                 for _a in range(self.num_actions):
-                    _x = 31
-                    _xp = self.num_states
-                    _r = 0.5
-                    _gamma = 0
                     self.update_model(_x, _a, _xp, _r, _gamma)
-                    self.behaviour_learner.update(_x, _a, _xp, _r, _gamma, self.alpha)
-
+                    # Always using an update of 1 to perfectly update the action values
+                    self.behaviour_learner.update(_x, _a, _xp, _r, _gamma, 1)
 
         x = self.representation.encode(s)
         # Treating the terminal state as an additional state in the tabular setting
@@ -158,7 +147,7 @@ class Dyna_Tab:
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
             self.tau += 1
-        self.tau[x, a] = 0
+        self.tau[x] = 0
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.update(x, a, xp, r, gamma, self.alpha)
@@ -212,11 +201,9 @@ class Dyna_Tab:
             pass
         else:
             # Exploration bonus for +
-            if x in [13,31,81]:
-                factor = 1
-            else:
-                factor = 0.0
-            r += self.kappa * factor * np.sqrt(self.tau[x, a])
+            if xp in [13,31,81]:
+                r += self.kappa * np.sqrt(self.tau[xp])
+            
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.planning_update(x, a, xp, r, discount, self.alpha)
@@ -232,21 +219,38 @@ class Dyna_Tab:
             r, discount, transition_prob = self.option_action_model.predict(x, a, o)
         
 
-        norm = np.linalg.norm(transition_prob, ord=1)
-        prob = transition_prob / norm
-        # +1 here accounts for the terminal state
-        xp = self.random.choice(self.num_states + 1, p=prob)
+        # norm = np.linalg.norm(transition_prob, ord=1)
+        # prob = transition_prob / norm
+        # # +1 here accounts for the terminal state
+        # xp = self.random.choice(self.num_states + 1, p=prob)
+
+        xp = np.argmax(transition_prob)
     
         return r, discount, xp
 
     def _get_option_action_values(self, x):
         option_values = np.zeros((self.num_options, self.num_actions))
+        bonuses = np.zeros((self.num_options, self.num_actions))
 
+        if globals.param['reward_schedule'] == 'goal2_switch':
+            pass
+        else:
+            # Exploration bonus for +
+            for o, xp in enumerate([13,31,81]):
+                bonuses[o] += self.kappa * np.sqrt(self.tau[xp])
+                
         for o in range(self.num_options):
             for a in range(self.num_actions):
                 r, discount, xp = self._sample_option(x, o, a)
                 option_values[o, a] = r + discount * np.max(self.behaviour_learner.get_action_values(xp))
 
+        # print('start')
+        # print(self.tau[[13, 31, 81]])
+
+        # print(bonuses)
+        # print(option_values)
+
+        option_values += bonuses
         return option_values
 
     def _option_planning_update(self, x: int):
@@ -256,7 +260,11 @@ class Dyna_Tab:
         # Updating towards option values
         max_values = np.maximum(max_option_values, self.behaviour_learner.get_action_values(x))
         # [2022-01-11 chunlok] This update is currently a hacky way of doing it that only works with the QLearner I believe.
-        self.behaviour_learner.Q[x, :] += self.alpha * (max_values - self.behaviour_learner.Q[x, :])
+
+        if self.option_alg == 'OnlyBackground_MaxAction':
+            self.behaviour_learner.Q[x, :] += self.alpha * (max_values - self.behaviour_learner.Q[x, :])
+        else:
+            self.behaviour_learner.Q[x, :] += self.alpha * (max_option_values - self.behaviour_learner.Q[x, :])
 
     def planning_step(self, x:int, xp: int):
         """performs planning, i.e. indirect RL.
@@ -265,7 +273,7 @@ class Dyna_Tab:
             Nothing
         """
 
-        if self.option_alg not in ['OnlyBackground', 'OnlyDecisionTime']:
+        if self.option_alg not in ['OnlyBackground', 'OnlyDecisionTime', 'OnlyBackground_MaxAction']:
             sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
 
             for i in range(self.planning_steps):
@@ -275,7 +283,7 @@ class Dyna_Tab:
                     self._planning_update(plan_x, a)
 
 
-        if self.option_alg in ['Background', 'OnlyBackground']:
+        if self.option_alg in ['Background', 'OnlyBackground', 'OnlyBackground_MaxAction']:
             # Option planning update
             sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
 

@@ -32,6 +32,10 @@ import argparse
 import importlib.util
 from src.utils import run_utils
 from collections.abc import Iterable
+from sweep_configs.common import get_configuration_list_from_file_path
+from src.analysis.plot_utils import load_configuration_list_data
+from analysis.common import get_best_grouped_param, load_reward_rate, load_max_reward_rate
+from analysis_common.configs import group_configs
 
 COLUMN_MAX = 12
 ROW_MAX = 8
@@ -182,27 +186,26 @@ def load_experiment_data(json_handle, load_keys: list = None):
 
 
 if __name__ == "__main__":
+    parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
+    parameter_list = get_configuration_list_from_file_path(parameter_path)
 
-    # Parsing arguments
-    parser = argparse.ArgumentParser(description='Produces the action values video for GrazingWorld Adam')
-    parser.add_argument('parameter_path', help='path to the Python parameter file that contains a get_configuration_list function that returns a list of parameters to run')
-    args = parser.parse_args()
+    # grouping configs based on seeds
+    grouped_params = group_configs(parameter_list, ['seed'])
+    best_group, best_index, best_performance, perfs, rank = get_best_grouped_param(grouped_params)
 
-    parameter_path = args.parameter_path
+    # display_config = {}
+    # for i in parameter_list:
+    #     # print(i)
+    #     if i['kappa'] == 0.001 and i['alpha'] == 0.7:
+    #         display_config = i
+    #         break
 
-    # Getting parameter list from parameter_path
-    param_spec = importlib.util.spec_from_file_location("ParamModule", parameter_path)
-    ParamModule = importlib.util.module_from_spec(param_spec)
-    param_spec.loader.exec_module(ParamModule)
-    parameter_list = ParamModule.get_configuration_list()
+    # print(display_config)
+    # sdfdsf
 
-    parameter_list = list(filter(lambda x: x['alpha']==1.0, parameter_list))
 
-    data = run_utils.load_data(parameter_list[0])
-    # print(parameter_list[0])
-    # print(parameter_list[10])
-    # adas
-
+    data = run_utils.load_data(best_group[1][0])
+    # data = run_utils.load_data(parameter_list[0])
     generatePlot(data)
 
     exit()

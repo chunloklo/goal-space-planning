@@ -203,11 +203,11 @@ class DynaOptions_Tab:
 
         # Exploration bonus for +
         # These states are specifically or GrazingWorldAdam
-        if x in [13,31]:
+        if x in [13,31,81]:
             factor = 1
         else:
             factor = 0.0
-        # r += self.kappa * factor * np.sqrt(self.tau[x, o])
+        r += self.kappa * factor * np.sqrt(self.tau[x, o])
 
         # xp could be none if the transition probability errored out
         if xp != None:

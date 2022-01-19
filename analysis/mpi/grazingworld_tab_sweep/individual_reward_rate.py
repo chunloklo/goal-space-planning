@@ -19,18 +19,25 @@ from sweep_configs.common import get_configuration_list_from_file_path
 from src.analysis.plot_utils import load_configuration_list_data
 from analysis.common import get_best_grouped_param, load_reward_rate, load_max_reward_rate, plot_mean_ribbon
 from sweep_configs.common import get_configuration_list_from_file_path
-from analysis_common.process_line import get_mean_std, mean_chunk_data
+from analysis_common.process_line import get_mean_std, mean_chunk_data, get_mean_stderr
 
 
-STEP_SIZE = 100
+STEP_SIZE = 200
 
 def plot_best_reward_rate_individual(ax, param_file_name: str, label: str):
     parameter_list = get_configuration_list_from_file_path(param_file_name)
 
     # grouping configs based on seeds
     grouped_params = group_configs(parameter_list, ['seed'])
-    best_group, best_index, best_performance, perfs = get_best_grouped_param(grouped_params)
+    best_group, best_index, best_performance, perfs, rank = get_best_grouped_param(grouped_params)
 
+    print(best_group[0])
+    # print(rank)
+    # print([group[0]['kappa'] for group in np.array(grouped_params)[rank]])
+    # print([group[0]['kappa'] for group in grouped_params])
+    # adasd
+    # best_group = grouped_params[rank[-3]]
+    # print(grouped_params[rank[1]])
     data = load_configuration_list_data(best_group[1], load_reward_rate)
 
     for run_data in data:
@@ -39,6 +46,16 @@ def plot_best_reward_rate_individual(ax, param_file_name: str, label: str):
         x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
 
         ax.plot(x_range, run_data, linewidth=0.5)
+
+    
+    # data = np.array(load_configuration_list_data(best_group[1], load_reward_rate))
+    # mean, std = get_mean_stderr(data)
+    # Smoothing both data
+    # mean, std = mean_chunk_data(mean, STEP_SIZE, 0), mean_chunk_data(std, STEP_SIZE, 0)
+
+    # x_range = get_x_range(0, mean.shape[0], STEP_SIZE)
+    # ax.plot(x_range, mean)
+    # plot_mean_ribbon(ax, mean, std, x_range, label=label)
     
 def plot_max_reward_rate(ax, param_file_name: str):
     parameter_list = get_configuration_list_from_file_path(param_file_name)
@@ -47,17 +64,10 @@ def plot_max_reward_rate(ax, param_file_name: str):
     max_reward_rate = load_max_reward_rate(parameter_list[0])
     max_reward_rate = mean_chunk_data(max_reward_rate, STEP_SIZE, 0)
     x_range = get_x_range(0, max_reward_rate.shape[0], STEP_SIZE)
-    
 
-    # ax.plot(x_range, max_reward_rate, label='max reward rate')
-
-    fixed_max_reward_rate = [-0.05384615384] * len(list(x_range))
-    fixed_lower_max_reward_rate = [-0.0888888889]* len(list(x_range))
-
-    fixed_max_reward_rate = [-0.0888888889] * 799 + [-0.05384615384] * 799
-    # ax.plot(x_range, max_reward_rate, label='max reward rate')
-    # ax.plot(x_range, fixed_max_reward_rate, label='fixed max reward rate')
-    ax.plot(fixed_max_reward_rate, label='max reward rate')
+    # Woops, the logged max reward rate is actually incorrect. Here's the actual correct one
+    # fixed_max_reward_rate = [-0.0888888889] * 799 + [-0.05384615384] * 799
+    ax.plot(x_range, max_reward_rate, label='max reward rate')
 
 def create_individual_plot(file_name, alg_name):
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -82,13 +92,43 @@ def create_individual_plot(file_name, alg_name):
 if __name__ == "__main__":
     subfolder = 'collective'
 
-    # create_individual_plot(f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_sweep.py', f'{subfolder} dyna')
+    # create_individual_plot(f'experiments/chunlok/mpi/extended/collective/dyna_gpi_only_low_init_sweep.py', 'gpi')
     # create_individual_plot(f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_backgroundgpi_sweep.py', f'{subfolder} backgroundGPI')
     # create_individual_plot(f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_gpi_sweep.py', f'{subfolder} GPI')
     # create_individual_plot(f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dynaoptions_sweep.py', f'{subfolder} dynaoptions')
 
-    create_individual_plot(f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_backgroundgpi_only_sweep.py', f'{subfolder} low init OurGPI')
+    # create_individual_plot(f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_backgroundgpi_only_sweep.py', f'{subfolder} low init OurGPI')
 
+    # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_backgroundgpi_only_low_init_sweep.py', 'dyna')
     # plt.show()
+
+    folder = 'experiments/chunlok/mpi/extended_half/collective/'
+    files = [
+        # {
+        #     'file' : 'dyna_backgroundgpi_only_low_init_sweep.py',
+        #     'label' : 'ourGPI'
+        # },
+        {
+            'file' : 'dyna_ourgpi_maxaction.py',
+            'label' : 'maxAction OurGPI'
+        },
+        # {
+        #     'file' : 'dyna_gpi_only_low_init_sweep.py',
+        #     'label' : 'GPI'
+        # },
+        # {
+        #     'file' : 'dyna_sweep.py',
+        #     'label' : 'dyna'
+        # },
+        # {
+        #     'file' : 'dynaoptions_sweep.py',
+        #     'label' : 'dynaoptions'
+        # }
+        
+    ]
+
+    for obj in files:
+        create_individual_plot(folder + obj['file'], obj['label'])
+    
 
         

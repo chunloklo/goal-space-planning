@@ -11,10 +11,16 @@ def get_mean_std(data: np.array):
         [(np.array, np.array)]: [Returns the (mean, std) of the data]
     """
     assert len(data.shape) == 2, f'data with more than 2 dimension is not supported. Input data has {len(data.shape)} dimensions'
-    # Assumes the first dimension is the number of runs, the second is ran
+    # Assumes the first dimension is the number of runs, the second is the number of log steps
     data_mean = np.mean(data, axis=0)
     data_std = np.std(data, axis=0) / data.shape[0]
     return data_mean, data_std
+
+def get_mean_stderr(data: np.array):
+    data_mean, data_std = get_mean_std(data)
+    data_stderr = data_std / data.shape[0]
+    return data_mean, data_stderr
+
 
 def mean_chunk_data(data: np.array, chunk_size: int, axis=0) -> np.array:
     """Chunks the data along some axis and averages the data along that chunk, rejoining them afterwards.
