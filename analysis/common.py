@@ -23,6 +23,14 @@ def load_max_reward_rate(config):
     # Just getting rid of the first dimension
     return data[0]
 
+def load_data(config, key: str):
+    data = run_utils.load_data(config)
+    # 1 x num_logs
+    data = np.array(data[key])
+
+    # Just getting rid of the first dimension
+    return data[0]
+
 def get_performance(config):
     data = load_reward_rate(config)
     return np.mean(data)

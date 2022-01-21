@@ -12,11 +12,6 @@ from matplotlib.patches import PathPatch
 from matplotlib import cm
 from matplotlib.animation import FuncAnimation
 
-
-from src.analysis.learning_curve import plotBest
-from src.experiment import ExperimentModel
-from PyExpUtils.results.results import loadResults, whereParameterGreaterEq, whereParametersEqual, find
-from PyExpUtils.utils.arrays import first
 from tqdm import tqdm
 
 # Mass taking imports from process_data for now
@@ -31,20 +26,22 @@ from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_pat
 from src.analysis.plot_utils import get_x_range
 from src.environments.HMaze import HMaze
 
-COLUMN_MAX = 12
-ROW_MAX = 8
+from sweep_configs.common import get_configuration_list_from_file_path
+from src.analysis.plot_utils import load_configuration_list_data
+from analysis.common import get_best_grouped_param, load_reward_rate, load_max_reward_rate
+from analysis_common.configs import group_configs
+from src.utils import run_utils
+from analysis.common import load_data
+import matplotlib
 
 def generatePlot(json_handle):
-    data = load_experiment_data(json_handle)
+    # print("backend", plt.rcParams["backend"])
+    # For now, we can't use the default MacOSX backend since it will give me terrible corruptions
+    matplotlib.use("TkAgg")
 
-    # Processing data here so the dimensions are correct
-    data = data["model_transition"]
-    data = data[:, 0, :, :, :]
-    data = np.mean(data, axis=0)
-    print(data.shape)
 
     # Getting file name
-    save_file = prompt_user_for_file_name('./visualizations/', 'model_transition_', '', 'mp4', timestamp=True)
+    save_file = prompt_user_for_file_name('./visualizations/', 'state_estimate_r_', '', 'mp4', timestamp=True)
 
     print(f'Visualization will be saved in {save_file}')
     # Getting episode range
@@ -53,19 +50,12 @@ def generatePlot(json_handle):
     env = HMaze(0)
     tab_feature = env.get_tabular_feature()
 
-
-    # Using a simple way of determining whether options are used.
-    # Note that this might not work in the future if we do something separate, but it works for now
-    hasOptions = data.shape[-1] > 4
-
-    num_options = data.shape[-1] - 4
-
     fig, axes = plt.subplots(1, figsize=(16, 16))
     ax = axes
 
     colormap = cm.get_cmap('viridis')
 
-    texts, patches, arrows = _plot_init(ax, columns = env.size, rows = env.size, center_arrows=True)
+    texts, patches = _plot_init(ax, columns = env.size, rows = env.size)
     
 
     min_val = np.min(data)
@@ -75,34 +65,26 @@ def generatePlot(json_handle):
     frames = range(start_frame, max_frame, interval)
     x_range = list(get_x_range(0, data.shape[0], 1))
 
-
-    states = [0, 1, 40, 80, 119, 120, 121]
-
-#     (0, 0)
-# (0, 40)
-# (20, 0)
-# (20, 40)
-# (40, 0)
-# (40, 40)
-
     print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
     pbar = tqdm(total=max_frame - start_frame)
+
+    plot_option = 1
     def draw_func(i):
         pbar.update(i - start_frame - pbar.n)
-        q_values = data[i, :, :]
+        frame_data = data[i]
 
 
         ax.set_title(f"episode: {x_range[i]}")
-
         nonzero_states = set()
 
         for r in range(env.size):
             for c in range(env.size):
                 try:
-                    index = tab_feature.encode((r, c))
+                    state_index = tab_feature.encode((r, c))
                     # q_value = q_values[index, :]
-                    option = 0
-                    q_value = q_values[index, option][[0, 1, 40, 80]]
+
+                    state_data = frame_data[state_index, :, plot_option]
+                    # print(state_data)
                     # q_value = q_values[index, option][[119, 120, 121]]
 
                     # _, states = np.nonzero(q_value)
@@ -111,18 +93,13 @@ def generatePlot(json_handle):
                     # print(np.nonzero(q_value))
 
                     for a in range(4):
-                        scaled_value = scale_value(q_value[a], min_val, max_val, post_process_func=lambda x: x)
+                        scaled_value = scale_value(state_data[a], min_val, max_val, post_process_func=lambda x: x)
                         patches[r][c][a].set_facecolor(colormap(scaled_value))
                         # colors = ["red", "green", "blue", "orange"]
                         # patches[i][j][a].set_facecolor(colors[a])
-                        texts[r][c][a].set_text(round(q_value[a], 2))
+                        texts[r][c][a].set_text(round(state_data[a], 2))
                 except KeyError as e:
                     pass
-
-        print(nonzero_states)
-        for s in nonzero_states:
-            print(tab_feature.decode(s))
-        return
 
     animation = FuncAnimation(fig, draw_func, frames=frames)
     animation.save(save_file)
@@ -155,16 +132,15 @@ def load_experiment_data(json_handle, load_keys: list = None):
 
 
 if __name__ == "__main__":
-
-    # read the arguments etc
-    if len(sys.argv) < 2:
-        print("usage : python analysis/process_data.py <list of json files")
-        exit()
+    parameter_path = 'experiments/chunlok/mpi/hmaze/optionplanning_test.py'
+    parameter_list = get_configuration_list_from_file_path(parameter_path)
 
 
-    json_handle = get_json_handle()
 
-    # Only use the first handle for now?
-    generatePlot(json_handle)
+    data = load_data(parameter_list[0], 'state_estimate_r')
+
+    print(data.shape)
+
+    generatePlot(data)
 
     exit()

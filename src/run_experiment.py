@@ -100,6 +100,10 @@ def run(param: dict, aux_config={}):
     # save_logger_keys = ['action_model_r', 'action_model_discount', 'action_model_transition', 'model_r', 'model_discount', 'model_transition', 'Q']
     save_logger_keys = ['Q', 'max_reward_rate', 'reward_rate']
 
+    # Overriding logger keys from aux config if it exists:
+    if 'save_logger_keys' in aux_config:
+        save_logger_keys = aux_config['save_logger_keys']
+
     step_logging_interval = param['step_logging_interval']
 
     if show_progress:

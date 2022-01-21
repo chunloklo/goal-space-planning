@@ -21,7 +21,7 @@ class HMaze(BaseEnvironment):
     """
     def __init__(self, seed:int, reward_sequence_length=10, initial_learning=0):
         random.seed(1)
-        self.size = 41
+        self.size = 15
         self.shape = (self.size, self.size)
         self.reward_sequence_length = reward_sequence_length
         self.num_steps = None
@@ -29,19 +29,19 @@ class HMaze(BaseEnvironment):
         self.goals = [
             {
                 "position" : (0,0), # Top left
-                "schedule": CyclingRewardSchedule([0, 1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
+                "schedule": CyclingRewardSchedule([1.0, -1.0, -1.0, -1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
             },
             {
                 "position" : (self.size - 1,0), # Bototm left
-                "schedule": CyclingRewardSchedule([0, 1.0], self.reward_sequence_length, cycle_offset=self.reward_sequence_length // 2, cycle_type='step'),
+                "schedule": CyclingRewardSchedule([-1.0, -1.0, -1.0, 1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
             },
             {
                 "position" : (0, self.size - 1), # Top right
-                "schedule": ConstantRewardSchedule(0),
+                "schedule": CyclingRewardSchedule([-1.0, -1.0, 1.0, -1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
             },
             {
                 "position" : (self.size - 1, self.size - 1), # Bottom right
-                "schedule": ConstantRewardSchedule(0),
+                "schedule": CyclingRewardSchedule([-1.0, 1.0, -1.0, -1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
             } 
         ]
 
@@ -65,6 +65,7 @@ class HMaze(BaseEnvironment):
                     self.valid_grids.append((r, c))
 
         self.step_penalty = -0.1
+        # self.step_penalty = 0
         self.nS = len(self.valid_grids)
         self.nA = 4
         # Start in the middle square
