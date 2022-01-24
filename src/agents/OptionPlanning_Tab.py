@@ -48,6 +48,8 @@ class OptionPlanning_Tab:
         self.gamma = params['gamma']
         self.q_init = param_utils.parse_param(params, 'q_init', lambda p: True, default=0, optional=True)
 
+        self.kappa = param_utils.parse_param(params, 'kappa', lambda p : isinstance(p, float))
+
         
         self.search_control = ActionModelSearchControl_Tabular('current', self.random)
         # This action model is only for random search control
@@ -61,8 +63,11 @@ class OptionPlanning_Tab:
         self.behaviour_learner.Q[:] = self.q_init
 
         # Supposed all goals have the same termination set for now
-        self.goals = self.options[0].termination_set
+        self.goals = self.options[0].termination_set + [self.num_states]
         print(self.goals)
+
+        # For exploration bonus on goals
+        self.tau = np.zeros(len(self.goals))
 
         # State estimate learner
         self.state_estimate_learner = ESARSAStateEstimates(self.num_states + 1, self.num_actions, self.num_options, len(self.goals))
@@ -108,6 +113,11 @@ class OptionPlanning_Tab:
         self.action_model.update(x, a, xp, r, gamma)
         self.search_control.update(x, xp)
         
+        # Updating tau
+        self.tau += 1
+        # goal_termination = xp == np.array(self.goals)
+        self.tau[xp == np.array(self.goals)] = 0
+
         self._update_state_estimates(x, a, xp, r, gamma)
         self._map_goal_to_state_estimates(x, a, xp, r, gamma)
         self._improve_goal_values()
@@ -174,8 +184,11 @@ class OptionPlanning_Tab:
             self.behaviour_learner.get_action_values(x), self.alpha)
 
     def _improve_goal_values(self):
+        goal_reward = self.goal_estimate_learner.r
+        # Some wonky transposing for broadcasting
+        goal_reward = (goal_reward.T + self.kappa * np.sqrt(self.tau)).T
         self.goal_value_learner.update(self.goal_estimate_learner.value_baseline, self.goal_estimate_learner.goal_transition_prob, 
-            self.goal_estimate_learner.gamma, self.goal_estimate_learner.r, self.alpha)
+            self.goal_estimate_learner.gamma, goal_reward, self.alpha)
     
     def _option_constrained_improvement(self, x, xp):
         goal_values = self.goal_value_learner.goal_values
@@ -263,6 +276,11 @@ class GoalEstimates:
                 self.goal_transition_prob[g] += alpha * (np.sum((goal_prob_s.T * option_pi_x).T, axis=0) - self.goal_transition_prob[g])
                 self.value_baseline[g] += alpha * (np.max(q_sa) - self.value_baseline[g])
 
+        if globals.blackboard['num_steps_passed'] % globals.blackboard['step_logging_interval'] == 0:
+            globals.collector.collect('goal_r', np.copy(self.r)) 
+            globals.collector.collect('goal_gamma', np.copy(self.gamma)) 
+            globals.collector.collect('goal_transition', np.copy(self.goal_transition_prob))
+            globals.collector.collect('goal_baseline', np.copy(self.value_baseline))
 
 class GoalValueLearner:
     def __init__(self, num_goals):
@@ -274,7 +292,6 @@ class GoalValueLearner:
     def update(self, value_baseline, goal_transition_prob, goal_gamma, reward_goals, alpha):
         
         num_planning_steps = 2
-
         for _ in range(num_planning_steps):
         #     # Literally doing value iteration here
             goal_transition_values = reward_goals + goal_gamma * np.sum(goal_transition_prob * self.goal_values, axis=2)

@@ -32,7 +32,7 @@ class HMaze(BaseEnvironment):
                 "schedule": CyclingRewardSchedule([1.0, -1.0, -1.0, -1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
             },
             {
-                "position" : (self.size - 1,0), # Bototm left
+                "position" : (self.size - 1, 0), # Bottom left
                 "schedule": CyclingRewardSchedule([-1.0, -1.0, -1.0, 1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
             },
             {

@@ -8,20 +8,26 @@ import numpy as np
 
 class SweepInfo:
 
-    def __init__(self, sweep_configs: List[Dict]):
+    def __init__(self, sweep_configs: List[Dict], config_func=None):
         
         self.filters = {}
         self.configs = copy(sweep_configs)
         self.diff_list = {}
+        self.const_list = {}
+        self.config_func = config_func # Allows you to bundle in many things into configs (like its file, or folder) and have it look only at a certain part of the config
 
+        self.filtered_configs = []
         self._update_diff_list()
 
     def _update_diff_list(self):
         diff_list = {}
         base_config = None
 
-        filtered_configs = self._filter_configs()
-        for config in filtered_configs:
+        self.filtered_configs = self._filter_configs()
+        for config in self.filtered_configs:
+
+            if self.config_func is not None:
+                config = self.config_func(config)
 
             if base_config is None:
                 base_config = config
@@ -54,6 +60,9 @@ class SweepInfo:
     def _filter_configs(self):
         def filter_func(config):
             for key, value in self.filters.items():
+                if self.config_func is not None:
+                    config = self.config_func(config)
+
                 if config[key] != value:
                     return False
             return True

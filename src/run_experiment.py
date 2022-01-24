@@ -16,9 +16,11 @@ from src.utils import rlglue
 from src.utils.json_handling import get_sorted_dict, get_param_iterable
 import copy
 from src.data_management import zeo_common
-from src.utils.run_utils import experiment_completed, InvalidRunException, save_error, cleanup_files, save_data
+from src.utils.run_utils import InvalidRunException, save_error
 import argparse
 import tqdm
+
+from data_io.configs import save_data_zodb
 
 import jax
 from src.utils.param_utils import parse_param
@@ -146,9 +148,9 @@ def run(param: dict, aux_config={}):
                 _, _, _, is_terminal = glue.step()
             globals.collector.reset()
     except InvalidRunException as e:
-        save_error(param, e)
+        # [2022-01-24 chunlok] Leaving out error saving for now. This needs to be reimplemented in the data_io library still
         logging.critical(f"Experiment errored {param} : {idx}, Time Taken : {time.time() - t_start}")
-        return
+        raise e
 
     save_obj = {}
 
@@ -158,7 +160,7 @@ def run(param: dict, aux_config={}):
         save_obj[k] = globals.collector.all_data[k]
 
     # We likely want to abstract this away from src/main
-    cleanup_files(param)
-    save_data(param, save_obj)
+    save_data_zodb(param, save_obj)
+    
     logging.info(f"Experiment Done {param} : {idx}, Time Taken : {time.time() - t_start}")
     return

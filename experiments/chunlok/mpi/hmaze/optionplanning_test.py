@@ -13,8 +13,8 @@ def get_configuration_list():
         "episodes": [0],
         'max_steps': [32000 * 2],
         "reward_sequence_length" : [8000],
-        'step_logging_interval': [1],
-        "seed": [0],
+        'step_logging_interval': [100],
+        "seed": [10],
         "exploration_phase": [0],
         "no_reward_exploration": [False],
         "alpha": [1.0],
@@ -23,6 +23,7 @@ def get_configuration_list():
         'planning_steps': [8],
         'goal_planning_steps': [4],
         "gamma": [0.95],
+        "kappa": [0.01],
 
     }
 

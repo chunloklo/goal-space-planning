@@ -4,6 +4,7 @@ from analysis_common.configs import group_configs
 import numpy as np
 from src.utils import run_utils
 from sweep_configs.common import get_configuration_list_from_file_path
+from data_io.configs import load_data_from_config_zodb
 
 # Some common functions for analysis specific for this project
 
@@ -24,9 +25,11 @@ def load_max_reward_rate(config):
     return data[0]
 
 def load_data(config, key: str):
-    data = run_utils.load_data(config)
+    # data = run_utils.load_data(config)
+    data = load_data_from_config_zodb(config)
     # 1 x num_logs
     data = np.array(data[key])
+    
 
     # Just getting rid of the first dimension
     return data[0]
