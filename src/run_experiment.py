@@ -4,35 +4,29 @@ import sys
 import os, time
 sys.path.append(os.getcwd())
 import logging
-from src.utils import globals, analysis_utils
-from src.utils.formatting import create_file_name, pushup_metaParameters
 from RlGlue import RlGlue
 from src.experiment import ExperimentModel
 from src.problems.registry import getProblem
-from src.agents.registry import getAgent
 from PyExpUtils.utils.Collector import Collector
 from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils import rlglue
-from src.utils.json_handling import get_sorted_dict, get_param_iterable
-import copy
-from src.data_management import zeo_common
 from src.utils.run_utils import InvalidRunException, save_error
-import argparse
 import tqdm
 
 from experiment_utils.data_io.configs import save_data_zodb
 
-import jax
 from src.utils.param_utils import parse_param
 
-
 def run(param: dict, aux_config={}):
-    
-    if aux_config.get('jax_debug_nans', False):
-        # Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
-        jax.config.update("jax_debug_nans", True)
 
-    jax.config.update('jax_platform_name', 'cpu')
+    # Don't import jax here if we don't need to
+    if aux_config.get('use_jax', True):
+        import jax
+        if aux_config.get('jax_debug_nans', False):
+            # Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
+            jax.config.update("jax_debug_nans", True)
+
+        jax.config.update('jax_platform_name', 'cpu')
 
     show_progress = aux_config.get('show_progress', False)
 
@@ -117,7 +111,6 @@ def run(param: dict, aux_config={}):
     glue = RlGlue(wrapper, env)
 
     # Run the experiment
-    rewards = []
     try:
         if exp.episodes > 0:
             episode_iter = range(exp.episodes)
@@ -139,7 +132,7 @@ def run(param: dict, aux_config={}):
                 step_iter = tqdm.tqdm(step_iter)
             
             is_terminal = True
-            for step in step_iter:
+            for _ in step_iter:
                 if is_terminal:
                     globals.collector.collect('return', glue.total_reward)
                     is_terminal = False
@@ -158,8 +151,7 @@ def run(param: dict, aux_config={}):
     # [2021-12-03 chunlok] this subsampling should probably be done in the logging step rather than afterwards
     for k in save_logger_keys:
         save_obj[k] = globals.collector.all_data[k]
-
-    # We likely want to abstract this away from src/main
+    
     save_data_zodb(param, save_obj)
     
     logging.info(f"Experiment Done {param} : {idx}, Time Taken : {time.time() - t_start}")
