@@ -1,10 +1,10 @@
 from typing import Any, Callable, List, Tuple
-from analysis_common.cache import cache_local_file
-from analysis_common.configs import group_configs
+from experiment_utils.analysis_common.cache import cache_local_file
+from experiment_utils.analysis_common.configs import group_configs
 import numpy as np
 from src.utils import run_utils
-from sweep_configs.common import get_configuration_list_from_file_path
-from data_io.configs import load_data_from_config_zodb
+from experiment_utils.sweep_configs.common import get_configuration_list_from_file_path
+from experiment_utils.data_io.configs import load_data_from_config_zodb
 
 # Some common functions for analysis specific for this project
 

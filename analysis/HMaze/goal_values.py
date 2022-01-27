@@ -25,10 +25,10 @@ from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_pat
 from src.analysis.plot_utils import get_x_range
 from src.environments.HMaze import HMaze
 
-from sweep_configs.common import get_configuration_list_from_file_path
+from experiment_utils.sweep_configs.common import get_configuration_list_from_file_path
 from src.analysis.plot_utils import load_configuration_list_data
 from analysis.common import get_best_grouped_param, load_reward_rate, load_max_reward_rate, plot_mean_ribbon
-from analysis_common.configs import group_configs
+from  experiment_utils.analysis_common.configs import group_configs
 from analysis.common import load_data
 import matplotlib
 from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_text_location, prompt_user_for_file_name, get_file_name, scale_value, _plot_init, prompt_episode_display_range

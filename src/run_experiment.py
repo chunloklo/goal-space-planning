@@ -20,7 +20,7 @@ from src.utils.run_utils import InvalidRunException, save_error
 import argparse
 import tqdm
 
-from data_io.configs import save_data_zodb
+from experiment_utils.data_io.configs import save_data_zodb
 
 import jax
 from src.utils.param_utils import parse_param

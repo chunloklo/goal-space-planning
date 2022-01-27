@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-from sweep_configs.common import get_configuration_list_from_file_path
+from experiment_utils.sweep_configs.common import get_configuration_list_from_file_path
 from src.utils.run_utils import experiment_completed
 
 # get_configuration_list function is required for 
