@@ -10,7 +10,6 @@ sys.path.append(os.getcwd())
 from src.utils.formatting import create_file_name
 from src.utils.json_handling import get_param_iterable_runs, get_param_iterable
 import itertools
-from src.data_management import zeo_common
 import traceback
 
 
@@ -81,10 +80,7 @@ def load_different_runs(json_handle):
         filename = folder + file + '.pkl'
         # load the file
         try:
-            if zeo_common.use_zodb():
-                arr = zeo_common.zodb_loader(zeo_common.get_db_key(i))
-            else:
-                arr = pkl_loader(filename)
+            arr = pkl_loader(filename)
             return_data.append( arr['return'])
             max_returns.append( arr['max_return'])
         except Exception as e:

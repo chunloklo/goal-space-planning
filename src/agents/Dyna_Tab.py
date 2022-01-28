@@ -60,9 +60,10 @@ class Dyna_Tab:
         # This is specifically for GrazingWorldAdam
         self.option_model, self.option_action_model = get_pretrained_option_model()
 
-        self.tau = np.zeros(self.num_states)
-        self.a = -1
-        self.x = -1
+        self.goals = [13,31,81]
+        self.tau = np.zeros(len(self.goals))
+        # self.a = -1
+        # self.x = -1
 
         # +1 accounts for the terminal state
         if self.behaviour_alg == 'QLearner':
@@ -147,7 +148,7 @@ class Dyna_Tab:
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
             self.tau += 1
-        self.tau[x] = 0
+        self.tau[xp == np.array(self.goals)] = 0
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.update(x, a, xp, r, gamma, self.alpha)
@@ -201,8 +202,8 @@ class Dyna_Tab:
             pass
         else:
             # Exploration bonus for +
-            if xp in [13,31,81]:
-                r += self.kappa * np.sqrt(self.tau[xp])
+            if xp in self.goals:
+                r += self.kappa * np.sqrt(np.sum(self.tau[xp == np.array(self.goals)]))
             
 
         if isinstance(self.behaviour_learner, QLearner):
@@ -236,8 +237,8 @@ class Dyna_Tab:
             pass
         else:
             # Exploration bonus for +
-            for o, xp in enumerate([13,31,81]):
-                bonuses[o] += self.kappa * np.sqrt(self.tau[xp])
+            for o, xp in enumerate(self.goals):
+                bonuses[o] += self.kappa * np.sqrt(np.sum(self.tau[xp == np.array(self.goals)]))
                 
         for o in range(self.num_options):
             for a in range(self.num_actions):

@@ -64,7 +64,7 @@ class OptionPlanning_Tab:
 
         # Supposed all goals have the same termination set for now
         self.goals = self.options[0].termination_set + [self.num_states]
-        print(self.goals)
+        # print(self.goals)
 
         # For exploration bonus on goals
         self.tau = np.zeros(len(self.goals))

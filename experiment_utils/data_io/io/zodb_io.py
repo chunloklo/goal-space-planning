@@ -1,4 +1,6 @@
 from ast import Index
+from ctypes import sizeof
+from distutils.command.config import config
 from re import L
 from sqlite3 import connect
 import ZODB, ZODB.FileStorage
@@ -6,7 +8,9 @@ import os
 from filelock import FileLock 
 from BTrees import OOBTree
 import transaction
-from ZODB.blob import Blob
+from ZODB.blob import Blob, is_blob_record
+from ZODB.serialize import ObjectWriter
+import pickle
 
 DB_DATA_KEY = 'data'
 DB_CONFIGS_KEY = 'configs'
@@ -21,7 +25,9 @@ def open_db(db_folder, create_if_not_exist=True):
     lock = FileLock(lock_name)
     lock.acquire()
 
-    storage = ZODB.FileStorage.FileStorage(f'{db_folder}/data.fs')
+    blob_dir = f'{db_folder}/blobs'
+
+    storage = ZODB.FileStorage.FileStorage(f'{db_folder}/data.fs', blob_dir=blob_dir)
     db = ZODB.DB(storage)
     connection = db.open()
     root = connection.root()

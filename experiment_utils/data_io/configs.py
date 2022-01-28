@@ -4,6 +4,7 @@ import os
 import json
 import hashlib
 from .io.zodb_io import save_config_and_data_zodb, load_data_config_from_id, open_db, close_db, DB_FOLDER, DB_CONFIGS_KEY, DB_DATA_KEY
+import pickle
 
 def hash_string(name):
     return hashlib.sha256(name.encode()).hexdigest()

@@ -13,6 +13,7 @@ class HMazeProblem(BaseProblem):
         self.actions = 4
         self.options = self.env.get_options()
         self.gamma = self.params['gamma']
+        self.goals = self.options[0].termination_set + [self.num_states]
 
     def get_representation(self, rep_type: str):
         rep_type = param_utils.check_valid(rep_type, lambda x: x in ['Tabular', 'Image'])

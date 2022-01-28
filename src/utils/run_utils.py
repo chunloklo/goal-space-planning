@@ -5,26 +5,19 @@ from PyExpUtils.models.ExperimentDescription import ExperimentDescription
 from PyExpUtils.utils.dict import DictPath, flatKeys, get
 import traceback
 from src.utils import analysis_utils
-from src.data_management import zeo_common
 
 class InvalidRunException(Exception):
     pass
 
 def cleanup_files(experiment: Dict):
-    if zeo_common.use_zodb():
-        data_key = zeo_common.get_db_key(experiment)
-        error_key = zeo_common.get_db_key(experiment) + '_ERROR'
-        zeo_common.zodb_remove(error_key)
-        zeo_common.zodb_remove(data_key)
-    else:
-        folder, filename = create_file_name(experiment)
-        output_file_name = folder + filename
+    folder, filename = create_file_name(experiment)
+    output_file_name = folder + filename
 
-        if os.path.exists(output_file_name + '.pkl'):
-            os.remove(output_file_name + '.pkl')
-        if os.path.exists(output_file_name + '.err'):
-            os.remove(output_file_name + '.err')
-        pass
+    if os.path.exists(output_file_name + '.pkl'):
+        os.remove(output_file_name + '.pkl')
+    if os.path.exists(output_file_name + '.err'):
+        os.remove(output_file_name + '.err')
+    pass
 
 def save_error(experiment: Dict, exception: Exception):
 

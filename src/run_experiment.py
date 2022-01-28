@@ -12,6 +12,7 @@ from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils import rlglue
 from src.utils.run_utils import InvalidRunException, save_error
 import tqdm
+from src.utils import globals
 
 from experiment_utils.data_io.configs import save_data_zodb
 
