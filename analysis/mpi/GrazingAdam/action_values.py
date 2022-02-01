@@ -34,7 +34,7 @@ from src.utils import run_utils
 from collections.abc import Iterable
 from experiment_utils.sweep_configs.common import get_configuration_list_from_file_path
 from src.analysis.plot_utils import load_configuration_list_data
-from analysis.common import get_best_grouped_param, load_reward_rate, load_max_reward_rate
+from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate
 from  experiment_utils.analysis_common.configs import group_configs
 
 COLUMN_MAX = 12
@@ -47,12 +47,10 @@ def generatePlot(data):
     matplotlib.use("TkAgg")
 
     # Processing data here so the dimensions are correct
-    print(data.keys())
-    data = data["Q"]
-    data = np.array(data)
-    print(data.shape)
+    # data = np.array(data)
+    # print(data.shape)
     # print(data)
-    data = data[0, :, :, :]
+    # data = data[0, :, :, :]
     # data = np.mean(data, axis=0)
     print(data.shape)
 
@@ -186,12 +184,12 @@ def load_experiment_data(json_handle, load_keys: list = None):
 
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
+    parameter_path = 'experiments/chunlok/graze_ideal/OCI.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     # grouping configs based on seeds
-    grouped_params = group_configs(parameter_list, ['seed'])
-    best_group, best_index, best_performance, perfs, rank = get_best_grouped_param(grouped_params)
+    # grouped_params = group_configs(parameter_list, ['seed'])
+    # best_group, best_index, best_performance, perfs, rank = get_best_grouped_param(grouped_params)
 
     # display_config = {}
     # for i in parameter_list:
@@ -204,7 +202,10 @@ if __name__ == "__main__":
     # sdfdsf
 
 
-    data = run_utils.load_data(best_group[1][0])
+    # data = run_utils.load_data(best_group[1][0])
+
+    data = load_data(parameter_list[0], 'Q')
+    print(data.shape)
     # data = run_utils.load_data(parameter_list[0])
     generatePlot(data)
 

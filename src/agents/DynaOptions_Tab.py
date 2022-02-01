@@ -1,6 +1,5 @@
 from src.agents.components.learners import ESarsaLambda, QLearner
 from src.agents.components.search_control import ActionModelSearchControl_Tabular
-from src.environments.GrazingWorldAdam import get_pretrained_option_model, get_all_transitions
 from PyExpUtils.utils.random import argmax, choice
 from PyFixedReps.BaseRepresentation import BaseRepresentation
 from PyFixedReps.Tabular import Tabular
@@ -27,7 +26,7 @@ class DynaOptions_Tab:
         self.features = self.representation.features
         self.num_actions = problem.actions
         self.actions = list(range(self.num_actions))
-        self.params = problem.params
+        self.params = globals.param
         self.num_states = self.env.nS
         self.options = problem.options
         self.num_options = len(problem.options)
@@ -40,46 +39,44 @@ class DynaOptions_Tab:
         self.planning_steps = params['planning_steps']
         self.model_planning_steps = params['model_planning_steps']
         self.kappa = params['kappa']
-        self.lmbda = params['lambda']
-        self.model_alg =  param_utils.parse_param(params, 'option_model_alg', lambda p : p in ['sutton'])
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['QLearner', 'ESarsaLambda']) 
+        self.learn_model =  param_utils.parse_param(params, 'learn_model', lambda p : isinstance(p, bool))
 
-        search_control_type = param_utils.parse_param(params, 'search_control', lambda p : p in ['random', 'current', 'td', 'close'])
-        self.search_control = ActionModelSearchControl_Tabular(search_control_type, self.random)
+        self.search_control = ActionModelSearchControl_Tabular(self.random)
         
-        self.tau = np.zeros((self.num_states, self.num_actions + self.num_options))
-        self.a = -1
-        self.x = -1
+        self.goals = problem.get_goals()
+        self.goals = [self.representation.encode(goal) for goal in self.goals]
+        self.tau = np.zeros(len(self.goals))
+
+        # Loading the pretrained model rather than learning from scratch.
+        if not self.learn_model:
+            self.option_model, self.option_action_model = problem.get_pretrained_option_model()
+        else:
+            self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+
+        # Creating models for actions and options
+        self.action_model = DictModel()
+        
+        if not self.learn_model:
+            transitions = problem.get_all_transitions()
+
+            # Prefilling dict buffer so no exploration is needed
+            for t in transitions:
+                # t: s, a, sp, reward. gamma
+                self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
+
 
         # +1 accounts for the terminal state
         if self.behaviour_alg == 'QLearner':
             self.behaviour_learner = QLearner(self.num_states + 1, self.num_actions + self.num_options)
         elif self.behaviour_alg == 'ESarsaLambda':
+            self.lmbda = params['lambda']
             self.behaviour_learner = ESarsaLambda(self.num_states + 1, self.num_actions + self.num_options)
         else:
             raise NotImplementedError(f'behaviour_alg for {self.behaviour_alg} is not implemented')
 
-        # Creating models for actions and options
-        self.action_model = DictModel()
-        transitions = get_all_transitions()
-        
-        # Prefilling dict buffer so no exploration is needed
-        for t in transitions:
-            # t: s, a, sp, reward. gamma
-            self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
-
-
-        if self.model_alg == 'sutton':
-            # self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
-            # self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
-
-            # Loading the pretrained model rather than learning from scatch
-            self.option_model, self.option_action_model = get_pretrained_option_model()
-        else:
-            raise NotImplementedError(f'option_model_alg for {self.model_alg} is not implemented')
-
         # For logging state visitation
-        self.state_visitations = np.zeros(self.num_states)
         self.cumulative_reward = 0
 
     def FA(self):
@@ -112,19 +109,10 @@ class DynaOptions_Tab:
         # Treating the terminal state as an additional state in the tabular setting
         xp = self.representation.encode(sp) if not terminal else self.num_states
 
-        if globals.blackboard['num_steps_passed'] == self.params['reward_sequence_length']:
-            # Correcting the one-step model based on 
-
-            for _a in range(self.num_actions):
-                self.update_model(31, _a, self.num_states, 0.5, 0)
-
-        self.state_visitations[x] += 1
-
         # Exploration bonus tracking
         if not globals.blackboard['in_exploration_phase']:
             self.tau += 1
-        
-        self.tau[x, o] = 0  
+        self.tau[xp == np.array(self.goals)] = 0
 
         if isinstance(self.behaviour_learner, QLearner):
             self.behaviour_learner.update(x, o, xp, r, gamma, self.alpha)
@@ -152,10 +140,6 @@ class DynaOptions_Tab:
         self.cumulative_reward += r
         if globals.blackboard['num_steps_passed'] % globals.blackboard['step_logging_interval'] == 0:
             globals.collector.collect('Q', np.copy(self.behaviour_learner.Q)) 
-
-            # Logging state visitation
-            globals.collector.collect('state_visitation', np.copy(self.state_visitations))   
-            self.state_visitations[:] = 0
 
             # globals.collector.collect('tau', np.copy(self.tau)) 
             globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
@@ -186,8 +170,7 @@ class DynaOptions_Tab:
     def _planning_update(self, x: int, o: int):
         if (o < self.num_actions):
             # Generating the experience from the action_model
-            xp, r, gamma = self.action_model.predict(x, o)
-            discount = gamma
+            xp, r, discount = self.action_model.predict(x, o)
         else:
             # Generating the experience from the option model
             option_index = options.from_action_to_option_index(o, self.num_actions)
@@ -202,12 +185,7 @@ class DynaOptions_Tab:
                 xp = None
 
         # Exploration bonus for +
-        # These states are specifically or GrazingWorldAdam
-        if x in [13,31,81]:
-            factor = 1
-        else:
-            factor = 0.0
-        r += self.kappa * factor * np.sqrt(self.tau[x, o])
+        r += self.kappa * np.sqrt(np.sum(self.tau[xp == np.array(self.goals)]))
 
         # xp could be none if the transition probability errored out
         if xp != None:
@@ -224,19 +202,6 @@ class DynaOptions_Tab:
         Returns:
             Nothing
         """
-        
-        # Additional model planning steps if we need them. Usually this is set to 0 though.
-        for _ in range(self.model_planning_steps):
-            # resample the states
-            plan_x = choice(np.array(self.action_model.visited_states()), self.random)
-            visited_actions = self.action_model.visited_actions(plan_x)
-
-            # Improving option model!
-            # We're improving the model a ton here (updating all 4 actions). We could reduce this later but let's keep it high for now?
-            # Disabling this since we are testing with traces
-            for a in visited_actions:
-                xp, r, gamma = self.action_model.predict(plan_x, a)
-                self.option_model_planning_update(plan_x, a, xp, r, gamma)
 
         sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
 
@@ -258,7 +223,3 @@ class DynaOptions_Tab:
         self.behaviour_learner.episode_end()
         self.option_model.episode_end()
         self.option_action_model.episode_end()
-
-        # Logging state visitation
-        globals.collector.collect('state_visitation', np.copy(self.state_visitations))   
-        self.state_visitations[:] = 0

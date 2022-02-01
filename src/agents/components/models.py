@@ -1,3 +1,4 @@
+from ssl import Options
 from typing import Any, List, Dict, Tuple
 import numpy as np
 import numpy.typing as npt
@@ -14,6 +15,8 @@ import jax
 import optax
 import jax.numpy as jnp
 import copy
+from src.utils.options import get_option_term, get_option_policies_prob
+from src.utils import log_utils
 
 class RewardModel_ImageNN_funcs():
     def __init__(self, learning_rate: float):
@@ -65,6 +68,79 @@ class RewardModel_ImageNN():
     def update(self, data):
         self.params, self.opt_state = self.funcs.f_update(self.params, self.opt_state, data)
 
+# class OptionActionModel_ESARSA():
+#     def __init__(self, num_states:int, num_actions:int, num_options:int):
+#         self.num_states = num_states
+#         self.num_actions = num_actions
+#         self.num_options = num_options
+
+#         self.reward_model = np.zeros((num_states, num_actions, num_options))
+#         self.discount_model = np.zeros((num_states, num_actions, num_options))
+#         self.transition_model = np.zeros((num_states, num_actions, num_options, num_states))
+
+#     def update(self, x, a, xp, r, gamma, options: list[Option], step_size:float):
+
+#         option_policies = get_option_policies_prob(xp, options, self.num_actions, 1 -)
+#         option_terminations = get_option_term(xp, options, 1 - gamma)
+
+#         xp_onehot = numpy_utils.create_onehot(self.num_states, xp)
+
+#         for o in range(self.num_options):
+#             xp_policy = option_policies[o]
+#             option_termination = option_terminations[o]
+
+#             xp_reward_average = np.average(self.reward_model[xp, :, o], weights=xp_policy)
+#             self.reward_model[x, a, o] += step_size * (r + gamma * (1 - option_termination) * xp_reward_average - self.reward_model[x, a, o])
+
+#             xp_discount_average = np.average(self.discount_model[xp, :, o], weights=xp_policy)
+#             self.discount_model[x, a, o] += step_size * (option_termination + (1 - option_termination) * gamma * xp_discount_average - self.discount_model[x, a, o])
+            
+#             xp_transition_average = np.average(self.transition_model[xp, :, o], weights=xp_policy, axis=0)
+#             self.transition_model[x, a, o] += step_size * ((option_termination * xp_onehot) + (1 - option_termination) * xp_transition_average -  self.transition_model[x, a, o]) 
+
+#         def log():
+#             globals.collector.collect('option_action_reward_model', np.copy(self.reward_model)) 
+#             globals.collector.collect('option_action_discount_model', np.copy(self.discount_model)) 
+#             globals.collector.collect('option_action_transition_model', np.copy(self.transition_model)) 
+
+#         log_utils.run_if_should_log(log)
+
+#     def predict(self, x: npt.ArrayLike, a:int, o: int) -> Any:
+#         reward = self.reward_model[x, a, o]
+#         discount = self.discount_model[x, a, o]
+#         next_state_prob = self.transition_model[x, a, o]
+#         return reward, discount, next_state_prob
+
+# class ActionModel_Linear():
+#     def __init__(self, num_states:int, num_actions:int):
+#         self.num_states = num_states
+#         self.num_actions = num_actions
+
+#         self.reward_model = np.zeros((num_states, num_actions))
+#         self.discount_model = np.zeros((num_states, num_actions))
+#         self.transition_model = np.zeros((num_states, num_actions, num_states))
+
+#     def update(self, x, a, xp, r, gamma, step_size:float):
+#         xp_onehot = numpy_utils.create_onehot(self.num_states, xp)
+
+#         # Update action models first
+#         self.reward_model[x, a] += step_size * (r - self.reward_model[x, a])
+#         self.discount_model[x, a] += step_size * (gamma - self.discount_model[x, a])
+#         self.transition_model[x, a] += step_size * (xp_onehot - self.transition_model[x, a])
+
+#         def log():
+#             globals.collector.collect('action_reward_model', np.copy(self.reward_model)) 
+#             globals.collector.collect('action_discount_model', np.copy(self.discount_model)) 
+#             globals.collector.collect('action_transition_model', np.copy(self.transition_model)) 
+
+#         log_utils.run_if_should_log(log)
+
+#     def predict(self, x: npt.ArrayLike, a:int) -> Any:
+#         reward = self.reward_model[x, a]
+#         discount = self.discount_model[x, a]
+#         next_state_prob = self.transition_model[x, a]
+#         return reward, discount, next_state_prob
+
 class OptionActionModel_Sutton_Tabular():
     def __init__(self, num_states: int, num_actions: int, num_options: int, options: List[Option]):
         self.num_states: int = num_states
@@ -90,7 +166,8 @@ class OptionActionModel_Sutton_Tabular():
                 ap = 0
             else:
                 ap, option_termination = self.options[o].step(xp)
-
+            
+            # Assumes the options are deterministic. Otherwise it's expectation-based off-policy sarsa? 
             self.reward_model[x, a, o] += step_size * (r + env_gamma * (1 - option_termination) * self.reward_model[xp, ap, o] - self.reward_model[x, a, o])
             self.discount_model[x, a, o] += step_size * (option_termination + (1 - option_termination) * env_gamma * self.discount_model[xp, ap, o] - self.discount_model[x, a, o])
             
@@ -320,8 +397,3 @@ class OptionModel_TB_Tabular():
                 reward[x, o] = xo_reward
                 discount[x, o] = xo_discount
                 transition[x, o] = xo_transition_prob
-
-        # Logging
-        # globals.collector.collect('model_r', reward)
-        # globals.collector.collect('model_discount', discount)
-        # globals.collector.collect('model_transition', transition) 

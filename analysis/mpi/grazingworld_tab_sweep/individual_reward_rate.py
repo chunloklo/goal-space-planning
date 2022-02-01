@@ -20,9 +20,9 @@ from src.analysis.plot_utils import load_configuration_list_data
 from analysis.common import get_best_grouped_param, load_reward_rate, load_max_reward_rate, plot_mean_ribbon
 from experiment_utils.sweep_configs.common import get_configuration_list_from_file_path
 from  experiment_utils.analysis_common.process_line import get_mean_std, mean_chunk_data, get_mean_stderr
+from pathlib import Path
 
-
-STEP_SIZE = 200
+STEP_SIZE = 50
 
 def plot_best_reward_rate_individual(ax, param_file_name: str, label: str):
     parameter_list = get_configuration_list_from_file_path(param_file_name)
@@ -69,8 +69,11 @@ def plot_max_reward_rate(ax, param_file_name: str):
     # fixed_max_reward_rate = [-0.0888888889] * 799 + [-0.05384615384] * 799
     ax.plot(x_range, max_reward_rate, label='max reward rate')
 
-def create_individual_plot(file_name, alg_name):
+def create_individual_plot(file_name, alg_name=None):
     fig, ax = plt.subplots(figsize=(10, 6))
+
+    if alg_name is None:
+        alg_name = Path(file_name).stem
 
     subfolder = 'collective'
 
@@ -102,33 +105,37 @@ if __name__ == "__main__":
     # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_backgroundgpi_only_low_init_sweep.py', 'dyna')
     # plt.show()
 
-    folder = 'experiments/chunlok/mpi/extended_half/collective/'
-    files = [
-        # {
-        #     'file' : 'dyna_backgroundgpi_only_low_init_sweep.py',
-        #     'label' : 'ourGPI'
-        # },
-        {
-            'file' : 'dyna_ourgpi_maxaction.py',
-            'label' : 'maxAction OurGPI'
-        },
-        # {
-        #     'file' : 'dyna_gpi_only_low_init_sweep.py',
-        #     'label' : 'GPI'
-        # },
-        # {
-        #     'file' : 'dyna_sweep.py',
-        #     'label' : 'dyna'
-        # },
-        # {
-        #     'file' : 'dynaoptions_sweep.py',
-        #     'label' : 'dynaoptions'
-        # }
-        
-    ]
+    
 
-    for obj in files:
-        create_individual_plot(folder + obj['file'], obj['label'])
+    create_individual_plot('experiments/chunlok/graze_learn/OCI.py')
+
+    # folder = 'experiments/chunlok/mpi/extended_half/collective/'
+    # files = [
+    #     # {
+    #     #     'file' : 'dyna_backgroundgpi_only_low_init_sweep.py',
+    #     #     'label' : 'ourGPI'
+    #     # },
+    #     {
+    #         'file' : 'dyna_ourgpi_maxaction.py',
+    #         'label' : 'maxAction OurGPI'
+    #     },
+    #     # {
+    #     #     'file' : 'dyna_gpi_only_low_init_sweep.py',
+    #     #     'label' : 'GPI'
+    #     # },
+    #     # {
+    #     #     'file' : 'dyna_sweep.py',
+    #     #     'label' : 'dyna'
+    #     # },
+    #     # {
+    #     #     'file' : 'dynaoptions_sweep.py',
+    #     #     'label' : 'dynaoptions'
+    #     # }
+        
+    # ]
+
+    # for obj in files:
+    #     create_individual_plot(folder + obj['file'], obj['label'])
     
 
         

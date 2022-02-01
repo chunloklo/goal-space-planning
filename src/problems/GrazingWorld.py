@@ -1,7 +1,7 @@
 from src.problems.BaseProblem import BaseProblem
 from src.environments.GrazingWorld import GrazingWorld as GWEnv
 from src.environments.GrazingWorldSimple import GrazingWorldSimple as GWSimpleEnv
-from src.environments.GrazingWorldAdam import GrazingWorldAdam as GWEnvAdam
+from src.environments.GrazingWorldAdam import GrazingWorldAdam as GWEnvAdam, get_pretrained_option_model, get_all_transitions
 from src.environments.GrazingWorldAdam import GrazingWorldAdamImageFeature
 from PyFixedReps.TileCoder import TileCoder
 from PyFixedReps.Tabular import Tabular
@@ -41,6 +41,17 @@ class GrazingWorldAdam(BaseProblem):
         self.actions = 4
         self.options = get_options("GrazingAdam")
         self.gamma = self.params['gamma']
+
+    
+    def get_pretrained_option_model(self):
+        return get_pretrained_option_model()
+
+    def get_all_transitions(self):
+        return get_all_transitions()
+
+    def get_goals(self):
+        return [goal['position'] for goal in self.env.goals]
+        
 
     def get_representation(self, rep_type: str):
         rep_type = param_utils.check_valid(rep_type, lambda x: x in ['Tabular', 'Image'])

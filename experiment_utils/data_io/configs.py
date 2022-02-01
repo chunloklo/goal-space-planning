@@ -39,9 +39,11 @@ def get_config_hash(config: dict, folder_keys=['experiment_name']):
         config_clean.pop(folder_key)
 
     file_str = json.dumps(config, sort_keys=True, default=str)
+    # print(file_str)
+    # print(hash_string(file_str))
     return hash_string(file_str)
 
-def get_folder_name(config, sub_folder = 'results', folder_keys=['experiment_name']):
+def get_folder_name(config: dict, sub_folder = 'results', folder_keys=['experiment_name']):
     folder = '/'.join([config[folder_key] for folder_key in folder_keys])
     folder = f"{os.getcwd()}/{sub_folder}/{folder}/"
     return folder

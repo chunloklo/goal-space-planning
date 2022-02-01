@@ -21,7 +21,7 @@ from src.utils.param_utils import parse_param
 def run(param: dict, aux_config={}):
 
     # Don't import jax here if we don't need to
-    if aux_config.get('use_jax', True):
+    if aux_config.get('use_jax', False):
         import jax
         if aux_config.get('jax_debug_nans', False):
             # Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
@@ -98,8 +98,8 @@ def run(param: dict, aux_config={}):
     save_logger_keys = ['Q', 'max_reward_rate', 'reward_rate']
 
     # Overriding logger keys from aux config if it exists:
-    if 'save_logger_keys' in aux_config:
-        save_logger_keys = aux_config['save_logger_keys']
+    if 'log_keys' in param:
+        save_logger_keys = param['log_keys']
 
     step_logging_interval = param['step_logging_interval']
 

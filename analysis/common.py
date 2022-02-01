@@ -10,29 +10,31 @@ from experiment_utils.data_io.configs import load_data_from_config_zodb
 
 # You can likely cache this for better performance later.
 def load_reward_rate(config):
-    data = run_utils.load_data(config)
+    # data = run_utils.load_data(config)
 
-    # Just getting rid of the first dimension
-    data = np.array(data['reward_rate'])
-    return data[0]
+    # # Just getting rid of the first dimension
+    # data = np.array(data['reward_rate'])
+    # return data[0]
+
+    return load_data(config, 'reward_rate')
 
 def load_max_reward_rate(config):
-    data = run_utils.load_data(config)
-    # 1 x num_logs
-    data = np.array(data['max_reward_rate'])
+    # data = run_utils.load_data(config)
+    # # 1 x num_logs
+    # data = np.array(data['max_reward_rate'])
 
     # Just getting rid of the first dimension
-    return data[0]
+    # return data[0]
+    return load_data(config, 'max_reward_rate')
 
-def load_data(config, key: str):
+def load_data(config: dict, key: str):
     # data = run_utils.load_data(config)
     data = load_data_from_config_zodb(config)
     # 1 x num_logs
     data = np.array(data[key])
-    
 
     # Just getting rid of the first dimension
-    return data[0]
+    return data[0, :]
 
 def get_performance(config):
     data = load_reward_rate(config)

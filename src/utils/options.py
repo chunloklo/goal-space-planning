@@ -52,14 +52,14 @@ def get_action_consistent_options(x: int, a: Union[list, int], options: list, co
         action_consistent_options = [from_option_to_action_index(o, num_actions) for o in action_consistent_options]
     return action_consistent_options
 
-def get_option_policies_prob(x: int, options: List[Option], num_actions: int) -> npt.ArrayLike:
+def get_option_policies_prob(x: int, options: List[Option], num_actions: int, terminal: bool) -> npt.ArrayLike:
     num_options = len(options)
     # Getting option policy and termination condition
     # This is SPECIFIC to the current Option model where it returns you just the action, not the policy.
     # this probably belong somewher eelse.
     option_policies = np.zeros((num_options, num_actions))
     for i, option in enumerate(options):
-        if x == None:
+        if x == None or terminal:
             option_policies[i] = 1 / num_actions
         else:
             action, _ = option.step(x)
