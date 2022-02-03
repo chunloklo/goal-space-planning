@@ -10,17 +10,20 @@ from mpi4py.util import dtlib
 import argparse
 import numpy as np
 import sys
+from tqdm import tqdm
 
 from common import get_configuration_list_from_file_path, get_run_function_from_file_path, add_common_args, get_aux_config_from_file_path, run_with_optional_aux_config
 
 # Parsing arguments
 parser = argparse.ArgumentParser(description='MPI file that is ran on each task that is spawned through mpiexec or similar functions')
 parser = add_common_args(parser)
+parser.add_argument('--show-progress', '-p', action='store_true', help='Whether to show a progress bar from the first process')
 args = parser.parse_args()
 
 configuration_path = args.config_path
 run_path = args.run_path
 aux_config_path = args.aux_config_path
+show_progress = args.show_progress
 
 # Getting configuration list from parameter_path
 configuration_list = get_configuration_list_from_file_path(configuration_path)
@@ -72,11 +75,22 @@ result = np.zeros(1, dtype=np_dtype)
 # The maximum index in the parameter list that needs to be ran:
 max_param_index = len(configuration_list) - 1
 
+# Initializing progress bar
+if rank == 0 and show_progress:
+    pbar = tqdm(total = len(configuration_list), ncols=0)
+
 while result <= max_param_index:
+    
     win.Lock(rank=0)
     # Fetches the counter and increments the counter by 1 (default Op is sum, and accumulate is 1)
     win.Fetch_and_op(accumulate, result, target_rank=0)
     win.Unlock(rank=0)
+
+    if rank == 0 and show_progress:
+        if result > max_param_index:
+            pbar.update(len(configuration_list) - pbar.n)
+        else:
+            pbar.update(int(result) - pbar.n)
 
     # If the top number is greater than the maximum allowed, stop running
     if result > max_param_index:

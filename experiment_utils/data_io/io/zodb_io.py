@@ -9,8 +9,8 @@ from filelock import FileLock
 from BTrees import OOBTree
 import transaction
 from ZODB.blob import Blob, is_blob_record
-from ZODB.serialize import ObjectWriter
-import pickle
+
+zodb_connection = None
 
 DB_DATA_KEY = 'data'
 DB_CONFIGS_KEY = 'configs'
@@ -64,8 +64,31 @@ def save_config_and_data_zodb(config_id, config, data, db_folder):
     close_db(db,  connection, lock)
 
 def load_data_config_from_id(config_id, db_folder):
-    db, connection, root, lock = open_db(db_folder, create_if_not_exist=False)
+    global zodb_connection
+    if zodb_connection is None:
+        db, connection, root, lock = open_db(db_folder, create_if_not_exist=False)
+    else:
+        db, connection, root, lock = zodb_connection
+
     config = zodb_op_load(root, config_id, DB_CONFIGS_KEY)
     data = zodb_op_load(root, config_id, DB_DATA_KEY)
-    close_db(db,  connection, lock)
+
+    if zodb_connection is None:
+        close_db(db,  connection, lock)
+    
     return config, data
+    
+class BatchDBAccess():
+    """Used to open DB for batch retrieval access.
+    Example: with BatchDBAccess(): # Retrieve data
+    """
+    def __init__(self, db_folder):
+        self.db_folder = db_folder
+    def __enter__(self):
+        global zodb_connection
+        zodb_connection = open_db(self.db_folder, create_if_not_exist=False)
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        global zodb_connection
+        # db, connection, and lock
+        close_db(zodb_connection[0], zodb_connection[1], zodb_connection[3])
+        zodb_connection = None

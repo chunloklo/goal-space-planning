@@ -98,7 +98,7 @@ def generatePlot(data):
 
     frames = range(start_frame, max_frame, interval)
 
-    x_range = list(get_x_range(0, data.shape[0], 1))
+    x_range = list(get_x_range(0, data.shape[0], 10))
 
     print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
     pbar = tqdm(total=max_frame - start_frame)
@@ -110,7 +110,7 @@ def generatePlot(data):
         # print(q_values)
 
 
-        ax.set_title(f"episode: {x_range[i]}")
+        ax.set_title(f"step: {x_range[i]}")
 
         for r in range(ROW_MAX):
             for c in range(COLUMN_MAX):
@@ -184,7 +184,7 @@ def load_experiment_data(json_handle, load_keys: list = None):
 
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/chunlok/graze_ideal/OCI.py'
+    parameter_path = 'experiments/chunlok/impl_test/OCI.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     # grouping configs based on seeds

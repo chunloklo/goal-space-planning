@@ -9,7 +9,7 @@ from src.agents.components.search_control import ActionModelSearchControl_Tabula
 from src.utils import rlglue
 from src.utils import globals
 from src.utils import options, param_utils
-from src.agents.components.models import OptionModel_Sutton_Tabular, CombinedModel_ESarsa_Tabular, OptionActionModel_Sutton_Tabular
+from src.agents.components.models import ActionModel_Linear, OptionActionModel_ESARSA, OptionModel_Sutton_Tabular, CombinedModel_ESarsa_Tabular, OptionActionModel_Sutton_Tabular
 from src.agents.components.approximators import DictModel
 from typing import Dict, Union, Tuple, Any, TYPE_CHECKING
 
@@ -47,6 +47,13 @@ class Dyna_Tab:
         self.search_control = ActionModelSearchControl_Tabular(self.random)
         
         self.option_alg = param_utils.parse_param(params, 'option_alg', lambda p : p in ['None', 'DecisionTime', 'Background', 'Background_MaxAction'])
+        self.learn_option_values =  param_utils.parse_param(params, 'learn_option_values', lambda p : isinstance(p, bool), default=False, optional=True)
+        if self.option_alg == 'DecisionTime' or self.option_alg == 'None' and self.learn_option_values:
+            raise ValueError(f'learn_option_values True is not supported with option alg {self.option_alg}')
+        
+        
+
+
         self.learn_model =  param_utils.parse_param(params, 'learn_model', lambda p : isinstance(p, bool))
 
         self.q_init = param_utils.parse_param(params, 'q_init', lambda p: True, default=0, optional=True)
@@ -56,10 +63,13 @@ class Dyna_Tab:
             self.option_model, self.option_action_model = problem.get_pretrained_option_model()
         else:
             self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
-            self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            # self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            self.option_action_model = OptionActionModel_ESARSA(self.num_states + 1, self.num_actions, self.num_options, self.options)
 
         # Creating models for actions and options
-        self.action_model = DictModel()
+        self.history_dict = DictModel()
+
+        self.action_model = ActionModel_Linear(self.num_states + 1, self.num_actions)
         
         if not self.learn_model:
             transitions = problem.get_all_transitions()
@@ -67,7 +77,9 @@ class Dyna_Tab:
             # Prefilling dict buffer so no exploration is needed
             for t in transitions:
                 # t: s, a, sp, reward. gamma
-                self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
+                self.history_dict.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
+                # do a complete update with each transition
+                self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4], 1)
         
         self.goals = problem.get_goals()
         self.goals = [self.representation.encode(goal) for goal in self.goals]
@@ -179,15 +191,15 @@ class Dyna_Tab:
         Returns:
             Nothing
         """
-        self.action_model.update(x, a, xp, r, gamma)
+        self.history_dict.update(x, a, xp, r, gamma)
+        self.action_model.update(x, a, xp, r, gamma, self.alpha)
         self.option_model.update(x, a, xp, r, gamma, self.alpha)
         self.option_action_model.update(x, a, xp, r, gamma, self.alpha)
 
     def _planning_update(self, x: int, a: int):
-        xp, r, gamma = self.action_model.predict(x, a)
-        discount = gamma
+        r, discount, transition_prob = self.action_model.predict(x, a)
+        xp = np.argmax(transition_prob)
 
-        
         if globals.param['reward_schedule'] == 'goal2_switch':
             pass
         else:
@@ -256,16 +268,16 @@ class Dyna_Tab:
         """
 
         if self.option_alg == 'None':
-            sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
+            sample_states = self.search_control.sample_states(self.planning_steps, self.history_dict, x, xp)
             
             for plan_x in sample_states:
-                visited_actions = self.action_model.visited_actions(plan_x)
+                visited_actions = self.history_dict.visited_actions(plan_x)
                 a = self.random.choice(visited_actions)
                 self._planning_update(plan_x, a)
 
         if self.option_alg in ['Background', 'Background_MaxAction']:
             # Option planning update
-            sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
+            sample_states = self.search_control.sample_states(self.planning_steps, self.history_dict, x, xp)
             for plan_x in sample_states:
                 self._option_constrainted_improvement(plan_x)
 

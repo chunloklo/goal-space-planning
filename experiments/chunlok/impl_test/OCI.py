@@ -9,7 +9,7 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["graze_ideal"],
+        "experiment_name": ["graze_debug"],
         # Environment/Experiment
         "problem": ["GrazingWorldAdam"],
         "reward_schedule": ["cyclic"],
@@ -17,7 +17,7 @@ def get_configuration_list():
         'max_steps': [20000],
         "reward_sequence_length" : [3200],
         # Logging
-        'log_keys': [('max_reward_rate', 'reward_rate')],
+        'log_keys': [('Q', 'max_reward_rate', 'reward_rate')],
         'step_logging_interval': [10],
         # Seed
         "seed": list(range(15)),
@@ -30,8 +30,8 @@ def get_configuration_list():
         "epsilon": [0.1],
         "exploration_phase": [0],
         "gamma": [1.0],
-        # "kappa": [0.06],
-        "kappa": list(np.linspace(0.01, 0.1, 10)),
+        "kappa": [0.07],
+        # "kappa": list(np.linspace(0.01, 0.1, 10)),
         "model_planning_steps": [0],
         "no_reward_exploration": [False],
         "option_alg": ["Background"],

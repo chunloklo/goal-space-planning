@@ -8,7 +8,7 @@ import generate_configs
 # get_configuration_list function is required for 
 def get_configuration_list():
     parameter_dict = {
-        "seed": list(range(0, 10)),
+        "seed": list(range(0, 100)),
         "param0": [100, 0, 55]
     }
 

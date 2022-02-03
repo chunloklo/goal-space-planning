@@ -20,6 +20,9 @@ from src.utils.param_utils import parse_param
 
 def run(param: dict, aux_config={}):
 
+    # Resetting blackboard every time this function is ran
+    globals.blackboard = {}
+
     # Don't import jax here if we don't need to
     if aux_config.get('use_jax', False):
         import jax

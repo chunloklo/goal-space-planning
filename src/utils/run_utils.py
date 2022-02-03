@@ -58,11 +58,7 @@ def experiment_completed(experiment, include_errored=True, pushup=True):
     '''
     if pushup:
         experiment = pushup_metaParameters(experiment)
-
-    if zeo_common.use_zodb():
-        exists = zeo_common.zodb_check_exists(experiment)
-        return exists
-
+        
     folder, filename = create_file_name(experiment)
     output_file_name = folder + filename
     # Cut the run if already done

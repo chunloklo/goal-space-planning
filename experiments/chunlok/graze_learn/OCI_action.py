@@ -9,12 +9,12 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["graze_ideal"],
+        "experiment_name": ["graze_learn"],
         # Environment/Experiment
         "problem": ["GrazingWorldAdam"],
         "reward_schedule": ["cyclic"],
         "episodes": [0],
-        'max_steps': [20000],
+        'max_steps': [40000],
         "reward_sequence_length" : [3200],
         # Logging
         'log_keys': [('max_reward_rate', 'reward_rate')],
@@ -34,11 +34,11 @@ def get_configuration_list():
         "kappa": list(np.linspace(0.01, 0.1, 10)),
         "model_planning_steps": [0],
         "no_reward_exploration": [False],
-        "option_alg": ["Background"],
+        "option_alg": ["Background_MaxAction"],
         "planning_alg": ['Standard'],
         "planning_steps": [1],
         "search_control": ["current"],
-        'learn_model': [False],
+        'learn_model': [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

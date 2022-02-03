@@ -24,6 +24,7 @@ def cache_local_file(cache_file_name: str, key: str, get_cached=False):
                 # Return from cache if exists and not refreshing
                     cache = load_pkl(cache_file_name)
                     if key in cache:
+                        print(f'Loading cached data from key {key} and file {cache_file_name}')
                         return cache[key]
                     
             try:

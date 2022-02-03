@@ -2,9 +2,11 @@ from typing import Any, Callable, List, Tuple
 from experiment_utils.analysis_common.cache import cache_local_file
 from experiment_utils.analysis_common.configs import group_configs
 import numpy as np
+from experiment_utils.data_io.io.zodb_io import BatchDBAccess, DB_FOLDER
 from src.utils import run_utils
 from experiment_utils.sweep_configs.common import get_configuration_list_from_file_path
-from experiment_utils.data_io.configs import load_data_from_config_zodb
+from experiment_utils.data_io.configs import get_folder_name, load_data_from_config_zodb
+from tqdm import tqdm
 
 # Some common functions for analysis specific for this project
 
@@ -49,7 +51,11 @@ def get_best_grouped_param(grouped_params: list[Tuple[Any, List]]) -> Tuple[Tupl
     Returns:
         Tuple[Any, int, float, list[float]]: Best config group, best index, best performance, list of performances
     """
-    perfs = [np.mean([get_performance(config) for config in config_list]) for _, config_list in grouped_params]
+
+    db_folder = get_folder_name(grouped_params[1][0], DB_FOLDER)
+
+    with BatchDBAccess(db_folder):
+        perfs = [np.mean([get_performance(config) for config in config_list]) for _, config_list in tqdm(grouped_params)]
     rank = np.argsort(-np.array(perfs))
 
     

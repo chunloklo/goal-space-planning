@@ -95,3 +95,10 @@ def load_all_db_configs_and_keys(db_folder: str) -> List[IdLinkedConfig]:
 
     close_db(db, connection, lock)
     return [IdLinkedConfig(item[1], item[0]) for item in items]
+
+def check_config_completed(config):
+    try:
+        load_data_from_config_zodb(config)
+        return True
+    except IndexError as e:
+        return False

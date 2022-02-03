@@ -18,7 +18,7 @@ def get_mean_std(data: np.array):
 
 def get_mean_stderr(data: np.array):
     data_mean, data_std = get_mean_std(data)
-    data_stderr = data_std / data.shape[0]
+    data_stderr = data_std
     return data_mean, data_stderr
 
 

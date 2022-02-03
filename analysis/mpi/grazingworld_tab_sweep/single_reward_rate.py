@@ -23,7 +23,7 @@ from analysis.common import get_best_grouped_param, load_data, load_reward_rate,
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
 
-STEP_SIZE = 100
+STEP_SIZE = 20
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
@@ -50,6 +50,8 @@ def plot_max_reward_rate(ax, param_file_name: str):
     
     # doesn't matter what we do here.
     max_reward_rate = load_data(parameter_list[0], 'max_reward_rate')
+
+    print(max_reward_rate.shape)
     max_reward_rate = mean_chunk_data(max_reward_rate, STEP_SIZE, 0)
     x_range = get_x_range(0, max_reward_rate.shape[0], STEP_SIZE)
     
@@ -87,7 +89,7 @@ if __name__ == "__main__":
     # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_gpi_only_low_init_sweep.py', 'okay')
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
-    create_individual_plot('experiments/chunlok/graze_learn/OCI.py')
+    create_individual_plot('experiments/chunlok/impl_test/OCI.py')
     # plt.show()
 
         

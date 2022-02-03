@@ -15,3 +15,6 @@ blackboard = {}
 
 global param
 param = None
+
+global zodb_stuff
+zodb_stuff = None

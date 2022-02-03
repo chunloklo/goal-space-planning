@@ -4,7 +4,7 @@ from PyExpUtils.utils.random import argmax, choice
 from PyFixedReps.BaseRepresentation import BaseRepresentation
 from PyFixedReps.Tabular import Tabular
 from src.agents.components.approximators import DictModel
-from src.agents.components.models import OptionActionModel_Sutton_Tabular, OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
+from src.agents.components.models import ActionModel_Linear, OptionActionModel_ESARSA, OptionActionModel_Sutton_Tabular, OptionModel_TB_Tabular, OptionModel_Sutton_Tabular
 from src.utils import globals
 from src.utils import options, param_utils
 from src.utils import rlglue
@@ -53,10 +53,13 @@ class DynaOptions_Tab:
             self.option_model, self.option_action_model = problem.get_pretrained_option_model()
         else:
             self.option_model = OptionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
-            self.option_action_model = OptionActionModel_Sutton_Tabular(self.num_states + 1, self.num_actions, self.num_options, self.options)
+            self.option_action_model = OptionActionModel_ESARSA(self.num_states + 1, self.num_actions, self.num_options, self.options)
 
         # Creating models for actions and options
-        self.action_model = DictModel()
+        self.history_dict = DictModel()
+
+        self.action_model = ActionModel_Linear(self.num_states + 1, self.num_actions)
+        
         
         if not self.learn_model:
             transitions = problem.get_all_transitions()
@@ -64,8 +67,10 @@ class DynaOptions_Tab:
             # Prefilling dict buffer so no exploration is needed
             for t in transitions:
                 # t: s, a, sp, reward. gamma
-                self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
-
+                self.history_dict.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4])
+                # do a complete update with each transition
+                self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4], 1)
+        
 
         # +1 accounts for the terminal state
         if self.behaviour_alg == 'QLearner':
@@ -160,7 +165,8 @@ class DynaOptions_Tab:
         Returns:
             Nothing
         """
-        self.action_model.update(x, a, xp, r, gamma)
+        self.history_dict.update(x, a, xp, r, gamma)
+        self.action_model.update(x, a, xp, r, gamma, self.alpha)
         if isinstance(self.option_model, OptionModel_Sutton_Tabular):
             self.option_model.update(x, a, xp, r, gamma, self.alpha)
             self.option_action_model.update(x, a, xp, r, gamma, self.alpha)
@@ -170,7 +176,8 @@ class DynaOptions_Tab:
     def _planning_update(self, x: int, o: int):
         if (o < self.num_actions):
             # Generating the experience from the action_model
-            xp, r, discount = self.action_model.predict(x, o)
+            r, discount, transition_prob = self.action_model.predict(x, o)
+            xp = np.argmax(transition_prob)
         else:
             # Generating the experience from the option model
             option_index = options.from_action_to_option_index(o, self.num_actions)
@@ -203,14 +210,14 @@ class DynaOptions_Tab:
             Nothing
         """
 
-        sample_states = self.search_control.sample_states(self.planning_steps, self.action_model, x, xp)
+        sample_states = self.search_control.sample_states(self.planning_steps, self.history_dict, x, xp)
 
         for i in range(self.planning_steps):
             plan_x = sample_states[i]
 
             # Pick a random action/option within all eligable action/options
             # I think there should be a better way of doing this...
-            visited_actions = self.action_model.visited_actions(plan_x)
+            visited_actions = self.history_dict.visited_actions(plan_x)
             action_consistent_options = options.get_action_consistent_options(plan_x, visited_actions, self.options, convert_to_actions=True, num_actions=self.num_actions)
             available_actions = visited_actions + action_consistent_options
             
