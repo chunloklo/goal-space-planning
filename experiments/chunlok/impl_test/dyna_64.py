@@ -9,7 +9,7 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["graze_debug"],
+        "experiment_name": ["graze_ideal"],
         # Environment/Experiment
         "problem": ["GrazingWorldAdam"],
         "reward_schedule": ["cyclic"],
@@ -29,13 +29,13 @@ def get_configuration_list():
         "epsilon": [0.1],
         "exploration_phase": [0],
         "gamma": [1.0],
-        "kappa": [0.03],
-        # "kappa": list(np.linspace(0.01, 0.1, 10)),
+        # "kappa": [0.05], 
+        "kappa": list(np.linspace(0.01, 0.1, 10)),
         "model_planning_steps": [0],
         "no_reward_exploration": [False],
         "option_alg": ["None"],
         "planning_alg": ['Standard'],
-        "planning_steps": [4],
+        "planning_steps": [64],
         "search_control": ["random"],
         'learn_model': [False],
     }

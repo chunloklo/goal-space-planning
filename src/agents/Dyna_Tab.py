@@ -51,9 +51,6 @@ class Dyna_Tab:
         if self.option_alg == 'DecisionTime' or self.option_alg == 'None' and self.learn_option_values:
             raise ValueError(f'learn_option_values True is not supported with option alg {self.option_alg}')
         
-        
-
-
         self.learn_model =  param_utils.parse_param(params, 'learn_model', lambda p : isinstance(p, bool))
 
         self.q_init = param_utils.parse_param(params, 'q_init', lambda p: True, default=0, optional=True)
@@ -288,3 +285,11 @@ class Dyna_Tab:
 
         self.option_model.episode_end()
         self.option_action_model.episode_end()
+
+
+class OptionValueLearner():
+    def __init__(self, num_options):
+        self.num_options = num_options
+    
+    def update(self, x, a, xp, r, gamma):
+        pass
