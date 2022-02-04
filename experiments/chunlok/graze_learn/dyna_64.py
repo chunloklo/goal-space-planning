@@ -9,12 +9,12 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["graze_learn"],
+        "experiment_name": ["graze_learn_dyna_64"],
         # Environment/Experiment
         "problem": ["GrazingWorldAdam"],
         "reward_schedule": ["cyclic"],
         "episodes": [0],
-        'max_steps': [20000],
+        'max_steps': [40000],
         "reward_sequence_length" : [3200],
         # Logging
         'log_keys': [('max_reward_rate', 'reward_rate')],
@@ -23,14 +23,14 @@ def get_configuration_list():
         "seed": list(range(15)),
         # Agent
         # 'alpha': [1.0],
-        'alpha': [1.0, 0.9, 0.7, 0.6],
+        'alpha': [1.0, 0.9, 0.7],
         "agent": ["Dyna_Tab"],
         "behaviour_alg": ["QLearner"],
         "epsilon": [0.1],
         "exploration_phase": [0],
         "gamma": [1.0],
         # "kappa": [0.05], 
-        "kappa": list(np.linspace(0.01, 0.1, 10)),
+        "kappa": list(np.linspace(0.01, 0.08, 8)),
         "model_planning_steps": [0],
         "no_reward_exploration": [False],
         "option_alg": ["None"],

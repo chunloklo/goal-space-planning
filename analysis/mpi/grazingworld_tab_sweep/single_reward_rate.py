@@ -89,7 +89,7 @@ if __name__ == "__main__":
     # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_gpi_only_low_init_sweep.py', 'okay')
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
-    create_individual_plot('experiments/chunlok/impl_test/dyna.py')
+    create_individual_plot('experiments/chunlok/impl_test/dyna_64.py')
     # plt.show()
 
         
