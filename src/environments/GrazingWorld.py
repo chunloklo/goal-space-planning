@@ -128,9 +128,6 @@ class GrazingWorld(BaseEnvironment):
                     goal_reward_rates[i] = (num_steps * self.step_penalty + self.goals[i]["schedule"]()) / (num_steps + 1)
                 max_reward_rate = np.max(goal_reward_rates)
                 globals.collector.collect('max_reward_rate', max_reward_rate) 
-            
-            # print(f"{globals.blackboard['num_steps_passed']} {globals.blackboard['step_logging_interval']}")
-
         if terminal:
             # rewards = [self.goals[i]["schedule"]() for i in range(1,4)]
             # globals.collector.collect('goal_rewards', rewards)  

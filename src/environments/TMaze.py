@@ -26,8 +26,6 @@ class TMaze(BaseEnvironment):
         self.shape = (self.size, self.size)
         self.reward_sequence_length = reward_sequence_length
         self.initial_learning = initial_learning
-        self.il_counter = -1
-        self.special_goal_nums = [1,2]
         self.num_steps = None
         self.error_max_steps = 100000000000
         """
@@ -37,21 +35,21 @@ class TMaze(BaseEnvironment):
             reward_sequence: generate reward sequences of both top goals to start with 0, lenght according to poisson dist.
             iterators: to keep track where we are in the reward sequence
         """
-        self.goals = {
-            1:{
+        self.goals = [
+            {
                 "position" : (self.size - 1,0),
                 "schedule" : CyclingRewardSchedule([0, 100], self.reward_sequence_length, cycle_type='step')
             },
-            2:{
+            {
                 "position" : (self.size - 1, self.size - 1),
                 "schedule" : CyclingRewardSchedule([100, 0], self.reward_sequence_length, cycle_type='step')
             },
-        }
+        ]
 
-        self.step_to_goals = {
-            1: 9,
-            2: 9,
-        }
+        self.step_to_goals = [
+            self.size - 1 + ((self.size - 1) / 2) + self.size - 1,
+            self.size - 1 + ((self.size - 1) / 2) + self.size - 1,
+        ]
 
         self.action_encoding = {
             0:(-1,0),
@@ -87,7 +85,7 @@ class TMaze(BaseEnvironment):
         #self.start_state_index = np.ravel_multi_index((self.shape[0]-1, 0), self.shape)
         self.start_state = (self.size - 1,  self.size // 2)
         self.current_state = self.start_state
-        self.terminal_state_positions = [self.goals[i]["position"] for i in range(1,3)]
+        self.terminal_state_positions = [goal["position"] for goal in self.goals]
         
     def start(self):
         self.num_steps = 0
@@ -99,24 +97,20 @@ class TMaze(BaseEnvironment):
 
     # give the rewards associated with a given state, action, next state tuple
     def rewards(self, s, terminal):
-        if terminal:
-            rewards = [self.goals[i]["schedule"]() for i in self.goals.keys()]
-            globals.collector.collect('goal_rewards', rewards)  
-            best_goal_num = np.argmax(rewards) + 1
-            globals.collector.collect('max_return', self.goals[best_goal_num]["schedule"]() + self.step_to_goals[best_goal_num] * self.step_penalty)  
-            for i in range(1,4):
+        if 'num_steps_passed' in globals.blackboard and 'step_logging_interval' in globals.blackboard:
+            if globals.blackboard['num_steps_passed'] % globals.blackboard['step_logging_interval'] == 0:
+                goal_reward_rates = np.zeros(len(self.goals))
+                for i in range(len(self.goals)):
+                    num_steps = self.step_to_goals[i]
+                    goal_reward_rates[i] = (num_steps * self.step_penalty + self.goals[i]["schedule"]()) / (num_steps + 1)
+                max_reward_rate = np.max(goal_reward_rates)
+                globals.collector.collect('max_reward_rate', max_reward_rate) 
+        if terminal:  
+            for i in range(len(self.goals)):
                 if self.goals[i]["position"]==tuple(s):
-                    globals.collector.collect('end_goal', i) 
                     return self.goals[i]["schedule"]()
         else:
             return self.step_penalty
-
-    def gen_reward_sequence(self,terminal_state, previous_terminal_reward):
-        #self.goals[terminal_state]["reward_sequence_length"] =  np.random.poisson(lam=self.reward_sequence_length)
-        if previous_terminal_reward == 0:
-            self.goals[terminal_state]["current_reward"] = self.goals[terminal_state]["reward"]
-        else:
-            self.goals[terminal_state]["current_reward"] = 0
 
     # get the next state and termination status
     def next_state(self, s, a):
