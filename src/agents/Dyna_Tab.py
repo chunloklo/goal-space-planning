@@ -47,10 +47,6 @@ class Dyna_Tab:
         self.search_control = ActionModelSearchControl_Tabular(self.random)
         
         self.option_alg = param_utils.parse_param(params, 'option_alg', lambda p : p in ['None', 'DecisionTime', 'Background', 'Background_MaxAction'])
-        self.learn_option_values =  param_utils.parse_param(params, 'learn_option_values', lambda p : isinstance(p, bool), default=False, optional=True)
-        if self.option_alg == 'DecisionTime' or self.option_alg == 'None' and self.learn_option_values:
-            raise ValueError(f'learn_option_values True is not supported with option alg {self.option_alg}')
-        
         self.learn_model =  param_utils.parse_param(params, 'learn_model', lambda p : isinstance(p, bool))
         self.q_init = param_utils.parse_param(params, 'q_init', lambda p: True, default=0, optional=True)
         self.use_goal_reward = param_utils.parse_param(params, 'use_goal_reward', lambda p: isinstance(p, bool), default=False, optional=True)
