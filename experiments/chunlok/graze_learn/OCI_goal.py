@@ -23,7 +23,7 @@ def get_configuration_list():
         "seed": list(range(15)),
         # 'seed': [1],
         # Agent
-        'alpha': [1.0, 0.9, 0.7, 0.6],
+        'alpha': [1.0, 0.9, 0.7],
         # "alpha": [1.0],
         "agent": ["Dyna_Tab"],
         "behaviour_alg": ["QLearner"],
@@ -31,7 +31,7 @@ def get_configuration_list():
         "exploration_phase": [0],
         "gamma": [1.0],
         # "kappa": [0.06],
-        "kappa": list(np.linspace(0.01, 0.1, 10)),
+        "kappa": list(np.linspace(0.01, 0.1, 5)),
         "model_planning_steps": [0],
         "no_reward_exploration": [False],
         "option_alg": ["Background"],
