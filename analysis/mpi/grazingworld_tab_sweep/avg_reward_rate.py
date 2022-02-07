@@ -42,23 +42,23 @@ def plot_best_reward_rate(ax, param_file_name: str, label: str = None):
     if label is None:
         label = Path(param_file_name).stem
 
-    if label == 'dyna':
-        parameter_list = get_configuration_list_from_file_path(param_file_name)
-        grouped_params = group_configs(parameter_list, ['seed'])
-        for group in grouped_params:
-            if group[0]['alpha'] == 1.0 and np.isclose(group[0]['kappa'],0.03):
-                data = np.array(load_configuration_list_data(group[1], load_reward_rate))
-                # print(data.shape)
-                # data = np.array(load_configuration_list_data(best_group[1], load_reward_rate))
-                mean, std = get_mean_stderr(data)
-                # Smoothing both data
-                mean, std = mean_chunk_data(mean, STEP_SIZE, 0), mean_chunk_data(std, STEP_SIZE, 0)
+    # if label == 'dyna':
+    #     parameter_list = get_configuration_list_from_file_path(param_file_name)
+    #     grouped_params = group_configs(parameter_list, ['seed'])
+    #     for group in grouped_params:
+    #         if group[0]['alpha'] == 1.0 and np.isclose(group[0]['kappa'],0.03):
+    #             data = np.array(load_configuration_list_data(group[1], load_reward_rate))
+    #             # print(data.shape)
+    #             # data = np.array(load_configuration_list_data(best_group[1], load_reward_rate))
+    #             mean, std = get_mean_stderr(data)
+    #             # Smoothing both data
+    #             mean, std = mean_chunk_data(mean, STEP_SIZE, 0), mean_chunk_data(std, STEP_SIZE, 0)
 
-                x_range = get_x_range(0, mean.shape[0], STEP_SIZE*group[1][0]['step_logging_interval'])
+    #             x_range = get_x_range(0, mean.shape[0], STEP_SIZE*group[1][0]['step_logging_interval'])
 
-                plot_mean_ribbon(ax, mean, std, x_range, label=label)
+    #             plot_mean_ribbon(ax, mean, std, x_range, label=label)
 
-        return
+    #     return
 
     best_group, best_index, best_performance, perfs, rank = get_best_config_from_file_path_cached(param_file_name, True)
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     # plot_best_reward_rate(ax, f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dynaoptions_sweep.py', 'dynaoptions')       
 
 
-    folder = 'experiments/chunlok/graze_ideal/'
+    folder = 'experiments/chunlok/graze_learn/'
     files = [
         {
             'file' : 'dyna.py',
@@ -118,6 +118,9 @@ if __name__ == "__main__":
         },
         {
             'file' : 'OCI.py',
+        },
+        {
+            'file' : 'dyna_64.py',
         }
         
     ]
@@ -125,6 +128,13 @@ if __name__ == "__main__":
 
     for obj in files:
         plot_best_reward_rate(ax, folder + obj['file'])
+
+
+    # plot_max_reward_rate(ax, 'experiments/chunlok/graze_learn/dyna_64.py')
+    # plot_best_reward_rate(ax, 'experiments/chunlok/graze_learn/dyna_64.py')
+
+
+
     
     plt.legend()
     plt.title('Learning')

@@ -15,7 +15,9 @@ def get_configuration_list():
         'dynaoptions.py',
         'OCG.py',
         'OCI_action.py',
-        'OCI.py'
+        'OCI.py',
+        'OCI_goal.py',
+        'OCG_goal.py',
     ]
     
     parameter_list = [param  for file in files for param in get_configuration_list_from_file_path(root + file)]

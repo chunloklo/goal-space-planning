@@ -44,20 +44,20 @@ def plot_all_reward_rate(ax, param_file_name: str, label: str):
     # print("plotting only the first index of the config list")
 
     ##### KAPPA SWEEP
-    # grouped_params = group_configs(parameter_list, ['seed'])
+    grouped_params = group_configs(parameter_list, ['seed'])
 
-    # for group in tqdm(grouped_params):
-    #     if group[0]['alpha'] == 1.0:
-    #         kappa = group[0]['kappa']
+    for group in tqdm(grouped_params):
+        if group[0]['alpha'] == 0.9:
+            kappa = group[0]['kappa']
 
-    #         data = np.array(load_configuration_list_data(group[1], load_reward_rate))
-    #         mean, std = get_mean_stderr(data)
-    #         # Smoothing both data
-    #         mean, std = mean_chunk_data(mean, STEP_SIZE, 0), mean_chunk_data(std, STEP_SIZE, 0)
+            data = np.array(load_configuration_list_data(group[1], load_reward_rate))
+            mean, std = get_mean_stderr(data)
+            # Smoothing both data
+            mean, std = mean_chunk_data(mean, STEP_SIZE, 0), mean_chunk_data(std, STEP_SIZE, 0)
 
-    #         x_range = get_x_range(0, mean.shape[0], STEP_SIZE*group[1][0]['step_logging_interval'])
+            x_range = get_x_range(0, mean.shape[0], STEP_SIZE*group[1][0]['step_logging_interval'])
 
-    #         plot_mean_ribbon(ax, mean, std, x_range, label=str(kappa))
+            plot_mean_ribbon(ax, mean, std, x_range, label=str(kappa))
 
     ##### ####
 
@@ -77,16 +77,16 @@ def plot_all_reward_rate(ax, param_file_name: str, label: str):
     
 
     # ######### GETTING BEST INDEX
-    best_group, best_index, best_performance, perfs, rank = get_best_config_from_file_path_cached(param_file_name, True)
-    print(best_group[0])
-    data = load_configuration_list_data(best_group[1], load_reward_rate)
+    # best_group, best_index, best_performance, perfs, rank = get_best_config_from_file_path_cached(param_file_name, True)
+    # print(best_group[0])
+    # data = load_configuration_list_data(best_group[1], load_reward_rate)
 
-    for run_data in data:
-        # run_data = window_smoothing(run_data, STEP_SIZE)
-        run_data = mean_chunk_data(run_data, STEP_SIZE, 0)
-        x_range = get_x_range(0, run_data.shape[0], STEP_SIZE*best_group[1][0]['step_logging_interval'])
+    # for run_data in data:
+    #     # run_data = window_smoothing(run_data, STEP_SIZE)
+    #     run_data = mean_chunk_data(run_data, STEP_SIZE, 0)
+    #     x_range = get_x_range(0, run_data.shape[0], STEP_SIZE*best_group[1][0]['step_logging_interval'])
 
-        ax.plot(x_range, run_data, linewidth=0.5)
+    #     ax.plot(x_range, run_data, linewidth=0.5)
     
     
 def plot_max_reward_rate(ax, param_file_name: str):
@@ -117,7 +117,7 @@ def create_individual_plot(file_name, alg_name = None):
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    plot_max_reward_rate(ax, 'experiments/chunlok/graze_ideal/dyna.py')
+    plot_max_reward_rate(ax, file_name)
     plot_all_reward_rate(ax, file_name, None)    
     # plot_max_reward_rate(ax, f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_sweep.py',)
     # plot_best_reward_rate(ax, f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_sweep.py', 'dyna')    
@@ -137,11 +137,13 @@ if __name__ == "__main__":
     # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_gpi_only_low_init_sweep.py', 'okay')
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
-    create_individual_plot('experiments/chunlok/graze_ideal/dyna.py')
-    create_individual_plot('experiments/chunlok/graze_ideal/dynaoptions.py')
-    create_individual_plot('experiments/chunlok/graze_ideal/OCG.py')
-    create_individual_plot('experiments/chunlok/graze_ideal/OCI_action.py')
-    create_individual_plot('experiments/chunlok/graze_ideal/OCI.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/dyna.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/dynaoptions.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/OCG.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/OCI_action.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/OCI.py')
+
+    create_individual_plot('experiments/chunlok/graze_learn/dyna_64.py')
     # plt.show()
 
         

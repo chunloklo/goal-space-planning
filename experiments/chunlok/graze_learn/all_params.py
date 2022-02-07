@@ -9,11 +9,13 @@ from src.utils.run_utils import experiment_completed
 def get_configuration_list():
     root = 'experiments/chunlok/graze_learn/'
     files = [
-        'dyna.py',
-        'dynaoptions.py',
-        'OCG.py',
-        'OCI_action.py',
-        'OCI.py'
+        # 'dyna.py',
+        # 'dynaoptions.py',
+        # 'OCG.py',
+        # 'OCI_action.py',
+        # 'OCI.py',
+        'OCI_goal.py',
+        'OCG_goal.py',
     ]
     
     parameter_list = [param  for file in files for param in get_configuration_list_from_file_path(root + file)]
