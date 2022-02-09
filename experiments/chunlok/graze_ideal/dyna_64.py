@@ -47,14 +47,14 @@ def get_configuration_list():
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)
 
     # Assuming that they all go in the same folder
-    db_folder = get_folder_name(parameter_list[0], DB_FOLDER)
+    # db_folder = get_folder_name(parameter_list[0], DB_FOLDER)
 
-    def incomplete_filter(config):
-        return not check_config_completed(config)
+    # def incomplete_filter(config):
+    #     return not check_config_completed(config)
 
-    # Assuming all configs belong to the same folder so we aren't opening/closing the DB over and over again to check each parameter
-    with BatchDBAccess(db_folder):
-        incomplete_parameter_list = list(filter(incomplete_filter, parameter_list))
+    # # Assuming all configs belong to the same folder so we aren't opening/closing the DB over and over again to check each parameter
+    # with BatchDBAccess(db_folder):
+    #     incomplete_parameter_list = list(filter(incomplete_filter, parameter_list))
 
 
-    return incomplete_parameter_list
+    return parameter_list

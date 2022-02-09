@@ -184,7 +184,7 @@ def load_experiment_data(json_handle, load_keys: list = None):
 
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/chunlok/impl_test/dyna.py'
+    parameter_path = 'experiments/chunlok/impl_test/dynaoptions.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     # grouping configs based on seeds

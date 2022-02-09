@@ -9,35 +9,35 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["graze_ideal"],
+        "experiment_name": ["impl_test"],
         # Environment/Experiment
         "problem": ["GrazingWorldAdam"],
         "reward_schedule": ["cyclic"],
         "episodes": [0],
-        'max_steps': [20000],
+        'max_steps': [40000],
         "reward_sequence_length" : [3200],
         # Logging
-        'log_keys': [('max_reward_rate', 'reward_rate')],
+        'log_keys': [('Q', 'max_reward_rate', 'reward_rate')],
         'step_logging_interval': [10],
         # Seed
-        "seed": list(range(15)),
+        "seed":  [0],
         # Agent
         # 'alpha': [1.0],
-        'alpha': [1.0, 0.9, 0.7, 0.6],
+        'alpha': [1.0],
         "agent": ["Dyna_Tab"],
         "behaviour_alg": ["QLearner"],
         "epsilon": [0.1],
         "exploration_phase": [0],
         "gamma": [1.0],
-        "kappa": [0.05], 
+        "kappa": [0.04], 
         # "kappa": list(np.linspace(0.01, 0.1, 10)),
         "model_planning_steps": [0],
         "no_reward_exploration": [False],
         "option_alg": ["None"],
         "planning_alg": ['Standard'],
-        "planning_steps": [32],
+        "planning_steps": [64],
         "search_control": ["random"],
-        'learn_model': [False],
+        'learn_model': [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

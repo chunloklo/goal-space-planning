@@ -22,7 +22,7 @@ from experiment_utils.sweep_configs.common import get_configuration_list_from_fi
 from  experiment_utils.analysis_common.process_line import get_mean_std, mean_chunk_data, get_mean_stderr
 from pathlib import Path
 
-STEP_SIZE = 50
+STEP_SIZE = 20
 
 def plot_best_reward_rate_individual(ax, param_file_name: str, label: str):
     parameter_list = get_configuration_list_from_file_path(param_file_name)
@@ -107,7 +107,8 @@ if __name__ == "__main__":
 
     
 
-    create_individual_plot('experiments/chunlok/graze_learn/OCI.py')
+    # create_individual_plot('experiments/chunlok/graze_learn/OCI.py')
+    create_individual_plot('experiments/chunlok/graze_learn/dyna_64.py')
 
     # folder = 'experiments/chunlok/mpi/extended_half/collective/'
     # files = [

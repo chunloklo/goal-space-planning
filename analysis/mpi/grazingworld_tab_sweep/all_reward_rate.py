@@ -47,7 +47,7 @@ def plot_all_reward_rate(ax, param_file_name: str, label: str):
     # grouped_params = group_configs(parameter_list, ['seed'])
 
     # for group in tqdm(grouped_params):
-    #     if group[0]['alpha'] == 1.0:
+    #     if group[0]['alpha'] == 0.9:
     #         kappa = group[0]['kappa']
 
     #         data = np.array(load_configuration_list_data(group[1], load_reward_rate))
@@ -117,7 +117,7 @@ def create_individual_plot(file_name, alg_name = None):
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    plot_max_reward_rate(ax, 'experiments/chunlok/graze_ideal/dyna.py')
+    plot_max_reward_rate(ax, file_name)
     plot_all_reward_rate(ax, file_name, None)    
     # plot_max_reward_rate(ax, f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_sweep.py',)
     # plot_best_reward_rate(ax, f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dyna_sweep.py', 'dyna')    
@@ -137,11 +137,14 @@ if __name__ == "__main__":
     # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_gpi_only_low_init_sweep.py', 'okay')
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
-    create_individual_plot('experiments/chunlok/graze_ideal/dyna.py')
-    create_individual_plot('experiments/chunlok/graze_ideal/dynaoptions.py')
-    create_individual_plot('experiments/chunlok/graze_ideal/OCG.py')
-    create_individual_plot('experiments/chunlok/graze_ideal/OCI_action.py')
-    create_individual_plot('experiments/chunlok/graze_ideal/OCI.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/dyna.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/dynaoptions.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/OCG.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/OCI_action.py')
+    # create_individual_plot('experiments/chunlok/graze_ideal/OCI.py')
+
+    create_individual_plot('experiments/chunlok/graze_ideal/OCG_goal.py')
+    create_individual_plot('experiments/chunlok/graze_ideal/OCI_goal.py')
     # plt.show()
 
         

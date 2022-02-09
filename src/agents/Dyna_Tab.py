@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union, Tuple
+from typing import Dict, List, Optional, Union, Tuple
 import numpy as np
 import numpy.typing as npt
 from PyExpUtils.utils.random import argmax, choice
@@ -47,13 +47,9 @@ class Dyna_Tab:
         self.search_control = ActionModelSearchControl_Tabular(self.random)
         
         self.option_alg = param_utils.parse_param(params, 'option_alg', lambda p : p in ['None', 'DecisionTime', 'Background', 'Background_MaxAction'])
-        self.learn_option_values =  param_utils.parse_param(params, 'learn_option_values', lambda p : isinstance(p, bool), default=False, optional=True)
-        if self.option_alg == 'DecisionTime' or self.option_alg == 'None' and self.learn_option_values:
-            raise ValueError(f'learn_option_values True is not supported with option alg {self.option_alg}')
-        
         self.learn_model =  param_utils.parse_param(params, 'learn_model', lambda p : isinstance(p, bool))
-
         self.q_init = param_utils.parse_param(params, 'q_init', lambda p: True, default=0, optional=True)
+        self.use_goal_reward = param_utils.parse_param(params, 'use_goal_reward', lambda p: isinstance(p, bool), default=False, optional=True)
  
         # Loading the pretrained model rather than learning from scratch.
         if not self.learn_model:
@@ -81,6 +77,9 @@ class Dyna_Tab:
         self.goals = problem.get_goals()
         self.goals = [self.representation.encode(goal) for goal in self.goals]
         self.tau = np.zeros(len(self.goals))
+
+        # Learning the goal rewards directly
+        self.goal_reward_learner = GoalRewardLearner(self.goals, self.alpha)
 
         # +1 accounts for the terminal state
         if self.behaviour_alg == 'QLearner':
@@ -192,6 +191,7 @@ class Dyna_Tab:
         self.action_model.update(x, a, xp, r, gamma, self.alpha)
         self.option_model.update(x, a, xp, r, gamma, self.alpha)
         self.option_action_model.update(x, a, xp, r, gamma, self.alpha)
+        self.goal_reward_learner.update(x, a, xp, r, gamma)
 
     def _planning_update(self, x: int, a: int):
         r, discount, transition_prob = self.action_model.predict(x, a)
@@ -229,18 +229,30 @@ class Dyna_Tab:
 
     def _get_option_action_values(self, x):
         option_values = np.zeros((self.num_options, self.num_actions))
-    
+
+        if x in self.goals and self.use_goal_reward:
+            for a in range(self.num_actions):
+                option_values[:, a] = np.max(self.behaviour_learner.get_action_values(x))
+            return option_values
+
         for o in range(self.num_options):
             for a in range(self.num_actions):
+                
                 r, discount, xp = self._sample_option(x, o, a)
-                option_values[o, a] = r + discount * np.max(self.behaviour_learner.get_action_values(xp))
+                if self.use_goal_reward:
+                    option_value = r + discount * self.goal_reward_learner.get_goal_reward(o)
+                else:
+                    option_value = r + discount * np.max(self.behaviour_learner.get_action_values(xp))
+
+                option_values[o, a] = option_value
 
                 if globals.param['reward_schedule'] == 'goal2_switch':
                     pass
                 else:
-                    option_values[o, a] += self.kappa * np.sqrt(np.sum(self.tau[xp == np.array(self.goals)]))
-                    # print(xp == np.array(self.goals))
-
+                    if self.use_goal_reward:
+                        option_values[o, a] += self.kappa * np.sqrt(np.sum(self.tau[o]))
+                    else:
+                        option_values[o, a] += self.kappa * np.sqrt(np.sum(self.tau[xp == np.array(self.goals)]))
                         
         return option_values
 
@@ -287,9 +299,16 @@ class Dyna_Tab:
         self.option_action_model.episode_end()
 
 
-class OptionValueLearner():
-    def __init__(self, num_options):
-        self.num_options = num_options
+class GoalRewardLearner():
+    def __init__(self, goals: List, step_size: float):
+        self.goals = goals
+        self.goal_rewards = np.zeros(len(goals))
+        self.step_size = step_size
     
     def update(self, x, a, xp, r, gamma):
-        pass
+        if x in self.goals:
+            index = self.goals.index(x)
+            self.goal_rewards[index] += self.step_size * (r - self.goal_rewards[index])
+    
+    def get_goal_reward(self, o):
+        return self.goal_rewards[o]

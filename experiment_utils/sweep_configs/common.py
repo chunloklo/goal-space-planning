@@ -4,6 +4,7 @@
 import importlib.util
 import argparse
 from typing import Any, Callable, Optional
+import traceback
 
 def get_configuration_list_from_file_path(file_path: str):
     # [chunlok-2022-01-11] This little duplicate code here is likely okay for now (similar code in get_run_function_from_file_path) 
@@ -60,7 +61,11 @@ def add_common_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 def run_with_optional_aux_config(run_func: Callable, config: Any, aux_config: Any):
 
-    if aux_config is not None:
-        run_func(config, aux_config)
-    else:
-        run_func(config)
+    try:
+        if aux_config is not None:
+            run_func(config, aux_config)
+        else:
+            run_func(config)
+    except Exception as exc:
+        print(traceback.format_exc())
+        print(exc)
