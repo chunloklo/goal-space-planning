@@ -22,8 +22,10 @@ def get_configuration_list():
     
     parameter_list = [param  for file in files for param in get_configuration_list_from_file_path(root + file)]
 
-    # Assuming that they all go in the same folder
+    # # Assuming that they all go in the same folder
     db_folder = get_folder_name(parameter_list[0], DB_FOLDER)
+
+    print(db_folder)
 
     def incomplete_filter(config):
         return not check_config_completed(config)

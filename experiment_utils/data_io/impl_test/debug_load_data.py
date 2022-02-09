@@ -7,13 +7,13 @@ from experiment_utils.data_io.configs import load_all_db_configs_and_keys, IdLin
 from  experiment_utils.analysis_common.configs import SweepInfo
 
 
-configs = load_all_db_configs_and_keys('results_dbs/extended_grazingworld_sweep')
+configs = load_all_db_configs_and_keys('results_dbs/old_graze_ideal')
 
-print(configs)
+# print(configs)
 
 # print(config_id_tuples[0])
 
-# sweepInfo = SweepInfo(configs)
+sweepInfo = SweepInfo(configs)
 # sweepInfo.add_filter('alpha', 0.3)
 # print(sweepInfo.diff_list)
 # print(len(sweepInfo.filtered_configs))

@@ -102,7 +102,7 @@ if __name__ == "__main__":
     # plot_best_reward_rate(ax, f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dynaoptions_sweep.py', 'dynaoptions')       
 
 
-    folder = 'experiments/chunlok/graze_learn/'
+    folder = 'experiments/chunlok/graze_ideal/'
     files = [
         {
             'file' : 'dyna.py',
@@ -121,8 +121,13 @@ if __name__ == "__main__":
         },
         {
             'file' : 'dyna_64.py',
+        },
+        {
+            'file' : 'OCI_goal.py',
+        },
+        {
+            'file' : 'OCG_goal.py',
         }
-        
     ]
     plot_max_reward_rate(ax, folder + files[0]['file'])
 
@@ -137,7 +142,7 @@ if __name__ == "__main__":
 
     
     plt.legend()
-    plt.title('Learning')
+    plt.title('Ideal')
 
     # ax.set_xlim([600, 1200])
 
