@@ -9,7 +9,7 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["tmaze_test"],
+        "experiment_name": ["tmaze_test_sweep"],
         # Environment/Experiment
         "problem": ["TMaze"],
         "episodes": [0],
@@ -29,7 +29,8 @@ def get_configuration_list():
         "epsilon": [0.1],
         "exploration_phase": [0],
         "gamma": [0.99],
-        "skip_action": [False]
+        "skip_action": [False],
+        "base_q": [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

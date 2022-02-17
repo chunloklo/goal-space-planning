@@ -22,7 +22,7 @@ class TMaze(BaseEnvironment):
     """
     def __init__(self, seed:int, reward_sequence_length=10, initial_learning=0):
         random.seed(1)
-        self.size = 7
+        self.size = 15
         self.shape = (self.size, self.size)
         self.reward_sequence_length = reward_sequence_length
         self.initial_learning = initial_learning

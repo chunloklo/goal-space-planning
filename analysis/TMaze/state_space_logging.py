@@ -37,8 +37,8 @@ from src.analysis.plot_utils import load_configuration_list_data
 from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate
 from  experiment_utils.analysis_common.configs import group_configs
 
-COLUMN_MAX = 7
-ROW_MAX = 7
+COLUMN_MAX = 15
+ROW_MAX = 15
 
 def generatePlot(data):
 
@@ -141,12 +141,13 @@ def load_experiment_data(json_handle, load_keys: list = None):
 
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/chunlok/env_tmaze/baseline.py'
+    parameter_path = 'experiments/chunlok/env_tmaze/skip.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     # data = run_utils.load_data(best_group[1][0])
 
-    data = load_data(parameter_list[0], 'avg_suboptimality')
+    data = load_data(parameter_list[0], 'skip_probability_weights')
+    data = 1/(1 + np.exp(-data))
     print(data.shape)
     # data = run_utils.load_data(parameter_list[0])
     generatePlot(data)

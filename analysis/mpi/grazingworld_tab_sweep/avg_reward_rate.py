@@ -60,9 +60,19 @@ def plot_best_reward_rate(ax, param_file_name: str, label: str = None):
 
     #     return
 
-    best_group, best_index, best_performance, perfs, rank = get_best_config_from_file_path_cached(param_file_name, True)
+    best_group, best_index, best_performance, perfs, rank = get_best_config_from_file_path_cached(param_file_name, False)
 
+    print(best_group[0])
+    
     data = np.array(load_configuration_list_data(best_group[1], load_reward_rate))
+
+    print(data.shape)
+
+    # Accumulating
+    for i in range(1, data.shape[1]):
+        data[:, i] = data[:, i] + data[:, i - 1]
+
+
     mean, std = get_mean_stderr(data)
     # Smoothing both data
     mean, std = mean_chunk_data(mean, STEP_SIZE, 0), mean_chunk_data(std, STEP_SIZE, 0)
@@ -102,37 +112,51 @@ if __name__ == "__main__":
     # plot_best_reward_rate(ax, f'experiments/chunlok/mpi/switch_experiment/{subfolder}/dynaoptions_sweep.py', 'dynaoptions')       
 
 
-    folder = 'experiments/chunlok/graze_ideal/'
-    files = [
-        {
-            'file' : 'dyna.py',
-        },
-        {
-            'file' : 'dynaoptions.py',
-        },
-        {
-            'file' : 'OCG.py',
-        },
-        {
-            'file' : 'OCI_action.py',
-        },
-        {
-            'file' : 'OCI.py',
-        },
-        {
-            'file' : 'dyna_64.py',
-        },
-        {
-            'file' : 'OCI_goal.py',
-        },
-        {
-            'file' : 'OCG_goal.py',
-        }
-    ]
-    plot_max_reward_rate(ax, folder + files[0]['file'])
+    # folder = 'experiments/chunlok/graze_ideal/'
+    # files = [
+    #     {
+    #         'file' : 'dyna.py',
+    #     },
+    #     {
+    #         'file' : 'dynaoptions.py',
+    #     },
+    #     {
+    #         'file' : 'OCG.py',
+    #     },
+    #     {
+    #         'file' : 'OCI_action.py',
+    #     },
+    #     {
+    #         'file' : 'OCI.py',
+    #     },
+    #     {
+    #         'file' : 'dyna_64.py',
+    #     },
+    #     {
+    #         'file' : 'OCI_goal.py',
+    #     },
+    #     {
+    #         'file' : 'OCG_goal.py',
+    #     }
+    # ]
+    # plot_max_reward_rate(ax, folder + files[0]['file'])
 
-    for obj in files:
-        plot_best_reward_rate(ax, folder + obj['file'])
+    # for obj in files:
+    #     plot_best_reward_rate(ax, folder + obj['file'])
+
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/baseline.py')
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/base_q.py')
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/skip.py')
+    # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_optimal.py')
+    # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_opt_option_learn_skip.py')
+    # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_opt_option.py')
+
+        #    'baseline.py',
+        # 'skip_opt_option.py',
+        # 'skip_optimal.py',
+        # 'skip.py',
+        # 'skip_opt_option_learn_skip.py',
+
 
 
     # plot_max_reward_rate(ax, 'experiments/chunlok/graze_learn/dyna_64.py')

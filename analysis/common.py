@@ -52,7 +52,7 @@ def get_best_grouped_param(grouped_params: list[Tuple[Any, List]]) -> Tuple[Tupl
         Tuple[Any, int, float, list[float]]: Best config group, best index, best performance, list of performances
     """
 
-    db_folder = get_folder_name(grouped_params[1][0], DB_FOLDER)
+    db_folder = get_folder_name(grouped_params[0][0], DB_FOLDER)
 
     with BatchDBAccess(db_folder):
         perfs = [np.mean([get_performance(config) for config in config_list]) for _, config_list in tqdm(grouped_params)]

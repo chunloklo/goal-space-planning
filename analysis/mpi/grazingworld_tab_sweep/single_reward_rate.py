@@ -27,7 +27,10 @@ STEP_SIZE = 20
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
-def plot_single_reward_rate(ax, param_file_name: str, label: str):
+def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
+    if label is None:
+        label = Path(param_file_name).stem
+
     parameter_list = get_configuration_list_from_file_path(param_file_name)
     # print("plotting only the first index of the config list")
 
@@ -37,11 +40,39 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str):
 
     print(data.shape)
     run_data = mean_chunk_data(data, STEP_SIZE, 0)
-    print(run_data.shape)
+    # print(run_data.shape)
+
+    # Accumulating
+    for i in range(1, len(run_data)):
+        run_data[i] = run_data[i] + run_data[i - 1]
+
     x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
 
-    print(len(list(x_range)))
-    ax.plot(x_range, run_data)
+    # print(len(list(x_range)))
+    ax.plot(x_range, run_data, label=label)
+
+    ####### Individual skip probability weights
+    # data = load_data(parameter_list[index], 'skip_probability_weights')
+    # print(data.shape)
+    
+
+    # for i in range(0, 3840, 196):
+    #     plt.axvline(x=i)
+
+    # for i in [0, 7, 14, 7 + 15]:
+    #     plot_data = data[:, i]
+    #     print(data.shape)
+    #     run_data = mean_chunk_data(plot_data, STEP_SIZE, 0)
+    #     # print(run_data.shape)
+
+    #     # Accumulating
+    #     # for i in range(1, len(run_data)):
+    #     #     run_data[i] = run_data[i] + run_data[i - 1]
+
+    #     x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
+
+    #     # print(len(list(x_range)))
+    #     ax.plot(x_range, run_data, label=i)
 
     
 def plot_max_reward_rate(ax, param_file_name: str):
@@ -66,30 +97,32 @@ def plot_max_reward_rate(ax, param_file_name: str):
     # ax.plot(x_range, fixed_max_reward_rate, label='fixed max reward rate')
     # ax.plot(fixed_max_reward_rate, label='max reward rate')
 
-def create_individual_plot(file_name, alg_name=None):
-    if alg_name is None:
-        alg_name = Path(file_name).stem
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-
+def create_individual_plot(ax, file_name):
     plot_max_reward_rate(ax, file_name)
     plot_single_reward_rate(ax, file_name, None)      
-    plt.legend()
-    plt.title(alg_name)
-
-    # ax.set_xlim([600, 1200])
-
-    # Getting file name
-    save_file = get_file_name('./plots/', f'single_reward_rate_{alg_name}', 'png', timestamp=True)
-    # print(f'Plot will be saved in {save_file}')
-    plt.savefig(f'{save_file}', dpi = 300)
 
 
 if __name__ == "__main__":
     # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_gpi_only_low_init_sweep.py', 'okay')
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
-    create_individual_plot('experiments/chunlok/env_tmaze/baseline.py')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
+    plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
+    plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_optimal.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_opt_option.py')
+
+    plt.legend()
+    # plt.title(alg_name)
+
+    # ax.set_xlim([600, 1200])
+
+    # Getting file name
+    save_file = get_file_name('./plots/', f'single_reward_rate', 'png', timestamp=True)
+    # print(f'Plot will be saved in {save_file}')
+    plt.savefig(f'{save_file}', dpi = 300)
+    
     # plt.show()
 
         

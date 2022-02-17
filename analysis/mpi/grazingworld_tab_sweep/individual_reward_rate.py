@@ -108,7 +108,7 @@ if __name__ == "__main__":
     
 
     # create_individual_plot('experiments/chunlok/graze_learn/OCI.py')
-    create_individual_plot('experiments/chunlok/graze_learn/dyna_64.py')
+    # create_individual_plot('experiments/chunlok/graze_learn/dyna_64.py')
 
     # folder = 'experiments/chunlok/mpi/extended_half/collective/'
     # files = [

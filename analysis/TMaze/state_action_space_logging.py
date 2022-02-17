@@ -37,8 +37,8 @@ from src.analysis.plot_utils import load_configuration_list_data
 from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate
 from  experiment_utils.analysis_common.configs import group_configs
 
-COLUMN_MAX = 15
-ROW_MAX = 15
+COLUMN_MAX = 7
+ROW_MAX = 7
 
 def generatePlot(data):
 
@@ -55,39 +55,19 @@ def generatePlot(data):
     print(data.shape)
 
     # Getting file name
-    save_file = prompt_user_for_file_name('./visualizations/', 'action_values_', '', 'mov', timestamp=True)
+    save_file = prompt_user_for_file_name('./visualizations/', 'state_space_', '', 'mov', timestamp=True)
     # print(f'Plot will be saved in {anim_file_name}')
 
     print(f'Visualization will be saved in {save_file}')
     # Getting episode range
     start_frame, max_frame, interval = prompt_episode_display_range(0, data.shape[0], max(data.shape[0] // 100, 1))
 
-    # Using a simple way of determining whether options are used.
-    # Note that this might not work in the future if we do something separate, but it works for now
-    hasOptions = data.shape[-1] > 4
-
-    num_options = data.shape[-1] - 4
-
-    # fig = plt.figure()
-    if hasOptions:
-        fig, axes = plt.subplots(1, 2, figsize=(32, 16))
-        ax = axes[0]
-        ax_options = axes[1]
-        
-    else:
-        fig, axes = plt.subplots(1, figsize=(16, 16))
-        ax = axes
+    fig, axes = plt.subplots(1, figsize=(16, 16))
+    ax = axes
 
     colormap = cm.get_cmap('viridis')
 
-    texts, patches, arrows = _plot_init(ax, columns = COLUMN_MAX, rows = ROW_MAX, center_arrows=True)
-    
-
-    if hasOptions:
-        ax_options.set_xlim(0, COLUMN_MAX)
-        ax_options.set_ylim(0, ROW_MAX)
-        ax_options.invert_yaxis()
-        texts_options, patches_options = _plot_init(ax_options, columns = COLUMN_MAX, rows = ROW_MAX, center_arrows=False)
+    texts, patches = _plot_init(ax, columns = COLUMN_MAX, rows = ROW_MAX, center_arrows=False)
     
     wall_indices = [12, 14, 24, 25, 26, 30, 32, 42, 43, 44 ]
 
@@ -95,10 +75,9 @@ def generatePlot(data):
     max_val = np.max(data[start_frame:max_frame])
     print(f'min: {min_val} max: {max_val}')
 
-
     frames = range(start_frame, max_frame, interval)
 
-    x_range = list(get_x_range(0, data.shape[0], 1))
+    x_range = list(get_x_range(0, data.shape[0], 10))
 
     print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
     pbar = tqdm(total=max_frame - start_frame)
@@ -106,50 +85,28 @@ def generatePlot(data):
     # return [*flatten(texts), *flatten(patches), *flatten(arrows), *flatten(texts_options), *flatten(patches_options)]
     def draw_func(i):
         pbar.update(i - start_frame - pbar.n)
-        q_values = data[i, :, :]
+        q_values = data[i, :]
         # print(q_values)
 
 
         ax.set_title(f"step: {x_range[i]}")
 
+        NUM_FACTOR = 1
+
         for r in range(ROW_MAX):
             for c in range(COLUMN_MAX):
-                q_value = q_values[r * COLUMN_MAX + c, :]
+                q_value = q_values[r * COLUMN_MAX + c]
                 action = np.argmax(q_value)
                 arrow_magnitude = 0.0625
                 width = 0.025
                 center = [0.5 + c, 0.5 + r]
                 offset = get_action_offset(arrow_magnitude)
-
-                arrows[r][c].remove()
-
-                if (action < 4):
-                    offset = get_action_offset(arrow_magnitude)
-                    arrow = ax.arrow(center[0], center[1], offset[action][0], offset[action][1], width=width, facecolor='black')
-                    arrows[r][c] = arrow
-                else:
-                    option = action - 4
-
-                    from src.utils.create_options import get_options
-                    options = get_options('GrazingAdam')
-                    action, _ = options[option].step(r * COLUMN_MAX + c)
-
-                    offset = get_action_offset(arrow_magnitude)
-                    arrow = ax.arrow(center[0], center[1], offset[action][0], offset[action][1], width=width, facecolor='red')
-                    arrows[r][c] = arrow
-
                 for a in range(4):
                     scaled_value = scale_value(q_value[a], min_val, max_val, post_process_func=lambda x: x)
                     patches[r][c][a].set_facecolor(colormap(scaled_value))
                     # colors = ["red", "green", "blue", "orange"]
                     # patches[i][j][a].set_facecolor(colors[a])
-                    texts[r][c][a].set_text(round(q_value[a], 2))
-
-                if hasOptions:
-                    for a in range(num_options):
-                        scaled_value = scale_value(q_value[a + 4], min_val, max_val)
-                        patches_options[r][c][a].set_facecolor(colormap(scaled_value))
-                        texts_options[r][c][a].set_text(round(q_value[a + 4], 2))
+                    texts[r][c][a].set_text(round(q_value[a] * NUM_FACTOR, 2))
 
         return
 
@@ -187,24 +144,9 @@ if __name__ == "__main__":
     parameter_path = 'experiments/chunlok/env_tmaze/skip.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
-    # grouping configs based on seeds
-    # grouped_params = group_configs(parameter_list, ['seed'])
-    # best_group, best_index, best_performance, perfs, rank = get_best_grouped_param(grouped_params)
-
-    # display_config = {}
-    # for i in parameter_list:
-    #     # print(i)
-    #     if i['kappa'] == 0.001 and i['alpha'] == 0.7:
-    #         display_config = i
-    #         break
-
-    # print(display_config)
-    # sdfdsf
-
-
     # data = run_utils.load_data(best_group[1][0])
 
-    data = load_data(parameter_list[0], 'Q')
+    data = load_data(parameter_list[0], 'greedy_action_count')
     print(data.shape)
     # data = run_utils.load_data(parameter_list[0])
     generatePlot(data)

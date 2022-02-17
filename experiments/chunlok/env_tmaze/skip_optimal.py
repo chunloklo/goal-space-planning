@@ -23,13 +23,14 @@ def get_configuration_list():
         # "seed":  [10],
         "seed": list(range(5)),
         # Agent
-        'alpha': [1.0, 0.9, 0.7],
+        'alpha': [1.0],
         "agent": ["Direct_Tab"],
         "behaviour_alg": ["QLearner"],
         "epsilon": [0.1],
         "exploration_phase": [0],
-        "gamma": [0.99],
-        "skip_action": [False]
+        "gamma": [0.9],
+        "skip_action": [True],
+        "use_optimal_skip": [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)
