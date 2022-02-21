@@ -3,8 +3,7 @@ from typing import List
 import os
 import json
 import hashlib
-from .io.zodb_io import save_config_and_data_zodb, load_data_config_from_id, open_db, close_db, DB_FOLDER, DB_CONFIGS_KEY, DB_DATA_KEY
-import pickle
+from .io.zodb_io import BatchDBAccess, check_config_exists, db_exists, save_config_and_data_zodb, load_data_config_from_id, open_db, close_db, DB_FOLDER, DB_CONFIGS_KEY
 
 def hash_string(name):
     return hashlib.sha256(name.encode()).hexdigest()
@@ -39,8 +38,6 @@ def get_config_hash(config: dict, folder_keys=['experiment_name']):
         config_clean.pop(folder_key)
 
     file_str = json.dumps(config, sort_keys=True, default=str)
-    # print(file_str)
-    # print(hash_string(file_str))
     return hash_string(file_str)
 
 def get_folder_name(config: dict, sub_folder = 'results', folder_keys=['experiment_name']):
@@ -97,8 +94,39 @@ def load_all_db_configs_and_keys(db_folder: str) -> List[IdLinkedConfig]:
     return [IdLinkedConfig(item[1], item[0]) for item in items]
 
 def check_config_completed(config):
-    try:
-        load_data_from_config_zodb(config)
-        return True
-    except IndexError as e:
-        return False
+    folder, config_hash = get_folder_and_config_hash(config, sub_folder=DB_FOLDER)
+    return check_config_exists(config_hash, folder)
+
+def get_incomplete_configuration_list(configuration_list: list, folder: str = DB_FOLDER):
+    """Returns the list of incomplete configurations after querying the database
+
+    Args:
+        configuration_list (list): list of configurations
+        folder (str, optional): Default parent location of the database. Defaults to DB_FOLDER.
+
+    Returns:
+        list: List of incomplete configurations
+    """
+
+    db_configs = {}
+    for config in configuration_list:
+        db_folder = get_folder_name(config, DB_FOLDER)
+        if db_folder not in db_configs:
+            db_configs[db_folder] = []
+        
+        db_configs[db_folder].append(config)
+
+    incomplete_configs_per_db = []
+    for db_folder, config_list_in_db in db_configs.items():
+        def incomplete_filter(config):
+            return not check_config_completed(config)
+
+        if not db_exists(db_folder):
+            incomplete_parameter_list = config_list_in_db
+        else: 
+            with BatchDBAccess(db_folder): # Batch check all configs in the same DB
+                incomplete_parameter_list = list(filter(incomplete_filter, config_list_in_db))
+
+        incomplete_configs_per_db.append(incomplete_parameter_list)
+    
+    return [config for incomplete_configs in incomplete_configs_per_db for config in incomplete_configs]

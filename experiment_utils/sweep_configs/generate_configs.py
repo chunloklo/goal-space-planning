@@ -3,7 +3,8 @@ import code
 from typing import Dict
 from copy import deepcopy
 
-# getting a sorted list is important for multiple files agreeing on the same
+# Getting a sorted configuration list. This is mostly to make sure that index is consistent when calling run_single.py
+# It shouldn't really be a bottleneck when running experiments, but possible if the configuration list is absolutely massive.
 def get_sorted_configuration_list_from_dict(configuration_collection_dict: Dict[str, list]):
     """Returns a sorted list of configurations from a dictionary of parameters.
 

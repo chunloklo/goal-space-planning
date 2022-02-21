@@ -1,7 +1,6 @@
 import math
-from typing import Any, Callable, Dict, List
+from typing import Dict, List
 from copy import copy
-from tqdm import tqdm
 import numpy as np
 
 # Useful classes and methods for organizing and viewing configurations

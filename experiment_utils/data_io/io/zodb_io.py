@@ -1,6 +1,4 @@
 from ast import Index
-from ctypes import sizeof
-from distutils.command.config import config
 from re import L
 from sqlite3 import connect
 import ZODB, ZODB.FileStorage
@@ -9,6 +7,7 @@ from filelock import FileLock
 from BTrees import OOBTree
 import transaction
 from ZODB.blob import Blob, is_blob_record
+import gc
 
 zodb_connection = None
 
@@ -16,8 +15,11 @@ DB_DATA_KEY = 'data'
 DB_CONFIGS_KEY = 'configs'
 DB_FOLDER = 'results_dbs'
 
+def db_exists(db_folder):
+    return os.path.isfile(f'{db_folder}/data.fs')
+
 def open_db(db_folder, create_if_not_exist=True):
-    if not os.path.isfile(f'{db_folder}/data.fs') and not create_if_not_exist:
+    if not db_exists(db_folder) and not create_if_not_exist:
         raise ValueError(f'Database at {db_folder} does not yet exist and open_db has been told not to create a database if it does not exit yet. Erroring out')
 
     os.makedirs(db_folder, exist_ok=True)
@@ -39,6 +41,10 @@ def close_db(db, connection, lock):
     db.close()
     lock.release()
 
+    # Running garbage collection when the database is closed since opening the database require significant memory usage.
+    # Otherwise repeated save calls build up a ton of memory usage.
+    gc.collect()
+
 def zodb_op_save(root, config_id, data, key):
     if key not in root:
         root[key] = OOBTree.OOBTree()
@@ -50,17 +56,25 @@ def zodb_op_save(root, config_id, data, key):
 def zodb_op_load(root, config_id, key):
     if key not in root:
         raise IndexError(f'{key} object is not in the database yet. Cannot retrieve any {key} for {config_id}')
-        
+
     if config_id not in root[key]:
         raise IndexError(f'Cannot find config id {config_id} in {key} object')
 
     return root[key][config_id]
 
+def zodb_op_check_exists(root, config_id, key):
+    if key not in root:
+        return False
+        
+    if config_id not in root[key]:
+        return False
+
+    return True
+
 def save_config_and_data_zodb(config_id, config, data, db_folder):
     db, connection, root, lock = open_db(db_folder)
     zodb_op_save(root, config_id, config, DB_CONFIGS_KEY)
     zodb_op_save(root, config_id, data, DB_DATA_KEY)
-    transaction.commit()
     close_db(db,  connection, lock)
 
 def load_data_config_from_id(config_id, db_folder):
@@ -77,6 +91,20 @@ def load_data_config_from_id(config_id, db_folder):
         close_db(db,  connection, lock)
     
     return config, data
+
+def check_config_exists(config_id, db_folder):
+    global zodb_connection
+    if zodb_connection is None:
+        db, connection, root, lock = open_db(db_folder, create_if_not_exist=False)
+    else:
+        db, connection, root, lock = zodb_connection
+
+    config_exists = zodb_op_check_exists(root, config_id, DB_CONFIGS_KEY)
+
+    if zodb_connection is None:
+        close_db(db,  connection, lock)
+    
+    return config_exists
     
 class BatchDBAccess():
     """Used to open DB for batch retrieval access.

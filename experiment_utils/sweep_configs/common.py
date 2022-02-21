@@ -60,12 +60,12 @@ def add_common_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 def run_with_optional_aux_config(run_func: Callable, config: Any, aux_config: Any):
-
     try:
         if aux_config is not None:
             run_func(config, aux_config)
         else:
             run_func(config)
     except Exception as exc:
+        # Stops run errors from failing out the entire program if something occurs during the run
         print(traceback.format_exc())
         print(exc)
