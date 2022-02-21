@@ -11,6 +11,7 @@ import argparse
 import numpy as np
 import sys
 from tqdm import tqdm
+import gc
 
 from common import get_configuration_list_from_file_path, get_run_function_from_file_path, add_common_args, get_aux_config_from_file_path, run_with_optional_aux_config
 
@@ -25,9 +26,6 @@ run_path = args.run_path
 aux_config_path = args.aux_config_path
 show_progress = args.show_progress
 
-# Getting configuration list from parameter_path
-configuration_list = get_configuration_list_from_file_path(configuration_path)
-
 # Getting run function from run_path
 run_func = get_run_function_from_file_path(run_path)
 
@@ -39,6 +37,17 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = MPI.COMM_WORLD.Get_size()
 name = MPI.Get_processor_name()
+
+# Centralizing obtaining configuration list to only be done on the rank 0 processor.
+# This removes the need for determinism and lets the configuration list function to only be called once,
+# in cases where calling it takes a long time (in the case of databases, requiring to open/close the database multiple times).
+# This copies the configuration list to each processor, which shouldn't be too much of an issue since it shouldn't be massive anyways.
+if rank == 0:
+    # Getting configuration list from parameter_path
+    configuration_list = get_configuration_list_from_file_path(configuration_path)
+else:
+    configuration_list = None
+configuration_list = comm.bcast(configuration_list, root=0)
 
 # Creating a counter for each task to grab tasks off of.
 # The counter will represent the next parameter that needs to be ran,
@@ -98,6 +107,9 @@ while result <= max_param_index:
 
     # Otherwise, run the function 
     run_with_optional_aux_config(run_func, configuration_list[int(result)], aux_config)
+
+    # Running the garbage collector before the next run is called in case the experiment requires significant memory usage
+    gc.collect()
 
 win.Free()
 sys.exit(0)
