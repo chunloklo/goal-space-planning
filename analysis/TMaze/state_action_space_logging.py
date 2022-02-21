@@ -37,8 +37,8 @@ from src.analysis.plot_utils import load_configuration_list_data
 from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate
 from  experiment_utils.analysis_common.configs import group_configs
 
-COLUMN_MAX = 7
-ROW_MAX = 7
+COLUMN_MAX = 15
+ROW_MAX = 15
 
 def generatePlot(data):
 
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     # data = run_utils.load_data(best_group[1][0])
 
-    data = load_data(parameter_list[0], 'greedy_action_count')
+    data = load_data(parameter_list[0], 'avg_greedy_policy')
     print(data.shape)
     # data = run_utils.load_data(parameter_list[0])
     generatePlot(data)

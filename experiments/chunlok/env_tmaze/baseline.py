@@ -10,10 +10,12 @@ def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
         "experiment_name": ["tmaze_test"],
+        'run_path': ['src/run_experiment.py'],
+
         # Environment/Experiment
         "problem": ["TMaze"],
         "episodes": [0],
-        'max_steps': [9600 * 40],
+        'max_steps': [9600 * 240],
         "reward_sequence_length" : [9600 * 2],
         # Logging
         'log_keys': [('max_reward_rate', 'reward_rate')],
@@ -23,12 +25,12 @@ def get_configuration_list():
         # "seed":  [10],
         "seed": list(range(5)),
         # Agent
-        'alpha': [1.0, 0.9, 0.7],
+        'alpha': [1.0],
         "agent": ["Direct_Tab"],
         "behaviour_alg": ["QLearner"],
         "epsilon": [0.1],
         "exploration_phase": [0],
-        "gamma": [0.99],
+        "gamma": [0.9],
         "skip_action": [False]
     }
 

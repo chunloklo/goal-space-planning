@@ -65,6 +65,7 @@ class Direct_Tab:
         self.cumulative_reward = 0
 
         self.skip_lr = param_utils.parse_param(params, 'skip_lr', lambda p : isinstance(p, float), optional=True, default=1e-3)
+        self.avg_greedy_policy_lr = param_utils.parse_param(params, 'avg_greedy_policy_lr', lambda p : isinstance(p, float), optional=True, default=1e-3)
 
         self.avg_greedy_policy = np.ones((self.num_states, self.num_actions)) / self.num_actions
 
@@ -120,7 +121,7 @@ class Direct_Tab:
             else:
                 return False
 
-        sig = 1/(1 + np.exp(-self.skip_probability_weights[x]))
+        sig = 1/(1 + np.exp(np.clip(-self.skip_probability_weights[x], -1e2, 1e2)))
 
         # min_prob = 0.1 
         # sig = np.clip(sig, a_min = 0, a_max = 1 - min_prob)
@@ -181,7 +182,7 @@ class Direct_Tab:
 
         greedy_action =  np.argmax(self.behaviour_learner.Q[x])
 
-        self.avg_greedy_policy[x] += self.skip_lr * (numpy_utils.create_onehot(self.num_actions, greedy_action) - self.avg_greedy_policy[x])
+        self.avg_greedy_policy[x] += self.avg_greedy_policy_lr * (numpy_utils.create_onehot(self.num_actions, greedy_action) - self.avg_greedy_policy[x])
 
         # avg_greedy_policy = self.avg_greedy_policy[x] / np.sum(self.avg_greedy_policy[x])
         avg_greedy_policy = self.avg_greedy_policy[x]
@@ -191,9 +192,6 @@ class Direct_Tab:
 
         self.skip_probability_weights[x] += self.skip_lr * distance
 
-        # if (x == 0):
-        #     print(f'avg greedy : {avg_greedy_policy}, greedy: {greedy_action} distance: {distance} skip_weight: {self.skip_probability[x]}')
-        
         if not terminal:
             ap = self.selectAction(sp)
         else:
@@ -206,7 +204,6 @@ class Direct_Tab:
             globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
             self.cumulative_reward = 0
 
-            sig = 1/(1 + np.exp(-self.skip_probability_weights))
             globals.collector.collect('skip_probability_weights', np.copy(self.skip_probability_weights))
 
             globals.collector.collect('avg_greedy_policy', np.copy(self.avg_greedy_policy))
@@ -222,3 +219,40 @@ class Direct_Tab:
         self.skip_a = None
         self.skip_r = -1
         self.skip_gamma = -1
+
+    
+class ConstantFilter():
+    def __init__(self, prob: float, rng):
+        self.rng = rng
+        self.prob = prob
+
+        assert prob >= 0.0 and prob <= 1.0, f'Probability must be between 0.0 and 1.0. Instead, prob is {self.prob}'
+
+    def should_filter(self, s):
+        rand = self.rng.random()
+        if rand < self.prob:
+            # print('skipping')
+            return True
+        return False
+
+class CommonGreedyFilter():
+    def __init__(self, greedy_policy_lr: float, filter_weight_lr: float, num_states: int, num_actions: int):
+        self.greedy_policy_lr = greedy_policy_lr
+        self.filter_weight_lr = filter_weight_lr
+        self.num_states = num_states
+        self.num_actions = num_actions
+
+        # setting the starting avg greedy policy to be random
+        self.avg_greedy_policy = np.ones((num_states, num_actions)) / num_actions
+
+    def update(self, x: int, x_action_value):
+        greedy_action = np.argmax(x_action_value)
+        self.avg_greedy_policy[x] += self.greedy_policy_lr * (numpy_utils.create_onehot(self.num_actions, greedy_action) - self.avg_greedy_policy[x])
+
+
+    def should_filter(self, s):
+        rand = self.rng.random()
+        if rand < self.prob:
+            # print('skipping')
+            return True
+        return False

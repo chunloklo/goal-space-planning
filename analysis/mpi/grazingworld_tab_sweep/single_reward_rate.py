@@ -36,6 +36,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
 
     index = 0
 
+    ############ STANDARD
     data = load_data(parameter_list[index], 'reward_rate')
 
     print(data.shape)
@@ -107,7 +108,7 @@ if __name__ == "__main__":
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
     fig, ax = plt.subplots(figsize=(10, 6))
-    plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
+    # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
     plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
     plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_optimal.py')

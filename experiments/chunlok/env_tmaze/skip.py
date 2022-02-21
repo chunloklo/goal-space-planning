@@ -8,15 +8,17 @@ import numpy as np
 # get_configuration_list function is required for 
 def get_configuration_list():
     parameter_dict = {
-        # Determiens which folder the experiment gets saved in
+        # Determines which folder the experiment gets saved in
         "experiment_name": ["tmaze_test"],
+        'run_path': ['src/run_experiment.py'],
+
         # Environment/Experiment
         "problem": ["TMaze"],
         "episodes": [0],
-        'max_steps': [9600 * 40],
+        'max_steps': [9600 * 240],
         "reward_sequence_length" : [9600 * 2],
         # Logging
-        'log_keys': [('max_reward_rate', 'reward_rate', 'skip_probability_weights')],
+        'log_keys': [('max_reward_rate', 'reward_rate', 'skip_probability_weights', 'avg_greedy_policy')],
         # 'log_keys': [('max_reward_rate', 'reward_rate')],
         'step_logging_interval': [100],
         # Seed
@@ -33,7 +35,8 @@ def get_configuration_list():
         # 'initial_skip_weight': [-8],
         # 'skip_lr': [1e-3]
         'initial_skip_weight': [-4],
-        'skip_lr': [1e-4]
+        'skip_lr': [1e-4],
+        'avg_greedy_policy_lr': [1e-5]
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)
