@@ -1,6 +1,5 @@
 import time
 
-
 def run(config: dict, aux_config: dict):
     # print('Configuration')
     # print(config)

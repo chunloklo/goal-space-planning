@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.getcwd())
 
-from experiment_utils.sweep_configs.generate_configs import get_sorted_configuration_list_from_dict
+from sweep_configs.generate_configs import get_sorted_configuration_list_from_dict
 
 # get_configuration_list function is required for 
 def get_configuration_list():

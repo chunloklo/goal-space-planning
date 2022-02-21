@@ -1,4 +1,4 @@
-# experiment_components.sweep_configs
+# sweep_configs
 This is a small library for running many independent experiments to sweep over different configurations. It's designed to do just that, and nothing more.
 
 ## Requirements
@@ -20,6 +20,14 @@ Example command:
 Example command:
 ```python run_single.py <run_function_file> <configuration_list_file> <index>```
 
+## Including run path in config
+One thing you might want to do is include the path of the run function file in the config so that you don't forget which file was used to run which config. `route_run.py` supports this if you allow the config to be accessed with the `run_path` key, i.e. `run_path = config['run_path']`. This is simple if your config is a dictionary: simply set `config['run_path'] = '<run_function_file>'`
+
+Once that's done, you can use `route_run.py` as the run function file when running the commands above. `route_run.py`'s run function will then execute the run function in `config['run_path']`.
+
+Example command:
+```mpiexec -n 8 python run_mpi.py route_run.py <configuration_list_file> ```
+
 ## Auxiliary configurations
 On occasions, especially with your debug experiments, you might want to run your experiment with a set of auxiliary parameters that doesn't affect the experiment results. For example, you might want to show debug information, progress, or print-outs on local runs of your experiment, or you might want debug information from your sweep experiments. Auxiliary configurations allows you to provide a set of additional parameters to your experiment for these cases. 
 
@@ -36,9 +44,6 @@ To see how to implement your own sweep, check out files under `sweep_configs/exa
 
 ## Performing grid search
 A common way to perform sweeps is through grid-search. `generate_configs.get_sorted_configuration_list_from_dict` is designed to generate a configuration list just for that scenario. It generates a sorted list of configurations from a dictionary describing what parameter values you want to sweep over.
-
-## IMPORTANT: Deterministic configuration list 
-It is imperative that the order of your configuration list is deterministic. When running with MPI, a copy of the configuration list will be created by each task and each task gets assigned configurations to run based on its index in the list. If the list is not deterministic, there is no guarantees that all configurations in the list will be ran.
 
 ## Running on Compute Canada
 Example scripts on how to use this library to run configuration sweeps can be found in `sweep_configs/compute_canada`.

@@ -3,8 +3,7 @@ from typing import List
 import os
 import json
 import hashlib
-from .io.zodb_io import BatchDBAccess, check_config_exists, db_exists, save_config_and_data_zodb, load_data_config_from_id, open_db, close_db, DB_FOLDER, DB_CONFIGS_KEY, DB_DATA_KEY
-import pickle
+from .io.zodb_io import BatchDBAccess, check_config_exists, db_exists, save_config_and_data_zodb, load_data_config_from_id, open_db, close_db, DB_FOLDER, DB_CONFIGS_KEY
 
 def hash_string(name):
     return hashlib.sha256(name.encode()).hexdigest()
@@ -39,8 +38,6 @@ def get_config_hash(config: dict, folder_keys=['experiment_name']):
         config_clean.pop(folder_key)
 
     file_str = json.dumps(config, sort_keys=True, default=str)
-    # print(file_str)
-    # print(hash_string(file_str))
     return hash_string(file_str)
 
 def get_folder_name(config: dict, sub_folder = 'results', folder_keys=['experiment_name']):

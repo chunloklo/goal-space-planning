@@ -1,6 +1,4 @@
 from ast import Index
-from ctypes import sizeof
-from distutils.command.config import config
 from re import L
 from sqlite3 import connect
 import ZODB, ZODB.FileStorage
@@ -58,7 +56,7 @@ def zodb_op_save(root, config_id, data, key):
 def zodb_op_load(root, config_id, key):
     if key not in root:
         raise IndexError(f'{key} object is not in the database yet. Cannot retrieve any {key} for {config_id}')
-        
+
     if config_id not in root[key]:
         raise IndexError(f'Cannot find config id {config_id} in {key} object')
 

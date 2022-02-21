@@ -89,7 +89,6 @@ if rank == 0 and show_progress:
     pbar = tqdm(total = len(configuration_list), ncols=0)
 
 while result <= max_param_index:
-    
     win.Lock(rank=0)
     # Fetches the counter and increments the counter by 1 (default Op is sum, and accumulate is 1)
     win.Fetch_and_op(accumulate, result, target_rank=0)
