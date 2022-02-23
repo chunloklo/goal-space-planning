@@ -15,15 +15,17 @@ def get_configuration_list():
         # Environment/Experiment
         "problem": ["TMaze"],
         "episodes": [0],
-        'max_steps': [9600 * 240],
-        "reward_sequence_length" : [9600 * 2],
+        'max_steps': [19200 * 10],
+        "reward_sequence_length" : [19200],
+
         # Logging
         'log_keys': [('max_reward_rate', 'reward_rate', 'skip_probability_weights', 'avg_greedy_policy')],
         # 'log_keys': [('max_reward_rate', 'reward_rate')],
         'step_logging_interval': [100],
+
         # Seed
-        # "seed":  [10],
         "seed": list(range(5)),
+
         # Agent
         'alpha': [1.0],
         "agent": ["Direct_Tab"],
@@ -32,11 +34,10 @@ def get_configuration_list():
         "exploration_phase": [0],
         "gamma": [0.9],
         "skip_action": [True],
-        # 'initial_skip_weight': [-8],
-        # 'skip_lr': [1e-3]
         'initial_skip_weight': [-4],
-        'skip_lr': [1e-4],
-        'avg_greedy_policy_lr': [1e-5]
+        'skip_lr': [1e-2],
+        'avg_greedy_policy_lr': [1e-3],
+        'filter_class': ['common_greedy'],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)
