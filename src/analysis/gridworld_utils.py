@@ -124,16 +124,17 @@ def _plot_init(ax, columns: int, rows: int, center_arrows: bool = False):
     return texts, patches
 
 
-def prompt_episode_display_range(default_start_episode: int, defualt_end_episode: int, default_interval: int) -> Tuple[int, int, int]:
+def prompt_episode_display_range(default_start_episode: int, default_end_episode: int, default_interval: int) -> Tuple[int, int, int]:
+    print(f'Defaults: START {default_start_episode}, END {default_end_episode}, INTERVAL {default_interval}')
     start_episode = input(f"Enter in START episode (press enter for the default of {default_start_episode}): ")
     if len(start_episode) == 0:
         start_episode = default_start_episode
     else:
         start_episode = int(start_episode)
 
-    end_episode = input(f"Enter in END episode (press enter for the default of {defualt_end_episode}): ")
+    end_episode = input(f"Enter in END episode (press enter for the default of {default_end_episode}): ")
     if len(end_episode) == 0:
-        end_episode = defualt_end_episode
+        end_episode = default_end_episode
     else:
         end_episode = int(end_episode)
 

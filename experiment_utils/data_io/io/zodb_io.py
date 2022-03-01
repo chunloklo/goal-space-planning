@@ -8,6 +8,7 @@ from BTrees import OOBTree
 import transaction
 from ZODB.blob import Blob, is_blob_record
 import gc
+import pickle
 
 zodb_connection = None
 

@@ -9,8 +9,8 @@ import numpy as np
 # get_configuration_list function is required for 
 def get_configuration_list():
     parameter_dict = {
-        # Determiens which folder the experiment gets saved in
-        "experiment_name": ["tmaze_test_sweep"],
+        # Determines which folder the experiment gets saved in
+        "db_folder": ["tmaze_test_sweep"],
         'run_path': ['src/run_experiment.py'],
 
         # Environment/Experiment

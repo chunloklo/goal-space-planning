@@ -8,7 +8,7 @@ import numpy as np
 # get_configuration_list function is required for 
 def get_configuration_list():
     parameter_dict = {
-        "experiment_name": ["extended_grazingworld_sweep"],
+        "db_folder": ["extended_grazingworld_sweep"],
         "agent": ["DynaOptions_Tab"],
         "problem": ["GrazingWorldAdam"],
         "reward_schedule": ["cyclic"],

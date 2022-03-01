@@ -33,31 +33,35 @@ from analysis.common import load_data
 import matplotlib
 from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_text_location, prompt_user_for_file_name, get_file_name, scale_value, _plot_init, prompt_episode_display_range
 
-def create_goal_value_plot(config):
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    data = load_data(config, 'goal_values')
-
-    ax.plot(data, label=range(6))
-    
-
+def create_plot(data):
     plt.legend()
-    plt.title('goal values')
+    plt.title('goal r')
 
-    # ax.set_xlim([600, 1200])
+    fig, axes = plt.subplots(2, 3, figsize=(32, 16))
+    # print(axes)
+    axes = axes.flatten()
 
+    num_goals = 6
+    for g in range(num_goals):
+        axes[g].plot(data[:, g, :], label=list(range(num_goals)))
+        axes[g].set_title(g)
+        axes[g].legend()
+
+
+     # ax.set_xlim([600, 1200])
+
+    
     # Getting file name
-    save_file = get_file_name('./plots/', f'goal_values', 'png', timestamp=True)
-
+    save_file = get_file_name('./plots/', f'goal_r', 'png', timestamp=True)
 
     # print(f'Plot will be saved in {save_file}')
     plt.savefig(f'{save_file}', dpi = 300)
 
 if __name__ == "__main__":
-
-    # Parsing arguments
     parameter_path = 'experiments/chunlok/env_hmaze/GSP_test.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
-    create_goal_value_plot(parameter_list[0])
+    data = load_data(parameter_list[0], 'goal_r')
+
+    create_plot(data)
     exit()

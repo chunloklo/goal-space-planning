@@ -7,7 +7,7 @@ from sweep_configs.generate_configs import get_sorted_configuration_list_from_di
 # get_configuration_list function is required for 
 def get_configuration_list():
     parameter_dict = {
-        "experiment_name": ["grazingworld_sweep"],
+        "db_folder": ["grazingworld_sweep"],
         "agent": ["Dyna_Tab"],
         "problem": ["GrazingWorldAdam"],
         "reward_schedule": ["goal2_switch"],

@@ -9,7 +9,7 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["pretrain_model"],
+        "db_folder": ["pretrain_model"],
         # Environment/Experiment
         "problem": ["GrazingWorldAdam"],
         "reward_schedule": ["zero_debug"],

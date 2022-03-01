@@ -1,6 +1,5 @@
 import os
 import sys
-
 sys.path.append(os.getcwd())
 
 from genericpath import isdir
@@ -11,7 +10,12 @@ from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 from matplotlib import cm
 from matplotlib.animation import FuncAnimation
+import matplotlib
 
+
+from src.analysis.learning_curve import plotBest
+from src.experiment import ExperimentModel
+from PyExpUtils.utils.arrays import first
 from tqdm import tqdm
 
 # Mass taking imports from process_data for now
@@ -24,84 +28,89 @@ from src.utils.formatting import create_file_name, create_folder
 from src.utils import analysis_utils
 from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_text_location, prompt_user_for_file_name, get_action_offset, scale_value, _plot_init, prompt_episode_display_range
 from src.analysis.plot_utils import get_x_range
-from src.environments.HMaze import HMaze
-
+import argparse
+import importlib.util
+from src.utils import run_utils
+from collections.abc import Iterable
 from experiment_utils.sweep_configs.common import get_configuration_list_from_file_path
 from src.analysis.plot_utils import load_configuration_list_data
-from analysis.common import get_best_grouped_param, load_reward_rate, load_max_reward_rate
+from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate
 from  experiment_utils.analysis_common.configs import group_configs
-from src.utils import run_utils
-from analysis.common import load_data
-import matplotlib
 
-def generatePlot(json_handle):
+COLUMN_MAX = 15
+ROW_MAX = 15
+
+def generatePlot(data):
+
     # print("backend", plt.rcParams["backend"])
     # For now, we can't use the default MacOSX backend since it will give me terrible corruptions
     matplotlib.use("TkAgg")
 
+    # Processing data here so the dimensions are correct
+    # data = np.array(data)
+    # print(data.shape)
+    # print(data)
+    # data = data[0, :, :, :]
+    # data = np.mean(data, axis=0)
+    print(data.shape)
 
     # Getting file name
-    save_file = prompt_user_for_file_name('./visualizations/', 'action_values_', '', 'mp4', timestamp=True)
+    save_file = prompt_user_for_file_name('./visualizations/', 'state_space_', '', 'mov', timestamp=True)
+    # print(f'Plot will be saved in {anim_file_name}')
 
     print(f'Visualization will be saved in {save_file}')
     # Getting episode range
     start_frame, max_frame, interval = prompt_episode_display_range(0, data.shape[0], max(data.shape[0] // 100, 1))
-
-    env = HMaze(0)
-    tab_feature = env.get_tabular_feature()
 
     fig, axes = plt.subplots(1, figsize=(16, 16))
     ax = axes
 
     colormap = cm.get_cmap('viridis')
 
-    texts, patches = _plot_init(ax, columns = env.size, rows = env.size)
+    texts, patches = _plot_init(ax, columns = COLUMN_MAX, rows = ROW_MAX, center_arrows=False)
     
+    wall_indices = [12, 14, 24, 25, 26, 30, 32, 42, 43, 44 ]
 
-    min_val = np.min(data)
-    max_val = np.max(data)
+    min_val = np.min(np.delete(data[start_frame:max_frame], wall_indices, axis=1))
+    max_val = np.max(data[start_frame:max_frame])
     print(f'min: {min_val} max: {max_val}')
 
     frames = range(start_frame, max_frame, interval)
-    x_range = list(get_x_range(0, data.shape[0], 1))
+
+    x_range = list(get_x_range(0, data.shape[0], 10))
 
     print(f'Creating video from episode {start_frame} to episode {max_frame} at interval {interval}')
     pbar = tqdm(total=max_frame - start_frame)
 
+    # return [*flatten(texts), *flatten(patches), *flatten(arrows), *flatten(texts_options), *flatten(patches_options)]
     def draw_func(i):
         pbar.update(i - start_frame - pbar.n)
-        frame_data = data[i]
+        q_values = data[i, :]
+        # print(q_values)
 
-        # print(frame_data.shape)
 
+        ax.set_title(f"step: {x_range[i]}")
 
-        ax.set_title(f"episode: {x_range[i]}")
+        NUM_FACTOR = 1
 
-        for r in range(env.size):
-            for c in range(env.size):
-                try:
-                    state_index = tab_feature.encode((r, c))
-                    # q_value = q_values[index, :]
+        for r in range(ROW_MAX):
+            for c in range(COLUMN_MAX):
+                q_value = [q_values[r * COLUMN_MAX + c]] * 4
+                action = np.argmax(q_value)
+                arrow_magnitude = 0.0625
+                width = 0.025
+                center = [0.5 + c, 0.5 + r]
+                offset = get_action_offset(arrow_magnitude)
+                for a in range(4):
+                    scaled_value = scale_value(q_value[a], min_val, max_val, post_process_func=lambda x: x)
+                    patches[r][c][a].set_facecolor(colormap(scaled_value))
+                    # colors = ["red", "green", "blue", "orange"]
+                    # patches[i][j][a].set_facecolor(colors[a])
+                    texts[r][c][a].set_text(round(q_value[a] * NUM_FACTOR, 2))
 
-                    state_data = frame_data[state_index]
-                    # print(state_data)
-                    # q_value = q_values[index, option][[119, 120, 121]]
+        return
 
-                    # _, states = np.nonzero(q_value)
-                    # for s in states:
-                    #     nonzero_states.add(s)
-                    # print(np.nonzero(q_value))
-
-                    for a in range(4):
-                        scaled_value = scale_value(state_data[a], min_val, max_val, post_process_func=lambda x: x)
-                        patches[r][c][a].set_facecolor(colormap(scaled_value))
-                        # colors = ["red", "green", "blue", "orange"]
-                        # patches[i][j][a].set_facecolor(colors[a])
-                        texts[r][c][a].set_text(round(state_data[a], 2))
-                except KeyError as e:
-                    pass
-
-    animation = FuncAnimation(fig, draw_func, frames=frames)
+    animation = FuncAnimation(fig, draw_func, frames=frames, blit=False)
     animation.save(save_file)
     pbar.close()
     # plt.show()
@@ -132,15 +141,15 @@ def load_experiment_data(json_handle, load_keys: list = None):
 
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/chunlok/env_hmaze/GSP_test.py'
+    parameter_path = 'experiments/chunlok/env_tmaze/skip.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
+    # data = run_utils.load_data(best_group[1][0])
 
-
-    data = load_data(parameter_list[0], 'Q')
-
+    data = load_data(parameter_list[0], 'skip_probability_weights')
+    data = 1/(1 + np.exp(-data))
     print(data.shape)
-
+    # data = run_utils.load_data(parameter_list[0])
     generatePlot(data)
 
     exit()

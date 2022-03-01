@@ -92,12 +92,11 @@ class HMaze(BaseEnvironment):
                 max_reward_rate = np.max(goal_reward_rates)
                 globals.collector.collect('max_reward_rate', max_reward_rate) 
 
-        if terminal:
-            for goal in self.goals:
-                if goal["position"]==tuple(s):
-                    return goal["schedule"]()
-        else:
-            return self.step_penalty
+        for goal in self.goals:
+            if goal["position"]==tuple(s):
+                return goal["schedule"]()
+        
+        return self.step_penalty
 
     # get the next state and termination status
     def next_state(self, s, a):
@@ -112,7 +111,7 @@ class HMaze(BaseEnvironment):
         self.num_steps += 1
         s = self.current_state
         sp, t = self.next_state(s, self.action_encoding[a])
-        r = self.rewards(s, t)
+        r = self.rewards(sp, t)
         return (r, sp, t)
 
     def _limit_coordinates(self, s, a):
@@ -133,6 +132,74 @@ class HMaze(BaseEnvironment):
             coord = s
             # print('hit a wall!')
         return coord
+
+    def get_goals_and_policies(self):
+        tab_feature = self.get_tabular_feature()
+
+        goals = [tab_feature.encode(s) for s in [(0, 0), 
+            (0, self.size - 1), 
+            (self.size // 2, 0), 
+            (self.size - 1, 0), 
+            (self.size - 1, self.size - 1), 
+            (self.size // 2, self.size - 1)]]
+        goal_0_policy = {}
+        goal_1_policy = {}
+        goal_2_policy = {}
+        goal_3_policy = {}
+        goal_4_policy = {}
+        goal_5_policy = {}
+
+        for r in range(self.size):
+            for c in range(self.size):
+                if (r, c) not in self.valid_grids:
+                    continue
+                # GOAL 0: (0, 0)
+                # print(self.size // 2)
+                # asda
+                if r <= self.size // 2 and c == 0:
+                    goal_0_policy[tab_feature.encode((r, c))] = UP
+                else:
+                    goal_0_policy[tab_feature.encode((r, c))] = None
+
+                # GOAL 1: (0, self.size - 1)
+                if r <= self.size // 2 and c == self.size - 1:
+                    goal_1_policy[tab_feature.encode((r, c))] = UP
+                else:
+                    goal_1_policy[tab_feature.encode((r, c))] = None
+
+                # GOAL 2: (self.size // 2, 0)
+                if c == 0 and r <= self.size // 2:
+                    goal_2_policy[tab_feature.encode((r, c))] = DOWN
+                elif c == 0 and r > self.size // 2:
+                    goal_2_policy[tab_feature.encode((r, c))] = UP
+                elif r == self.size // 2:
+                    goal_2_policy[tab_feature.encode((r, c))] = LEFT
+                else:
+                    goal_2_policy[tab_feature.encode((r, c))] = None
+
+                # GOAL 3: (self.size - 1, 0)
+                if r >= self.size // 2 and c == 0:
+                    goal_3_policy[tab_feature.encode((r, c))] = DOWN
+                else:
+                    goal_3_policy[tab_feature.encode((r, c))] = None
+                
+                # GOAL 4: (self.size - 1, self.size - 1)
+                if r >= self.size // 2 and c == self.size - 1:
+                    goal_4_policy[tab_feature.encode((r, c))] = DOWN
+                else:
+                    goal_4_policy[tab_feature.encode((r, c))] = None
+
+                # GOAL 5: (self.size // 2, self.size - 1)
+                if c == self.size - 1 and r <= self.size // 2:
+                    goal_5_policy[tab_feature.encode((r, c))] = DOWN
+                elif c == self.size - 1 and r > self.size // 2:
+                    goal_5_policy[tab_feature.encode((r, c))] = UP
+                elif r == self.size // 2:
+                    goal_5_policy[tab_feature.encode((r, c))] = RIGHT
+                else:
+                    goal_5_policy[tab_feature.encode((r, c))] = None
+
+        return goals, [goal_0_policy, goal_1_policy, goal_2_policy, goal_3_policy, goal_4_policy, goal_5_policy]
 
     def get_options(self):
 

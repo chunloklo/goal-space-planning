@@ -7,7 +7,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 # get_configuration_list function is required for 
 def get_configuration_list():
     parameter_dict = {
-        "experiment_name": ["option_planning"],
+        "db_folder": ["option_planning"],
         "agent": ["OptionPlanning_Tab"],
         "problem": ["HMaze"],
         "episodes": [0],

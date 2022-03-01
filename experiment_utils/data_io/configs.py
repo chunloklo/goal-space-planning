@@ -5,16 +5,18 @@ import json
 import hashlib
 from .io.zodb_io import BatchDBAccess, check_config_exists, db_exists, save_config_and_data_zodb, load_data_config_from_id, open_db, close_db, DB_FOLDER, DB_CONFIGS_KEY
 
+DEFAULT_DB_FOLDER_KEY = 'db_folder'
+
 def hash_string(name):
     return hashlib.sha256(name.encode()).hexdigest()
 
-def get_folder_and_config_hash(config: dict, sub_folder = 'results', folder_keys=['experiment_name']):
+def get_folder_and_config_hash(config: dict, sub_folder = 'results', folder_keys=[DEFAULT_DB_FOLDER_KEY]):
     """Returns the folder and hash of the config for saving data
 
     Args:
         config (dict): Configuration of the data that you want to save
         sub_folder (str, optional): Subfolder you want to save your results in. Defaults to 'results'.
-        folder_keys (list, optional): Additional subfolders that you want to subdivide your results by. Note that this will also remove the key from the dict when hashing. Defaults to ['experiment_name'].
+        folder_keys (list, optional): Additional subfolders that you want to subdivide your results by. Note that this will also remove the key from the dict when hashing. Defaults to [DEFAULT_DB_FOLDER_KEY].
 
     Returns:
         [type]: [description]
@@ -23,12 +25,12 @@ def get_folder_and_config_hash(config: dict, sub_folder = 'results', folder_keys
     config_hash = get_config_hash(config, folder_keys)
     return folder, config_hash
 
-def get_config_hash(config: dict, folder_keys=['experiment_name']):
+def get_config_hash(config: dict, folder_keys=[DEFAULT_DB_FOLDER_KEY]):
     """Returns the hash of the config for saving data
 
     Args:
         config (dict): Configuration of the data that you want to save
-        folder_keys (list, optional): Additional subfolders that you want to subdivide your results by. Note that this will also remove the key from the dict when hashing. Defaults to ['experiment_name'].
+        folder_keys (list, optional): Additional subfolders that you want to subdivide your results by. Note that this will also remove the key from the dict when hashing. Defaults to [DEFAULT_DB_FOLDER_KEY].
 
     Returns:
         [str]: hash for the config
@@ -40,7 +42,7 @@ def get_config_hash(config: dict, folder_keys=['experiment_name']):
     file_str = json.dumps(config, sort_keys=True, default=str)
     return hash_string(file_str)
 
-def get_folder_name(config: dict, sub_folder = 'results', folder_keys=['experiment_name']):
+def get_folder_name(config: dict, sub_folder = 'results', folder_keys=[DEFAULT_DB_FOLDER_KEY]):
     folder = '/'.join([config[folder_key] for folder_key in folder_keys])
     folder = f"{os.getcwd()}/{sub_folder}/{folder}/"
     return folder

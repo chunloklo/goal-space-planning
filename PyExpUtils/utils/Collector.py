@@ -2,7 +2,6 @@ from PyExpUtils.utils.permute import Record
 from typing import Any, Callable, Dict, List, cast
 import numpy as np
 from PyExpUtils.utils.arrays import last, fillRest_
-
 class Collector:
     def __init__(self):
         self.run_data: Record = {}
@@ -77,3 +76,19 @@ class Collector:
         stderr: float = cast(float, np.std(arr, axis=0, ddof=1)) / np.sqrt(runs)
 
         return (mean, stderr, runs)
+
+class FilteredCollector(Collector):
+    def __init__(self, save_keys: list):
+        """Collector where non-saved keys are filtered
+
+        Args:
+            save_keys (list): A list of keys to save. Other keys are filtered
+        """
+
+        super().__init__()
+        self.save_keys = save_keys
+    
+    def collect(self, name: str, value: Any):
+        if name in self.save_keys:
+            super().collect(name, value)
+        # Ignore if not set to save

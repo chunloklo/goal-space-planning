@@ -7,16 +7,15 @@ import logging
 from RlGlue import RlGlue
 from src.experiment import ExperimentModel
 from src.problems.registry import getProblem
-from PyExpUtils.utils.Collector import Collector
+from PyExpUtils.utils.Collector import Collector, FilteredCollector
 from src.utils.rlglue import OneStepWrapper, OptionOneStepWrapper
 from src.utils import rlglue
 from src.utils.run_utils import InvalidRunException, save_error
 import tqdm
 from src.utils import globals
-
 from experiment_utils.data_io.configs import save_data_zodb
-
 from src.utils.param_utils import parse_param
+import pickle
 
 def run(param: dict, aux_config={}):
 
@@ -46,7 +45,6 @@ def run(param: dict, aux_config={}):
     episodes = parse_param(param, 'episodes', lambda p: p >= 0, default=0, optional=True)
     seed = parse_param(param, 'seed', lambda p: isinstance(p, int), default=-1, optional=True)
 
-    globals.collector = Collector()
     globals.param = param
 
     np.random.seed(seed)
@@ -103,6 +101,8 @@ def run(param: dict, aux_config={}):
     # Overriding logger keys from aux config if it exists:
     if 'log_keys' in param:
         save_logger_keys = param['log_keys']
+        
+    globals.collector = FilteredCollector(save_logger_keys)
 
     step_logging_interval = param['step_logging_interval']
 
@@ -157,6 +157,12 @@ def run(param: dict, aux_config={}):
         save_obj[k] = globals.collector.all_data[k]
     
     save_data_zodb(param, save_obj)
+
+
+    # Saving HMaze data here for the agent:
+    # pickle.dump(agent.state_estimate_learner, open('./src/environments/data/HMaze/state_estimate_learner.pkl', 'wb'))
+    # pickle.dump(agent.goal_estimate_learner, open('./src/environments/data/HMaze/goal_estimate_learner.pkl', 'wb'))
+    # pickle.dump(agent.goal_value_learner, open('./src/environments/data/HMaze/goal_value_learner.pkl', 'wb'))
     
     logging.info(f"Experiment Done {param} : {idx}, Time Taken : {time.time() - t_start}")
     return

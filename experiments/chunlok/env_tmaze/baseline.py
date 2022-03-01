@@ -9,7 +9,7 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["tmaze_test"],
+        "db_folder": ["tmaze_test"],
         'run_path': ['src/run_experiment.py'],
 
         # Environment/Experiment

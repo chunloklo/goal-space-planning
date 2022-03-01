@@ -9,7 +9,7 @@ import numpy as np
 def get_configuration_list():
     parameter_dict = {
         # Determiens which folder the experiment gets saved in
-        "experiment_name": ["tmaze_test_sweep"],
+        "db_folder": ["tmaze_test_sweep"],
         # Environment/Experiment
         "problem": ["TMaze"],
         "episodes": [0],
