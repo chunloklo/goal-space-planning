@@ -29,7 +29,6 @@ class Dyna_Tab:
         self.params = problem.params
         self.num_states = self.env.nS
         self.random = np.random.RandomState(problem.seed)
-
         self.options = problem.options
         self.num_options = len(problem.options)
 
@@ -75,7 +74,8 @@ class Dyna_Tab:
                 self.action_model.update(self.representation.encode(t[0]), t[1], self.representation.encode(t[2]), t[3], t[4], 1)
         
         self.goals = problem.get_goals()
-        self.goals = [self.representation.encode(goal) for goal in self.goals]
+        # Commenting this line out for now for the HMaze. We need this line for the GrazingWorld
+        # self.goals = [self.representation.encode(goal) for goal in self.goals]
         self.tau = np.zeros(len(self.goals))
 
         # Learning the goal rewards directly
@@ -170,6 +170,7 @@ class Dyna_Tab:
 
         if not terminal:
             ap = self.selectAction(sp)
+            # print(f'sp: {sp} {self.behaviour_learner.get_action_values(xp)} ap: {ap} exploring: {globals.blackboard["in_exploration_phase"]}')
         else:
             ap = None
 

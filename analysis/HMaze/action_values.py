@@ -132,7 +132,7 @@ def load_experiment_data(json_handle, load_keys: list = None):
 
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/chunlok/env_hmaze/GSP_test.py'
+    parameter_path = 'experiments/chunlok/env_hmaze/dyna.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
 

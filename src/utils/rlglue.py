@@ -57,7 +57,7 @@ class OneStepWrapper(BaseAgent):
         return reward
 
     def _update_exploration_phase(self):
-        if self.num_episodes_passed < self.exploration_phase:
+        if self.num_steps_passed < self.exploration_phase:
             globals.blackboard['in_exploration_phase'] = True
         else:
             globals.blackboard['in_exploration_phase'] = False
@@ -66,7 +66,6 @@ class OneStepWrapper(BaseAgent):
 
 
         r = self.no_reward_if_exploring(r)
-
         ap = self.agent.update(self.s, self.a, sp, r, self.gamma)
 
         ap = self.random_action_if_exploring(ap, use_option_action_pair = False)

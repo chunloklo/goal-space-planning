@@ -39,6 +39,8 @@ class GSP_Tab:
         self.step_size = param_utils.parse_param(params, 'step_size', lambda p: isinstance(p, float))
         self.epsilon = param_utils.parse_param(params, 'epsilon', lambda p: p >= 0 and p <= 1)
         self.kappa = param_utils.parse_param(params, 'kappa', lambda p: p >=0)
+        self.oci_steps = param_utils.parse_param(params, 'oci_steps', lambda p: isinstance(p, int) and p >= 0)
+        self.use_direct_rl = param_utils.parse_param(params, 'use_direct_rl', lambda p: isinstance(p, bool), optional=True, default=True)
 
         self.behaviour_learner = QLearner(self.num_states + 1, self.num_actions)
     
@@ -102,10 +104,6 @@ class GSP_Tab:
         # Treating the terminal state as an additional state in the tabular setting
         xp = self.representation.encode(sp) if not terminal else self.num_states
 
-        # print(self.representation.encode((8, 1)))
-        # print(self.env.valid_grids)
-        # print(self.representation.encode_map)
-
 
         # Exploration bonus
         if not globals.blackboard['in_exploration_phase']:
@@ -116,7 +114,9 @@ class GSP_Tab:
         self.search_control.update(x, xp)
 
         # Direct RL Update
-        self.behaviour_learner.update(x, a, xp, r, gamma, self.step_size)
+        if self.use_direct_rl:
+            # print('using Direct')
+            self.behaviour_learner.update(x, a, xp, r, gamma, self.step_size)
 
         self._update_state_estimates(x, a, xp, r, gamma)
         self._map_goal_to_state_estimates(x, a, xp, r, gamma)
@@ -125,6 +125,8 @@ class GSP_Tab:
 
         if not terminal:
             ap = self.selectAction(sp)
+            # print(f'sp: {sp} {self.behaviour_learner.get_action_values(xp)} ap: {ap} exploring: {globals.blackboard["in_exploration_phase"]}')
+
         else:
             ap = None
 
@@ -135,6 +137,9 @@ class GSP_Tab:
             globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
             self.cumulative_reward = 0
         run_if_should_log(log)
+
+        # if r == 1 or r == -1:
+        #     print(f'termianted {s} {r}')
 
         return ap
 
@@ -152,7 +157,8 @@ class GSP_Tab:
     def _update_state_estimates(self, x, a, xp, r, gamma):
         option_pi_xp = np.zeros((self.num_goals, self.num_actions))
         x_option_gamma = np.zeros(self.num_goals)
-        valid_goal = np.full(self.num_goals, False)
+        valid_goal_x = np.full(self.num_goals, False)
+        valid_goal_xp = np.full(self.num_goals, False)     
         
         # For now, hard coding termination for when you arrive at the goal state
         # when following the option for that goal
@@ -163,11 +169,14 @@ class GSP_Tab:
                 option_pi_xp[g, action] = 1
                 
             if x_action is not None:
-                valid_goal[g] = True
+                valid_goal_x[g] = True
+            
+            if action is not None:
+                valid_goal_xp[g] = True
 
             x_option_gamma[g] = (1 - term)
 
-        self.state_estimate_learner.update(x, a, xp, r, gamma, option_pi_xp, x_option_gamma, self.step_size, valid_goal)
+        self.state_estimate_learner.update(x, a, xp, r, gamma, option_pi_xp, x_option_gamma, self.step_size, valid_goal_x, valid_goal_xp)
         pass
 
     def _map_goal_to_state_estimates(self, x, a, xp, r, gamma):
@@ -176,62 +185,47 @@ class GSP_Tab:
             action, term = self._get_goal_policy_term(x, g)
             if action is not None:
                 option_pi_x[g, action] = 1
-    
+
         self.goal_estimate_learner.update(x, option_pi_x, self.state_estimate_learner.r[x], self.state_estimate_learner.gamma[x], self.step_size, r, xp, self.goal_func)
 
     def _improve_goal_values(self):
         goal_reward = self.goal_estimate_learner.r
-        goal_reward = (goal_reward + self.kappa * np.sqrt(self.tau))
-        # print(goal_reward)
-        # goal_reward = goal_reward.T
-        # print(goal_reward)
-        self.goal_value_learner.update(self.goal_estimate_learner.gamma, goal_reward, self.goal_estimate_learner.goal_r, globals.param['gamma'])
+        goal_bonus =  self.kappa * np.sqrt(self.tau)
+        self.goal_value_learner.update(self.goal_estimate_learner.gamma, goal_reward, self.goal_estimate_learner.goal_r, globals.param['gamma'], goal_bonus)
     
-    def _option_constrained_improvement(self, x, xp,):
+    def _option_constrained_improvement(self, x, xp):
         goal_values = self.goal_value_learner.goal_values
         goal_reward = self.state_estimate_learner.r
         goal_enter_reward = self.goal_estimate_learner.goal_r
-        goal_enter_reward = (goal_enter_reward + self.kappa * np.sqrt(self.tau))
+
+        goal_bonus =  self.kappa * np.sqrt(self.tau)
+
+        # print(goal_bonus)
+        # print(goal_enter_reward)
+        # print(self.goal_estimate_learner.goal_r)
+
         goal_gamma = self.state_estimate_learner.gamma
+        valid_action_value = self.state_estimate_learner.valid_action_value
 
         # Plan with only the current state for now. Only need 1 sample
-        for _x in self.search_control.sample_states(1, self.history_dict, x, xp):
-
-                # returns = reward_goals[g] + goal_gamma[g] / gamma * goal_r + goal_gamma[g] * self.goal_values
-                # valid_goals = np.nonzero(goal_gamma[g])
-
-                # if len(valid_goals[0]) > 0:
-                #     self.goal_values[g] = np.max(returns[valid_goals[0]])
-                    
-
+        for _x in self.search_control.sample_states(self.oci_steps, self.history_dict, x, xp):
             # Small hack here to get a factor of gamma off the gamma
-            option_values = goal_reward[_x] + goal_gamma[_x] /  globals.param['gamma']  * goal_enter_reward  + goal_gamma[_x] * goal_values
+            option_q_values = goal_reward[_x] + goal_gamma[_x] /  globals.param['gamma']  * goal_enter_reward  + goal_gamma[_x] * (goal_values + goal_bonus)
 
-            # print(option_values.shape)
-            # print(goal_gamma[_x].shape)
-            invalid_indices = np.where(goal_gamma[_x] == 0)
-            option_values[invalid_indices] = -np.inf
+            unreachable_indices = np.where(goal_gamma[_x] == 0)
+            invalid_action_value_indices = np.where(valid_action_value[_x] == False)
+            # if len(invalid_action_value_indices[0]) > 0:
+            #     print(x)
+            #     print(invalid_action_value_indices)
 
-            best_option_values = np.max(option_values, axis=1)
+            option_q_values[unreachable_indices] = -np.inf
+            option_q_values[invalid_action_value_indices] = -np.inf
 
-            # print(best_option_values)
-
+            best_option_values = np.max(option_q_values, axis=1)
+            
             for a in range(self.num_actions):
                 if best_option_values[a] != -np.inf:
                     self.behaviour_learner.Q[_x, a] += self.step_size * (best_option_values[a] - self.behaviour_learner.Q[_x, a])
-                    # print(_x)
-
-            # for a in range(self.num_actions):
-
-            #     # If there are valid goals
-            #     if len(np.nonzero(goal_gamma[_x][a])[0]) > 0: 
-                    
-  
-            #         # print(option_values)
-            #         best_option_values = np.max(option_values)
-            #         # print(best_option_values)
-                    
-                    # self.behaviour_learner.Q[_x, a] += self.step_size * (best_option_values - self.behaviour_learner.Q[_x, a])
 
     def agent_end(self, s, a, r, gamma):
         self.update(s, a, None, r, gamma, terminal=True)
@@ -249,19 +243,25 @@ class ESARSAStateEstimates:
         # initializing weights
         self.r = np.zeros((self.num_states, self.num_actions, self.num_goals))
         self.gamma = np.zeros((self.num_states, self.num_actions, self.num_goals))
+
+        self.valid_action_value = np.full((self.num_states, self.num_actions, self.num_goals), True)
     
-    def update(self, x, a, xp, r, gamma, option_pi_xp, option_gamma, alpha, valid_state_for_goal):
+    def update(self, x, a, xp, r, gamma, option_pi_xp, option_gamma, alpha, valid_state_for_goal_x, valid_state_for_goal_xp):
         for g in range(self.num_goals):
             # Check for in the start state distribution
-            if valid_state_for_goal[g]:
+            if valid_state_for_goal_xp[g]:
                 
+
                 # Getting full
                 # self.r[x, a, g] += alpha * (r + gamma * option_gamma[g] * np.sum(option_pi_xp[g] * self.r[xp, :, g]) - self.r[x, a, g])
                 if option_gamma[g] != 0:
                     self.r[x, a, g] += alpha * (r + gamma * option_gamma[g] * np.sum(option_pi_xp[g] * self.r[xp, :, g]) - self.r[x, a, g])
                 else:
                     self.r[x, a, g] += alpha * (0 - self.r[x, a, g])
+
                 self.gamma[x, a, g] += alpha * (gamma * (1 - option_gamma[g]) + gamma * option_gamma[g] * np.sum(option_pi_xp[g] * self.gamma[xp, :, g]) - self.gamma[x, a, g])
+            else:
+                self.valid_action_value[x, a, g] = False 
 
         def log():
             globals.collector.collect('state_r', np.copy(self.r))
@@ -283,7 +283,12 @@ class GoalEstimates:
 
         for g in range(self.num_goals):
             if x_on_goals[g] == 1: 
-                self.r[g] += alpha * (np.sum(option_pi_x * r_s.T, axis=1)- self.r[g])
+                # if g == 2:
+                    # print(gamma_s)
+                # Adding exploration bonus here
+                self.r[g] += alpha * (np.sum(option_pi_x * r_s.T, axis=1) - self.r[g])
+
+
                 self.gamma[g] += alpha * (np.sum(option_pi_x * gamma_s.T, axis=1)- self.gamma[g])
             
             if xp_on_goal[g] == 1:
@@ -292,6 +297,7 @@ class GoalEstimates:
         def log():
             globals.collector.collect('goal_r', np.copy(self.r))
             globals.collector.collect('goal_gamma', np.copy(self.gamma))
+            globals.collector.collect('goal_enter_r', np.copy(self.goal_r))
         run_if_should_log(log)
 
 class GoalValueLearner:
@@ -301,16 +307,32 @@ class GoalValueLearner:
         # Initializing goal values
         self.goal_values = np.zeros(self.num_goals)
     
-    def update(self, goal_gamma, reward_goals, goal_r, gamma):
-        num_planning_steps = 2
+    def update(self, goal_gamma, reward_goals, goal_r, gamma, goal_bonus):
+        num_planning_steps = 1
+        # print(goal_bonus)
+        # print(goal_r)
+        # print(goal_r)
+        # print(goal_bonus)
+        # goal_r = np.copy(goal_r)
+        # goal_r += goal_bonus
+        # print(goal_bonus)
+        # print(goal_r)
+
         for _ in range(num_planning_steps):
             # Just doing value iteration for now 
 
             # Can we possibly vectorize this?
             for g in range(self.num_goals):
                 # Dividing by gamma as a hacky way of getting gamma for step - 1
-                returns = reward_goals[g] + goal_gamma[g] / gamma * goal_r + goal_gamma[g] * self.goal_values
-                valid_goals = np.nonzero(goal_gamma[g])
+                returns = reward_goals[g] + goal_gamma[g] / gamma * goal_r + goal_gamma[g] * (self.goal_values + goal_bonus)
+
+                # I think I need a better map here.
+                goal_gamma_valid = np.copy(goal_gamma[g])
+                # if g == 2:
+                    # print(goal_gamma_valid)
+                goal_gamma_valid[g] = 0
+
+                valid_goals = np.nonzero(goal_gamma_valid)
 
                 if len(valid_goals[0]) > 0:
                     self.goal_values[g] = np.max(returns[valid_goals[0]])

@@ -29,24 +29,46 @@ class HMaze(BaseEnvironment):
         self.goals = [
             {
                 "position" : (0,0), # Top left
-                "schedule": CyclingRewardSchedule([1.0, -1.0, -1.0, -1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
+                "schedule": CyclingRewardSchedule([1.0, -1.0, -1.0, -1.0], self.reward_sequence_length, cycle_offset=initial_learning, cycle_type='step'),
             },
             {
                 "position" : (self.size - 1, 0), # Bottom left
-                "schedule": CyclingRewardSchedule([-1.0, -1.0, -1.0, 1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
+                "schedule": CyclingRewardSchedule([-1.0, -1.0, -1.0, 1.0], self.reward_sequence_length, cycle_offset=initial_learning, cycle_type='step'),
             },
             {
                 "position" : (0, self.size - 1), # Top right
-                "schedule": CyclingRewardSchedule([-1.0, -1.0, 1.0, -1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
+                "schedule": CyclingRewardSchedule([-1.0, -1.0, 1.0, -1.0], self.reward_sequence_length, cycle_offset=initial_learning, cycle_type='step'),
             },
             {
                 "position" : (self.size - 1, self.size - 1), # Bottom right
-                "schedule": CyclingRewardSchedule([-1.0, 1.0, -1.0, -1.0], self.reward_sequence_length, cycle_offset=0, cycle_type='step'),
+                "schedule": CyclingRewardSchedule([-1.0, 1.0, -1.0, -1.0], self.reward_sequence_length, cycle_offset=initial_learning, cycle_type='step'),
             } 
         ]
 
+
+        # self.goals = [
+        #     {
+        #         "position" : (0,0), # Top left
+        #         "schedule": ConstantRewardSchedule(-1),
+        #     },
+        #     {
+        #         "position" : (self.size - 1, 0), # Bottom left
+        #         "schedule": ConstantRewardSchedule(-1),
+        #     },
+        #     {
+        #         "position" : (0, self.size - 1), # Top right
+        #         "schedule": ConstantRewardSchedule(1),
+        #     },
+        #     {
+        #         "position" : (self.size - 1, self.size - 1), # Bottom right
+        #         "schedule": ConstantRewardSchedule(-1),
+        #     } 
+        # ]
+
+
         # Takes self.size to get to goal
         self.step_to_goals = [self.size] * len(self.goals)
+        # Accounting for the last step giving 0 reward.
 
         self.action_encoding = {
             0:(-1,0),
@@ -88,7 +110,7 @@ class HMaze(BaseEnvironment):
                 goal_reward_rates = np.zeros(len(self.goals))
                 for i, goal in enumerate(self.goals):
                     num_steps = self.step_to_goals[i]
-                    goal_reward_rates[i] = (num_steps * self.step_penalty + goal["schedule"]()) / (num_steps + 1)
+                    goal_reward_rates[i] = ((num_steps - 1) * self.step_penalty + goal["schedule"]()) / (num_steps + 1)
                 max_reward_rate = np.max(goal_reward_rates)
                 globals.collector.collect('max_reward_rate', max_reward_rate) 
 
@@ -96,6 +118,9 @@ class HMaze(BaseEnvironment):
             if goal["position"]==tuple(s):
                 return goal["schedule"]()
         
+        if terminal:
+            return 0
+            
         return self.step_penalty
 
     # get the next state and termination status

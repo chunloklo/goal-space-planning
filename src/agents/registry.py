@@ -6,6 +6,7 @@ from src.agents.Direct_Tab import Direct_Tab
 from src.agents.OptionPlanning_Tab import OptionPlanning_Tab
 from src.agents.DynaOptions_NN import DynaOptions_NN
 from src.agents.GSP_Tab import GSP_Tab
+from src.agents.Dyna_NN import Dyna_NN
 
 def getAgent(name):
     if name == 'DynaOptions_Tab':
@@ -22,5 +23,7 @@ def getAgent(name):
         return DynaOptions_NN
     elif name == 'GSP_Tab':
         return GSP_Tab
+    elif name == 'Dyna_NN':
+        return Dyna_NN
     else:
         raise NotImplementedError()

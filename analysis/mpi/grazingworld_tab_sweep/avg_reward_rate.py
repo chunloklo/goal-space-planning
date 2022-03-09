@@ -66,11 +66,11 @@ def plot_best_reward_rate(ax, param_file_name: str, label: str = None):
     
     data = np.array(load_configuration_list_data(best_group[1], load_reward_rate))
 
-    print(data.shape)
+    # print(data.shape)
 
-    # Accumulating
-    for i in range(1, data.shape[1]):
-        data[:, i] = data[:, i] + data[:, i - 1]
+    # # Accumulating
+    # for i in range(1, data.shape[1]):
+    #     data[:, i] = data[:, i] + data[:, i - 1]
 
 
     mean, std = get_mean_stderr(data)
@@ -144,9 +144,9 @@ if __name__ == "__main__":
     # for obj in files:
     #     plot_best_reward_rate(ax, folder + obj['file'])
 
-    plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/baseline.py')
-    plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/base_q.py')
-    plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/skip.py')
+    # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/baseline.py')
+    # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/base_q.py')
+    # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze_sweep/skip.py')
     # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_optimal.py')
     # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_opt_option_learn_skip.py')
     # plot_best_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_opt_option.py')
@@ -162,13 +162,22 @@ if __name__ == "__main__":
     # plot_max_reward_rate(ax, 'experiments/chunlok/graze_learn/dyna_64.py')
     # plot_best_reward_rate(ax, 'experiments/chunlok/graze_learn/dyna_64.py')
 
+    plot_max_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/GSP_test.py')
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dyna.py')
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/GSP_test.py')
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/GSP_no_direct.py')
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dynaoptions.py')
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/OCG.py')
+    plot_best_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/OCI.py')
+
 
 
     
     plt.legend()
-    plt.title('Ideal')
+    # plt.title('Ideal')
 
     # ax.set_xlim([600, 1200])
+    # ax.set_ylim([-0.04, -0.022])
 
     # Getting file name
     save_file = get_file_name('./plots/', 'reward_rate', 'png', timestamp=True)

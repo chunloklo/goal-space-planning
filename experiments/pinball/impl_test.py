@@ -8,15 +8,15 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["GSP_test"],
-        'run_path': ['src/run_experiment.py'],
+        "db_folder": ["pinball_impl_test"],
+        'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["HMaze"],
+        "problem": ["PinballProblem"],
+        'pinball_configuration_file': ['src/environments/data/pinball_simple_single.cfg.txt'],
         "episodes": [0],
         'max_steps': [8000*10],
-        "reward_sequence_length" : [8000 * 1],
-        'exploration_phase': [8000],
+        'exploration_phase': [0],
         'gamma': [0.95],
 
         # Logging
@@ -27,7 +27,7 @@ def get_configuration_list():
         "seed": [10],
         
         # Agent
-        "agent": ["GSP_Tab"],
+        "agent": ["Dyna_NN"],
         'step_size': [1.0],
         'epsilon': [0.1],
         'kappa': [0.0],

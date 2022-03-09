@@ -45,7 +45,7 @@ class DynaOptions_Tab:
         self.search_control = ActionModelSearchControl_Tabular(self.random)
         
         self.goals = problem.get_goals()
-        self.goals = [self.representation.encode(goal) for goal in self.goals]
+        # self.goals = [self.representation.encode(goal) for goal in self.goals]
         self.tau = np.zeros(len(self.goals))
 
         # Loading the pretrained model rather than learning from scratch.

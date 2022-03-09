@@ -8,7 +8,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["GSP_test"],
+        "db_folder": ["2022_03_07_small_sweep"],
         'run_path': ['src/run_experiment.py'],
         
         #Environment/Experiment
@@ -18,21 +18,29 @@ def get_configuration_list():
         "reward_sequence_length" : [8000 * 1],
         'exploration_phase': [8000],
         'gamma': [0.95],
+        'reward_schedule': [None], # Not needed in HMaze, but regardless, its here bec Dyna_Tab needs it.
 
         # Logging
-        'log_keys': [('max_reward_rate', 'reward_rate', 'state_r', 'state_gamma', 'goal_r', 'goal_gamma', 'goal_values', 'Q')],
+        'log_keys': [('max_reward_rate', 'reward_rate',)],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10],
+        "seed": [10, 11, 12, 13, 14],
         
         # Agent
-        "agent": ["GSP_Tab"],
-        'step_size': [1.0],
-        'epsilon': [0.1],
-        'kappa': [0.0],
-        'search_control': ['random'],
-        'use_pretrained_model': [False],
+        "agent": ["Dyna_Tab"],
+        "behaviour_alg": ["QLearner"],
+        'alpha': [1.0, 0.9, 0.8, 0.7],
+        "epsilon": [0.1],
+        "gamma": [1.0],
+        'kappa': [0.02],
+        "model_planning_steps": [0],
+        "no_reward_exploration": [False],
+        "option_alg": ["Background"],
+        "planning_alg": ['Standard'],
+        "planning_steps": [1],
+        "search_control": ["current"],
+        'learn_model': [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

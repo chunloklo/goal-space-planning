@@ -1,6 +1,3 @@
-from mpi4py import MPI
-from mpi4py.util import dtlib
-import numpy as np
 import argparse
 
 from common import get_configuration_list_from_file_path, get_run_function_from_file_path, add_common_args, get_aux_config_from_file_path, run_with_optional_aux_config

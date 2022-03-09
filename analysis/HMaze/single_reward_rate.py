@@ -108,8 +108,17 @@ if __name__ == "__main__":
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
     fig, ax = plt.subplots(figsize=(10, 6))
-    plot_max_reward_rate(ax, 'experiments/chunlok/env_hmaze/GSP_test.py')
-    plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/GSP_test.py')
+    plot_max_reward_rate(ax, 'experiments/chunlok/env_hmaze/GSP_no_direct.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dyna.py')
+    plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/dyna.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dynaoptions.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/OCG.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/OCI.py')
+
+
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/dynaoptions.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/OCI.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/OCG.py')
 
     plt.legend()
     # plt.title(alg_name)
