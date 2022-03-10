@@ -13,14 +13,15 @@ def get_configuration_list():
         
         #Environment/Experiment
         "problem": ["PinballProblem"],
-        'pinball_configuration_file': ['src/environments/data/pinball_simple_single.cfg.txt'],
+        'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         "episodes": [0],
-        'max_steps': [8000*10],
+        'max_steps': [8000*60],
         'exploration_phase': [0],
-        'gamma': [0.95],
+        'gamma': [0.99],
+        'render': [True],
 
         # Logging
-        'log_keys': [('max_reward_rate', 'reward_rate', 'state_r', 'state_gamma', 'goal_r', 'goal_gamma', 'goal_values', 'Q')],
+        'log_keys': [('reward_rate', 'num_steps_in_ep')],
         'step_logging_interval': [100],
 
         # Seed
@@ -32,7 +33,8 @@ def get_configuration_list():
         'epsilon': [0.1],
         'kappa': [0.0],
         'search_control': ['random'],
-        'use_pretrained_model': [False],
+        'use_pretrained_behavior': [True],
+        # 'use_pretrained_model': [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

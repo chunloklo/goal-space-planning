@@ -18,6 +18,15 @@ import jax.numpy as jnp
 from src.agents.components.buffers import Buffer, DictBuffer
 from collections import namedtuple
 from src.environments.GrazingWorldAdam import get_all_transitions
+import jax
+import haiku as hk
+import optax
+import copy
+import pickle
+import traceback
+
+
+from src.utils.log_utils import run_if_should_log
 
 if TYPE_CHECKING:
     # Important for forward reference
@@ -28,62 +37,37 @@ class Dyna_NN:
     def __init__(self, problem: 'BaseProblem'):
         self.wrapper_class = rlglue.OneStepWrapper
         self.env = problem.getEnvironment()
-        # self.image_representation: GrazingWorldAdamImageFeature = problem.get_representation('Image')
-        # self.tabular_representation: Tabular = problem.get_representation('Tabular')
-
         self.num_actions = problem.actions
         self.params = problem.params
-        # self.num_states = self.env.shape[0] * self.env.shape[1]
-        # self.options = problem.options
-        # self.num_options = len(problem.options)
         self.random = np.random.RandomState(problem.seed)
+        self.goal_termination_funcs = problem.goal_termination_funcs
+        self.goal_initiation_funcs = problem.goal_initiation_funcs
 
-        # # define parameter contract
-        params = self.params
-        # self.alpha = params['alpha']
-        # self.epsilon = params['epsilon']
-        # self.polyak_stepsize = params['polyak_stepsize']
-        # self.planning_steps = param_utils.check_valid(params['planning_steps'], lambda x: isinstance(x, int) and x > 0)
-        # # Bonus reward for exploration
-        # self.kappa = params['kappa']
-        # # The number of steps that the goal state is not visited before the kappa exploration bonus will be applied to that experience.
-        # self.kappa_interval = params['kappa_interval']
+        self.step_size = 1e-3
+        self.batch_size = 16
+        self.epsilon = 0.3
 
-        # self.behaviour_learner = QLearner_ImageNN(self.image_representation.features(), self.num_actions, self.alpha)
-        # self.batch_size = params['batch_size']
-
-        # # Replay Buffer:
-        # # self.buffer_size = 100000
-        # # self.buffer = Buffer(self.buffer_size, {'s': (2,), 'x': (8, 12, 1), 'a': (), 'xp': (8, 12, 1), 'r': (), 'gamma': ()}, self.random.randint(0,2**31))
-
-        # # self.model_planning_steps = params['model_planning_steps']
-
-        # self.priority_alpha = params['priority_alpha']
-        # self.option_value_alg = param_utils.parse_param(params, 'option_value_alg', lambda p : p in ['None', 'action_selection', 'bootstrap', 'base_target', 'value_shift'])
-
-
-        # self.tau = np.zeros((self.num_options))
-        # # # Creating models for actions and options
-        # self.action_model = DictModel()
-
-        # self.dict_buffer = DictBuffer()
-        # transitions = get_all_transitions()
+        self.behaviour_learner = QLearner_NN((4,), 5, self.step_size)
+        self.goal_policy_learners = []
+        for g in range(len(self.goal_termination_funcs)):
+            # We have 25 NNs????
+            self.goal_policy_learners.append(QLearner_NN((4,), 5, self.step_size))
         
-        # # Prefilling dict buffer so no exploration is needed
-        # DictBufferData = namedtuple("DictBufferData", "s a sp r gamma")
-        # for t in transitions:
-        #     self.dict_buffer.update(DictBufferData(t[0], t[1], t[2], t[3], t[4]))
-        #     self.action_model.update(t[0], t[1], t[2], t[3], t[4])
+        self.buffer_size = 200000
+        self.min_buffer_size_before_update = 1000
+        self.buffer = Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': ()}, self.random.randint(0,2**31))
 
-        # self.option_model, self.action_option_model = get_pretrained_option_model()
+        self.num_steps_in_ep = 0
+        
+        params = self.params
+        self.use_pretrained_behavior = param_utils.parse_param(params, 'use_pretrained_behavior', lambda p : isinstance(p, bool), optional=True, default=False)
 
-        # # For logging state visitation
-        # self.state_visitations = np.zeros(self.num_states)
+        if self.use_pretrained_behavior:
+            behavior_weights = pickle.load(open('src/environments/data/pinball/behavior_params.pkl', 'rb'))
+            self.behaviour_learner.params = behavior_weights
+            self.behaviour_learner.target_params = copy.deepcopy(behavior_weights)
 
-        # # Logging update distribution
-        # self.update_distribution = np.zeros(self.num_states)
-
-        # self.cumulative_reward = 0
+        self.cumulative_reward = 0
 
     def FA(self):
         return "Neural Network"
@@ -91,218 +75,156 @@ class Dyna_NN:
     def __str__(self):
         return "Dyna_NN"
 
+    def get_policy(self, s) -> npt.ArrayLike:
+        probs = np.zeros(self.num_actions)
+        probs += self.epsilon / (self.num_actions)
+        action_values = self.behaviour_learner.get_action_values(s)
+
+        a = np.argmax(action_values)
+
+        probs[a] += 1 - self.epsilon
+        return probs
+
 
     # public method for rlglue
-        # public method for rlglue
     def selectAction(self, s: Any) -> int:
-        return self.random.choice(self.num_actions)
-        # x = self.representation.encode(s)
+        s = np.array(s)
+        a = self.random.choice(self.num_actions, p = self.get_policy(s))
+        return a
 
-        # if self.use_optimal_options:
-        #     # UP = 0
-        #     # RIGHT = 1
-        #     # DOWN = 2
-        #     # LEFT = 3
+    def update_behavior(self):
+        if self.min_buffer_size_before_update < self.buffer.num_in_buffer:
+            # Not enough samples in buffer to update yet
+            return 
+        data = self.buffer.sample(self.batch_size)
+        self.behaviour_learner.update(data, polyak_stepsize=0.001)
+        pass
 
-        #     if s[1] == 0 or s[1] == self.env.size - 1:
-        #         return 2
-
-        #     if s[1] == (self.env.size - 1) // 2 and s[0] != 0:
-        #         return 0
-
-        #     return 0
-
-        # # if not self.skip_action:
-        # return self.random.choice(self.num_actions, p = self.get_policy(x))
-
-
-    # def planning_update(self):
-    #     # Hard coding this for GrazingWorldAdam for now
-    #     tau_states = [13,31,81]
-
-    #     samples = self.dict_buffer.sample(self.random, self.batch_size, alpha=self.priority_alpha)
-    #     batch_x = jnp.array([self.image_representation.encode(sample.s) for sample in samples])
-    #     batch_a = jnp.array([sample.a for sample in samples])
-    #     batch_xp = jnp.array([self.image_representation.encode(sample.sp) for sample in samples])
-    #     batch_gamma = jnp.array([sample.gamma for sample in samples])
-    #     # batch_r = np.array([sample.r for sample in samples])
-
-    #     batch_r = np.zeros(len(samples))
-    #     batch_option_values = np.zeros((len(samples), self.num_options))
-    #     for i, sample in enumerate(samples):
-    #         sp, r, gamma = self.action_model.predict(sample.s, sample.a)
-    #         batch_r[i] = r 
-
-
-    #     # exploration bonus
-    #     if not globals.blackboard['in_exploration_phase']:
-    #         for i, sample in enumerate(samples):
-    #             tab_x = int(self.tabular_representation.encode(sample.s))
-    #             try:
-    #                 index = tau_states.index(tab_x)
-    #                 if self.tau[index] > self.kappa_interval:
-    #                 # if globals.blackboard['num_steps_passed'] > 15000 and globals.blackboard['num_steps_passed'] < 30000:
-    #                         batch_r[i] += self.kappa
-    #             except ValueError:
-    #                 pass  
-            
-    #     # forming batch
-    #     batch = {}
-    #     batch['x'] = batch_x
-    #     batch['a'] = batch_a
-    #     batch['xp'] = batch_xp
-    #     batch['r'] = batch_r
-    #     batch['gamma'] = batch_gamma
-
-    #     update_type = 'None'
-
-    #     if self.option_value_alg == 'base_target':
-    #         update_type = 'base_target'
-
-    #         batch['best_option_q_sa'] = np.zeros((len(samples)))
-    #         for i, sample in enumerate(samples):
-    #             batch['best_option_q_sa'][i] = np.max(self._get_option_values(sample.s, sample.a)[1])
-        
-    #     if self.option_value_alg == 'bootstrap':
-    #         update_type = 'bootstrap'
-
-    #         batch['best_option_v_sp'] = np.zeros((len(samples)))
-    #         for i, sample in enumerate(samples):
-    #             batch['best_option_v_sp'][i] = np.max(self._get_option_values(sample.sp)[1])
-
-        
-    #     _, td_errors = self.behaviour_learner.update(batch, self.polyak_stepsize, update_type=update_type)  
-          
-    #     td_errors = np.abs(td_errors)
-    #     # # Updating TD error in the buffer
-    #     for i, sample in enumerate(samples):
-    #         self.dict_buffer.update(sample, td_errors[i])
-
-    #     if self.option_value_alg == 'value_shift':
-    #         samples = self.dict_buffer.sample(self.random, 8, alpha=0)
-
-    #         batch = {}
-    #         batch['x'] = jnp.array([self.image_representation.encode(sample.s) for sample in samples])
-    #         batch['s'] = [sample.s for sample in samples]
-
-    #         best_option_values = np.max(self._get_batch_option_values(batch), axis=1)
-
-    #         # print(best_option_values)
-    #         batch['best_option_values'] = best_option_values
-    #         self.behaviour_learner.shift_update(batch)  
-
-    #         # # print(option_values)
-    #         # print(best_option_values.shape)
-    #         # sdsad
-    #         # for i, sample in enumerate(samples):
-#         #     for a in range(self.num_actions):
-    #         #         _, option_qs = self._get_option_values(sample.s, a)
-    #         #         option_values[i, a] = np.max(option_qs)
-
-    #         #     # print(np.maximum(action_values, option_values))
-                
-    #         # option_action_values = np.maximum(action_values, option_values)
-    #         # batch['values'] = option_action_values
-    #         # self.behaviour_learner.shift_update(batch)  
-    #         # batch_r = np.array([sample.r for sample in samples])
-
-    #         # Get option values
-    #         # Pass them off to learner to perform things
-    #         pass
 
 
     def update(self, s: Any, a, sp: Any, r, gamma, terminal: bool = False):
-        print(s, a, sp, gamma, terminal)
-        # print(a)
-        # print(gamma)
-        # print(s)
-        # print(sp)
-        # print(terminal)
-        # print(gamma)
-        # self.action_model.update(tuple(s), a, sp, r, gamma)
-
-        # if sp is None:
-        #     assert gamma == 0
-        #     sp = (0, 0)
-        # else:
-        #     sp = tuple(sp)
-                    
-        # # # forming batch
-        # batch = {'x': jnp.array([self.image_representation.encode(s)]), 'a': jnp.array([a]), 'xp': jnp.array([self.image_representation.encode(sp)]), 'r': jnp.array([r]), 'gamma': jnp.array([gamma])}
-        # # indexing into 0 since it is an array
-        # delta = np.abs(self.behaviour_learner.get_deltas(batch))[0]
-
-        # DictBufferData = namedtuple("DictBufferData", "s a sp r gamma")
-        # self.dict_buffer.update(DictBufferData(tuple(s), a, sp, r, gamma), delta)
-
-        # tab_x = self.tabular_representation.encode(s)
-
-        # self.state_visitations[tab_x] += 1
-
-
-        # # Hard coding this for GrazingWorldAdam for now
-        # tau_states = [13,31,81]
-
-        # # Updating tau and exploration bonus
-        # if not globals.blackboard['in_exploration_phase']:
-        #     self.tau += 1
-
-        # try:
-        #     index = tau_states.index(tab_x)
-        #     self.tau[index] = 0
-        #     # if not globals.blackboard['in_exploration_phase']:
-        #         # print(tab_x)
-        # except ValueError:
-        #     pass    
-
-        # x = self.image_representation.encode(s)
-        # # Treating the terminal state as an additional state in the tabular setting
-        # xp = self.image_representation.encode(sp) if not terminal else jnp.zeros(self.image_representation.features())
-    
-        # # buffer_data = {'s': s, 'x': x, 'a': a, 'xp': xp, 'r': r, 'gamma': gamma}
-        # # self.buffer.update(buffer_data)
-
-        # # s = self.action_model.visited_states()
-        # # print(len(s))
-
-        # # adding exploration bonus to batch
-        # # if not globals.blackboard['in_exploration_phase']:
-        # for _ in range(self.planning_steps):
-        #     self.planning_update()
-
-
+        self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma})
+        self.num_steps_in_ep += 1
 
         # # Logging
-        # self.cumulative_reward += r
-        # if globals.blackboard['num_steps_passed'] % globals.blackboard['step_logging_interval'] == 0:
-        #     xs = np.zeros((96, 8, 12, 1))
-        #     for r in range(8):
-        #         for c in range(12):
-        #             s = (r, c)
-        #             x = self.image_representation.encode(s)
-        #             xs[r * 12 + c] = x
-        #     q_values = self.behaviour_learner.get_action_values(xs)
-        #     globals.collector.collect('Q', np.copy(q_values)) 
-
-        #     # Logging state visitation
-        #     globals.collector.collect('state_visitation', np.copy(self.state_visitations))   
-        #     self.state_visitations[:] = 0
-
-        #     globals.collector.collect('tau', np.copy(self.tau)) 
-        #     globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
-        #     # print(f'reward rate: {np.copy(self.cumulative_reward) / globals.blackboard["step_logging_interval"]}')
-        #     self.cumulative_reward = 0
+        self.cumulative_reward += r
+        def log():
+            globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
+            self.cumulative_reward = 0
+        run_if_should_log(log)
 
         if not terminal:
             ap = self.selectAction(sp)
         else:
             ap = None
 
-
         return ap
 
     def agent_end(self, s, a, r, gamma):
-        self.update(s, a, None, r, gamma, terminal=True)
- 
+        self.update(s, a, s, r, 0, terminal=True)
+
+        globals.collector.collect('num_steps_in_ep', self.num_steps_in_ep)
+        self.num_steps_in_ep = 0
         # self.behaviour_learner.episode_end()
         # self.option_model.episode_end()
+
+class QLearner_funcs():
+    def __init__(self, num_actions: int, learning_rate: float):
+        self.num_actions = num_actions
+
+        def q_function(states):
+            mlp = hk.Sequential([
+                hk.Linear(128), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
+                hk.Linear(self.num_actions),
+            ])
+            return mlp(states) 
+        self.f_qfunc = hk.without_apply_rng(hk.transform(q_function))
+        self.f_opt = optax.adam(learning_rate)
+
+        def get_q_values(params: hk.Params, x: Any):
+            action_values = self.f_qfunc.apply(params, x)
+            return action_values
+        
+        def get_td_errors(params: hk.Params, target_params: hk.Params, data):
+            r = data['r']
+            x = data['x']
+            a = data['a']
+            xp = data['xp']
+            gamma = data['gamma']
+
+            x_pred = self.f_qfunc.apply(params, x)
+            xp_pred = jax.lax.stop_gradient(jnp.max(self.f_qfunc.apply(target_params, xp), axis=1))
+            prev_pred = jnp.take_along_axis(x_pred, jnp.expand_dims(a, axis=1), axis=1).squeeze()
+            td_error = r + gamma * xp_pred - prev_pred
+            return td_error
+            
+        def loss(params: hk.Params, target_params: hk.Params, data):
+            td_errors = get_td_errors(params, target_params, data)
+            return  jnp.mean(jnp.square(td_errors)), td_errors
+
+        def update(params: hk.Params, target_params: hk.Params, opt_state, data):
+            grads, td_errors = jax.grad(loss, has_aux=True)(params, target_params, data)
+            updates, opt_state = self.f_opt.update(grads, opt_state)
+            params = optax.apply_updates(params, updates)
+            return params, opt_state, td_errors
+
+        self.f_get_q_values = jax.jit(get_q_values)
+        self.f_update = jax.jit(update)  
+        self.f_get_td_errors = jax.jit(get_td_errors)      
+        return
+
+class QLearner_NN():
+    def __init__(self, state_shape, num_actions: int, learning_rate: float):
+        self.num_actions: int = num_actions
+        self.funcs = QLearner_funcs(num_actions, learning_rate)
+
+        dummy_state = jnp.zeros(state_shape)
+        self.params = self.funcs.f_qfunc.init(jax.random.PRNGKey(42), dummy_state)
+        self.opt_state = self.funcs.f_opt.init(self.params)
+
+        # target params for the network
+        self.target_params = copy.deepcopy(self.params)
+
+    def get_action_values(self, x: npt.ArrayLike) -> np.ndarray:
+        action_values = self.funcs.f_get_q_values(self.params, x)
+        return action_values
+
+    def get_target_action_values(self, x: npt.ArrayLike) -> np.ndarray:
+        action_values = self.funcs.f_get_q_values(self.target_params, x)
+        return action_values
+    
+    def get_td_errors(self, data):
+        return self.funcs.f_get_td_errors(self.params, self.target_params, data)
+
+    def update(self, data, polyak_stepsize:float=0.005):
+        self.params, self.opt_state, td_errors = self.funcs.f_update(self.params, self.target_params, self.opt_state, data)
+        self.target_params = optax.incremental_update(self.params, self.target_params, polyak_stepsize)
+        return self.params, td_errors
+
+
+class GoalPolicyLeaner():
+    def __init__(self, goal_funcs, num_actions) -> None:
+        self.goal_funcs = goal_funcs
+        self.num_actions = num_actions
+
+        self.step_size = 0.001
+
+
+        # def pred(state, labels):
+        #     mlp = hk.Sequential([
+        #         hk.Linear(32), jax.nn.relu,
+        #         hk.Linear(32), jax.nn.relu,
+        #         hk.Linear(self.num_actions * len()),
+        #     ])
+        #     logits = mlp(state)
+        #     return jnp.mean(softmax_cross_entropy(logits, labels))
+
+
+        pass
+
+    def update(self, s, a, r, sp, gamma):
+        goal_rewards = [goal_func(s) for goal_func in self.goal_funcs]
+        print(goal_rewards)
+
+        pass

@@ -47,6 +47,7 @@ class Buffer():
         self.keys = keys
 
         self.buffer_head = 0
+        self.num_in_buffer = 0
         self.buffer_full = self.buffer_head >= self.buffer_size
 
         self.buffer = {}
@@ -60,8 +61,12 @@ class Buffer():
             self.buffer[k][self.buffer_head] = data[k]
         
         self.buffer_head += 1
+        if not self.buffer_full:
+            self.num_in_buffer += 1
+
         if self.buffer_head == self.buffer_size:
             self.buffer_full = True
+
         self.buffer_head %= self.buffer_size
         pass
 

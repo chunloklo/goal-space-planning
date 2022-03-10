@@ -15,7 +15,6 @@ import jax.numpy as jnp
 import jax
 import optax
 import copy
-
 class QLearner_ImageNN_funcs():
     def __init__(self, num_actions: int, learning_rate: float):
         self.num_actions = num_actions
@@ -79,7 +78,6 @@ class QLearner_ImageNN_funcs():
             updates, opt_state = self.f_opt.update(grads, opt_state)
             params = optax.apply_updates(params, updates)
             return params, opt_state, td_errors
-
 
         # For the shift update
         def shift_loss(params: hk.Params, data):

@@ -15,6 +15,7 @@ import tqdm
 from src.utils import globals
 from experiment_utils.data_io.configs import save_data_zodb
 from src.utils.param_utils import parse_param
+import pickle
 
 def run(param: dict, aux_config={}):
 
@@ -23,12 +24,12 @@ def run(param: dict, aux_config={}):
 
     # # Don't import jax here if we don't need to
     # if aux_config.get('use_jax', False):
-    #     import jax
-    #     if aux_config.get('jax_debug_nans', False):
-    #         # Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
-    #         jax.config.update("jax_debug_nans", True)
+    import jax
+    if aux_config.get('jax_debug_nans', False):
+        # Automatically exits when it detects nan in Jax. No error handling yet though (probably need to add before sweep)
+        jax.config.update("jax_debug_nans", True)
 
-    #     jax.config.update('jax_platform_name', 'cpu')
+    jax.config.update('jax_platform_name', 'cpu')
 
     show_progress = aux_config.get('show_progress', False)
 
@@ -148,11 +149,14 @@ def run(param: dict, aux_config={}):
         raise e
 
     save_obj = {}
-    
+
     for k in save_logger_keys:
         save_obj[k] = globals.collector.all_data[k]
     
     save_data_zodb(param, save_obj)
+
+    # Saving agent for display:
+    # pickle.dump(agent.behaviour_learner.params, open('./src/environments/data/pinball/behavior_params.pkl', 'wb'))
     
     logging.info(f"Experiment Done {param} : {idx}, Time Taken : {time.time() - t_start}")
     return

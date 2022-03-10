@@ -384,13 +384,28 @@ class PinballEnvironment(BaseEnvironment):
 
     Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
     """
-    def __init__(self, configuration_file):
+    def __init__(self, configuration_file, render=False):
         self.configuration_file = configuration_file
         self.pinball = None
-    
+        self.render = render
+
+        
+
+        if self.render:
+            # Launch interactive pygame
+            pygame.init()
+            pygame.display.set_caption('Pinball Domain')
+            # Fixing height to be 800
+            self.screen = pygame.display.set_mode([800, 800])
+
     def start(self):
         self.pinball = PinballModel(self.configuration_file)
         obs = self.pinball.get_state()
+
+        
+        if self.render:
+            self.environment_view = PinballView(self.screen, self.pinball)
+
         return obs
 
     def step(self, action):
@@ -404,6 +419,10 @@ class PinballEnvironment(BaseEnvironment):
         r = self.pinball.take_action(action)
         s = self.pinball.get_state()
         terminal = self.pinball.episode_ended()
+
+        if self.render:
+            self.environment_view.blit()
+            pygame.display.flip()
 
         return (r, s, terminal)
 
@@ -430,6 +449,7 @@ class PinballView:
         self.LIGHT_GRAY = [232, 232, 232]
         self.BALL_COLOR = [0, 0, 255]
         self.TARGET_COLOR = [255, 0, 0]
+        self.GOAL_COLOR = [0, 255, 0]
 
         # Draw the background
         self.background_surface = pygame.Surface(screen.get_size())
@@ -437,6 +457,17 @@ class PinballView:
         for obs in model.obstacles:
             pygame.draw.polygon(self.background_surface, self.DARK_GRAY, list(map(self._to_pixels, obs.points)), 0)
 
+        goals = []
+        border = 0.05
+        for x in np.linspace(0 + border, 1 - border, 5):
+            for y in np.linspace(0 + border, 1 - border, 5):
+                goals.append((x,y))
+        
+        for g in goals:
+            pygame.draw.circle(
+            self.background_surface, self.GOAL_COLOR, self._to_pixels(g), int(0.02*self.screen.get_width()))
+
+    
         pygame.draw.circle(
             self.background_surface, self.TARGET_COLOR, self._to_pixels(self.model.target_pos), int(self.model.target_rad*self.screen.get_width()))
 
