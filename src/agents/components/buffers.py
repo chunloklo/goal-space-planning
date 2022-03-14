@@ -1,4 +1,5 @@
-from typing import Dict, Set, Tuple, Any
+from concurrent.futures import process
+from typing import Callable, Dict, Set, Tuple, Any
 from PyExpUtils.utils.random import sample
 import numpy as np
 
@@ -36,12 +37,14 @@ class DictBuffer():
 class Buffer():
     """Class for efficient buffer implementation when storing various numpy/matrix data
     """
-    def __init__(self, buffer_size: int, keys: Dict[str, Tuple], random_seed: int):
+    def __init__(self, buffer_size: int, keys: Dict[str, Tuple], random_seed: int, type_map={}):
         """[summary]
 
         Args:
             buffer_size (int): max size of the buffer
             keys_sizes (Dict[str, Tuple]): dictionary of keys to the size of the input you want to store in the buffer
+            random_seed (int): seed for the random state for sampling
+            type_map (Optional[dict]): A dict of non-default types that you want to use
         """
         self.buffer_size = buffer_size
         self.keys = keys
@@ -52,7 +55,8 @@ class Buffer():
 
         self.buffer = {}
         for key in keys:
-            self.buffer[key] = np.zeros((self.buffer_size, *keys[key]))
+            dtype = type_map.get(key, np.float64)
+            self.buffer[key] = np.zeros((self.buffer_size, *keys[key]), dtype=dtype)
 
         self.random = np.random.RandomState(random_seed)
         
@@ -74,6 +78,34 @@ class Buffer():
         # Currently sampling with replacement which shouldn't make too much of a difference
         sample_range = self.buffer_size if self.buffer_full else self.buffer_head 
         sample_indices = self.random.choice(sample_range, num_samples)
+
+        return_dict = {}
+        for k in self.keys:
+            return_dict[k] = np.copy(self.buffer[k][sample_indices])
+
+        return return_dict
+
+    def weighted_sample(self, num_samples: int, weight_key: str, process_func: Callable = lambda p: p):
+        # print(self.buffer.keys())
+        sample_range = self.buffer_size if self.buffer_full else self.buffer_head 
+        processed_weights = process_func(self.buffer[weight_key][:sample_range])
+        processed_sum = np.sum(processed_weights)
+
+        if any(processed_weights < 0):
+            raise ValueError('processed weights contain negative value')
+
+        if processed_sum == 0:
+            # Won't be able to get linalg.norm. Just return none
+            return None
+
+        prob = processed_weights / processed_sum
+        
+        # print(self.buffer_size)
+        # print(self.buffer_head)
+        # print(sample_range)
+        # print(num_samples)
+        # print(prob.shape)
+        sample_indices = self.random.choice(sample_range, num_samples, p=prob)
 
         return_dict = {}
         for k in self.keys:

@@ -15,13 +15,15 @@ def get_configuration_list():
         "problem": ["PinballProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         "episodes": [0],
-        'max_steps': [8000*60],
+        'max_steps': [600000],
+        'explore_env': [False],
         'exploration_phase': [0],
         'gamma': [0.99],
-        'render': [True],
+        'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate', 'num_steps_in_ep')],
+        'log_keys': [('reward_rate', 'num_steps_in_ep', 'q_map')],
+        # 'log_keys': [('reward_rate', 'q_map')],
         'step_logging_interval': [100],
 
         # Seed
@@ -31,9 +33,8 @@ def get_configuration_list():
         "agent": ["Dyna_NN"],
         'step_size': [1.0],
         'epsilon': [0.1],
-        'kappa': [0.0],
         'search_control': ['random'],
-        'use_pretrained_behavior': [True],
+        'use_pretrained_behavior': [False],
         # 'use_pretrained_model': [True],
     }
 

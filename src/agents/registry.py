@@ -1,4 +1,5 @@
 # Tabular Agents with Options
+from src.agents.GSP_NN import GSP_NN
 from src.agents.DynaOptions_Tab import DynaOptions_Tab
 from src.agents.Dyna_Tab import Dyna_Tab
 from src.agents.ActorCritic_Tab import ActorCritic_Tab
@@ -25,5 +26,7 @@ def getAgent(name):
         return GSP_Tab
     elif name == 'Dyna_NN':
         return Dyna_NN
+    elif name == 'GSP_NN':
+        return GSP_NN
     else:
         raise NotImplementedError()

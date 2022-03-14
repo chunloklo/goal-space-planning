@@ -104,6 +104,10 @@ if __name__ == "__main__":
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
     fig, ax = plt.subplots(figsize=(10, 6))
+
+    ax.set_ylim([0, 10000])
+    ax.set_xlabel('episodes')
+    ax.set_ylabel('number of steps per episode')
     # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
     plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip.py')

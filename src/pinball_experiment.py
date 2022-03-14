@@ -15,7 +15,8 @@ import tqdm
 from src.utils import globals
 from experiment_utils.data_io.configs import save_data_zodb
 from src.utils.param_utils import parse_param
-import pickle
+import cloudpickle
+
 
 def run(param: dict, aux_config={}):
 
@@ -150,13 +151,41 @@ def run(param: dict, aux_config={}):
 
     save_obj = {}
 
+    # Calculating the value at each state approximately
+    num_goals = problem.num_goals
+    last_q_map = np.zeros((20, 20, 5))
+    last_goal_q_map = np.zeros((num_goals, 20, 20, 5))
+    last_reward_map = np.zeros((num_goals, 20, 20, 5))
+    last_gamma_map = np.zeros((num_goals, 20, 20, 5))
+    for r, y in enumerate(np.linspace(0, 1, 20)):
+        for c, x in enumerate(np.linspace(0, 1, 20)):
+            last_q_map[r, c] = agent.behaviour_learner.get_action_values(np.array([x, y, 0.0, 0.0]))
+            for g in range(num_goals):
+                
+                # action_value, reward, gamma = agent.goal_learners[g].get_goal_outputs(np.array([x, y, 0.0, 0.0]))
+                # last_goal_q_map[g, r, c] = action_value
+                # last_reward_map[g, r, c] = reward
+                # last_gamma_map[g, r, c] = gamma
+                pass
+
+    print(last_q_map.shape)
+    globals.collector.collect('q_map', last_q_map)
+    globals.collector.collect('goal_q_map', last_goal_q_map)
+    globals.collector.collect('goal_r_map', last_reward_map)
+    globals.collector.collect('goal_gamma_map', last_gamma_map)
+    globals.collector.reset()
+
     for k in save_logger_keys:
         save_obj[k] = globals.collector.all_data[k]
     
     save_data_zodb(param, save_obj)
 
     # Saving agent for display:
-    # pickle.dump(agent.behaviour_learner.params, open('./src/environments/data/pinball/behavior_params.pkl', 'wb'))
+
+    # Saving the agent goal learners
+    # cloudpickle.dump(agent.behaviour_learner, open('./src/environments/data/pinball/behavior_learner.pkl', 'wb'))
+    # cloudpickle.dump(agent.goal_learners, open('./src/environments/data/pinball/goal_learners.pkl', 'wb'))
+    # cloudpickle.dump(agent.goal_estimate_learner, open('./src/environments/data/pinball/goal_estimate_learner.pkl', 'wb'))
     
     logging.info(f"Experiment Done {param} : {idx}, Time Taken : {time.time() - t_start}")
     return

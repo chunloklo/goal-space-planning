@@ -40,21 +40,16 @@ class Dyna_NN:
         self.num_actions = problem.actions
         self.params = problem.params
         self.random = np.random.RandomState(problem.seed)
-        self.goal_termination_funcs = problem.goal_termination_funcs
-        self.goal_initiation_funcs = problem.goal_initiation_funcs
-
+        
         self.step_size = 1e-3
         self.batch_size = 16
-        self.epsilon = 0.3
+        self.epsilon = self.params['epsilon']
 
         self.behaviour_learner = QLearner_NN((4,), 5, self.step_size)
         self.goal_policy_learners = []
-        for g in range(len(self.goal_termination_funcs)):
-            # We have 25 NNs????
-            self.goal_policy_learners.append(QLearner_NN((4,), 5, self.step_size))
-        
+
         self.buffer_size = 200000
-        self.min_buffer_size_before_update = 1000
+        self.min_buffer_size_before_update = 500
         self.buffer = Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': ()}, self.random.randint(0,2**31))
 
         self.num_steps_in_ep = 0
@@ -63,9 +58,8 @@ class Dyna_NN:
         self.use_pretrained_behavior = param_utils.parse_param(params, 'use_pretrained_behavior', lambda p : isinstance(p, bool), optional=True, default=False)
 
         if self.use_pretrained_behavior:
-            behavior_weights = pickle.load(open('src/environments/data/pinball/behavior_params.pkl', 'rb'))
-            self.behaviour_learner.params = behavior_weights
-            self.behaviour_learner.target_params = copy.deepcopy(behavior_weights)
+            self.behaviour_learner = pickle.load(open('src/environments/data/pinball/behavior_learner.pkl', 'rb'))
+            print('using pretrained behavior')
 
         self.cumulative_reward = 0
 
@@ -93,19 +87,40 @@ class Dyna_NN:
         return a
 
     def update_behavior(self):
-        if self.min_buffer_size_before_update < self.buffer.num_in_buffer:
+        if self.buffer.num_in_buffer < self.min_buffer_size_before_update:
             # Not enough samples in buffer to update yet
             return 
+        # Updating behavior
         data = self.buffer.sample(self.batch_size)
         self.behaviour_learner.update(data, polyak_stepsize=0.001)
-        pass
-
-
 
     def update(self, s: Any, a, sp: Any, r, gamma, terminal: bool = False):
         self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma})
         self.num_steps_in_ep += 1
 
+        if terminal:
+            print('terminal')
+
+        # if s == [0.2, 0.9, 0.0, 0.0]:
+        #     print(f'{self.behaviour_learner.get_action_values(np.array(s))}')
+
+
+        self.update_behavior()
+                # print(s)
+        # Calculating the value at each state approximately
+        # term_map = np.zeros((20, 20))
+        # for row, y in enumerate(np.linspace(0, 1, 20)):
+        #     for c, x in enumerate(np.linspace(0, 1, 20)):
+        #         goal_terms = self.goal_termination_func(np.array([x, y, 0, 0]))
+        #         term_map[row, c] = 1 if goal_terms[5] == True else 0
+
+        # init_map = np.zeros((20, 20))
+        # for row, y in enumerate(np.linspace(0, 1, 20)):
+        #     for c, x in enumerate(np.linspace(0, 1, 20)):
+        #         goal_init = self.goal_initiation_func(np.array([x, y, 0, 0]))
+        #         init_map[row, c] = 1 if goal_init[5] == True else 0
+
+        
         # # Logging
         self.cumulative_reward += r
         def log():
@@ -201,30 +216,3 @@ class QLearner_NN():
         self.params, self.opt_state, td_errors = self.funcs.f_update(self.params, self.target_params, self.opt_state, data)
         self.target_params = optax.incremental_update(self.params, self.target_params, polyak_stepsize)
         return self.params, td_errors
-
-
-class GoalPolicyLeaner():
-    def __init__(self, goal_funcs, num_actions) -> None:
-        self.goal_funcs = goal_funcs
-        self.num_actions = num_actions
-
-        self.step_size = 0.001
-
-
-        # def pred(state, labels):
-        #     mlp = hk.Sequential([
-        #         hk.Linear(32), jax.nn.relu,
-        #         hk.Linear(32), jax.nn.relu,
-        #         hk.Linear(self.num_actions * len()),
-        #     ])
-        #     logits = mlp(state)
-        #     return jnp.mean(softmax_cross_entropy(logits, labels))
-
-
-        pass
-
-    def update(self, s, a, r, sp, gamma):
-        goal_rewards = [goal_func(s) for goal_func in self.goal_funcs]
-        print(goal_rewards)
-
-        pass

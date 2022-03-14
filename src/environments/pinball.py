@@ -10,6 +10,7 @@
 
 import random
 import argparse, os
+from re import S
 import numpy as np
 from RlGlue import BaseEnvironment
 from itertools import *
@@ -384,12 +385,24 @@ class PinballEnvironment(BaseEnvironment):
 
     Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
     """
-    def __init__(self, configuration_file, render=False):
+    def __init__(self, configuration_file, render=False, explore_env=False):
         self.configuration_file = configuration_file
         self.pinball = None
         self.render = render
+        self.explore_env = explore_env 
 
-        
+        if self.explore_env:
+            self.num_steps = 0
+            self.max_steps = 250
+            
+            self.start_states = []
+            border = 0.05
+            for y in np.linspace(0 + border, 1 - border, 4):
+                for x in np.linspace(0 + border, 1 - border, 4):
+                    self.start_states.append([x,y])
+            # Shifting these two down so they don't start in the obstacle
+            self.start_states[10][1] += 0.01
+            self.start_states[11][1] += 0.01
 
         if self.render:
             # Launch interactive pygame
@@ -400,11 +413,18 @@ class PinballEnvironment(BaseEnvironment):
 
     def start(self):
         self.pinball = PinballModel(self.configuration_file)
+        if self.explore_env:
+            # If exploring, set to random start state
+            self.pinball.ball.position = np.copy(self.start_states[np.random.choice(len(self.start_states))])
+            self.num_steps = 0
+
         obs = self.pinball.get_state()
 
         
         if self.render:
             self.environment_view = PinballView(self.screen, self.pinball)
+
+        
 
         return obs
 
@@ -419,6 +439,11 @@ class PinballEnvironment(BaseEnvironment):
         r = self.pinball.take_action(action)
         s = self.pinball.get_state()
         terminal = self.pinball.episode_ended()
+
+        # Reset after self.max_steps
+        if self.explore_env:
+            terminal = terminal or self.num_steps > self.max_steps
+            self.num_steps += 1
 
         if self.render:
             self.environment_view.blit()
@@ -459,13 +484,17 @@ class PinballView:
 
         goals = []
         border = 0.05
-        for x in np.linspace(0 + border, 1 - border, 5):
-            for y in np.linspace(0 + border, 1 - border, 5):
+        n = 4
+        for x in np.linspace(0 + border, 1 - border, n):
+            for y in np.linspace(0 + border, 1 - border, n):
                 goals.append((x,y))
         
-        for g in goals:
-            pygame.draw.circle(
-            self.background_surface, self.GOAL_COLOR, self._to_pixels(g), int(0.02*self.screen.get_width()))
+        goal_radius = 0.04
+        # goal_initiation_radius = 0.25
+
+        # for g in goals:
+        #     pygame.draw.circle(
+        #     self.background_surface, self.GOAL_COLOR, self._to_pixels(g), int(goal_radius*self.screen.get_width()))
 
     
         pygame.draw.circle(
@@ -525,6 +554,7 @@ def run_pinballview(width, height, configuration):
         if environment.take_action(user_action) == environment.END_EPISODE:
             done = True
 
+        # print(environment.ball.position)
         environment_view.blit()
         pygame.display.flip()
 
