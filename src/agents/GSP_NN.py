@@ -76,12 +76,11 @@ class GSP_NN:
         self.goal_value_learner = GoalValueLearner(self.num_goals)
     
 
-        # self.use_pretrained_behavior = param_utils.parse_param(params, 'use_pretrained_behavior', lambda p : isinstance(p, bool), optional=True, default=False)
+        self.use_pretrained_behavior = param_utils.parse_param(params, 'use_pretrained_behavior', lambda p : isinstance(p, bool), optional=True, default=False)
 
-        # if self.use_pretrained_behavior:
-        #     behavior_weights = pickle.load(open('src/environments/data/pinball/behavior_params.pkl', 'rb'))
-        #     self.behaviour_learner.params = behavior_weights
-        #     self.behaviour_learner.target_params = copy.deepcopy(behavior_weights)
+        if self.use_pretrained_behavior:
+            self.behaviour_learner = pickle.load(open('src/environments/data/pinball/behavior_learner.pkl', 'rb'))
+            print('using pretrained behavior')
 
         self.use_pretrained_model = param_utils.parse_param(params, 'use_pretrained_model', lambda p : isinstance(p, bool), optional=True, default=False)
         if self.use_pretrained_model:
@@ -228,15 +227,16 @@ class GSP_NN:
     #         data['target'] = goal_targets
     #         self.behaviour_learner.OCI_combined_update(data, polyak_stepsize=0.0005)
 
-    def _OCI(self, s):
+    def _OCI(self, sp):
         ############################ OCI
         if self.buffer.num_in_buffer >= self.min_buffer_size_before_update:
             
             # OCI. Resampling here
             OCI_batch_size = 32
             data = self.buffer.sample(OCI_batch_size)
-            data['x'] = np.vstack([data['x'], s])
-            # data['x'] = np.vstack(data['x']
+            # Bias update towards the current state by adding it to the list of updated states.
+            data['x'] = np.vstack([data['x'], sp])
+            OCI_batch_size += 1
             x_goals_list = []
 
             goals = np.array(self.goals)

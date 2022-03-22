@@ -17,14 +17,14 @@ def get_configuration_list():
         'explore_env': [False],
         "episodes": [0],
         # 'max_steps': [100],
-        'max_steps': [200000],
+        'max_steps': [100000],
         'exploration_phase': [0],
         'gamma': [0.99],
-        'render': [False],
+        'render': [True],
 
         # Logging
         # 'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss')],
-        'log_keys': [('reward_rate', 'q_map', 'num_steps_in_ep', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'goal_r', 'goal_gamma', 'goal_baseline', 'goal_init', 'goal_values')],
+        'log_keys': [('reward_rate', 'q_map', 'num_steps_in_ep', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'goal_r', 'goal_gamma', 'goal_baseline', 'goal_init')],
         # 'log_keys': [('reward_rate', 'goal_baseline', 'goal_values')],
         # 'log_keys': [('reward_rate', 'q_map', 'goal_baseline', 'goal_values')],
         'step_logging_interval': [100],
@@ -38,9 +38,9 @@ def get_configuration_list():
         'epsilon': [0.1],
         'kappa': [0.0],
         'search_control': ['random'],
-        # 'use_pretrained_behavior': [True],
+        'use_pretrained_behavior': [True],
         'use_pretrained_model': [True],
-        'OCI_update_interval': [0],
+        'OCI_update_interval': [4],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

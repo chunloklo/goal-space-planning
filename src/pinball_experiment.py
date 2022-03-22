@@ -188,7 +188,7 @@ def run(param: dict, aux_config={}):
     # Saving agent for display:
 
     # Saving the agent goal learners
-    # cloudpickle.dump(agent.behaviour_learner, open('./src/environments/data/pinball/behavior_learner.pkl', 'wb'))
+    cloudpickle.dump(agent.behaviour_learner, open('./src/environments/data/pinball/behavior_learner.pkl', 'wb'))
     # 'save_goal_model': [True],
 
 
