@@ -33,9 +33,9 @@ from analysis.common import load_data
 import matplotlib
 from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_text_location, prompt_user_for_file_name, get_file_name, scale_value, _plot_init, prompt_episode_display_range
 
-def create_plot(data):
+def create_plot(data, key):
     plt.legend()
-    plt.title('goal r')
+    plt.title(key)
 
     fig, axes = plt.subplots(4, 4, figsize=(32, 32))
     # print(axes)
@@ -47,12 +47,14 @@ def create_plot(data):
         axes[g].set_title(g)
         axes[g].legend()
 
+        if g == 0:
+            print(data[-1, g, :])
 
      # ax.set_xlim([600, 1200])
 
     
     # Getting file name
-    save_file = get_file_name('./plots/', f'goal_r', 'png', timestamp=True)
+    save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
 
     # print(f'Plot will be saved in {save_file}')
     plt.savefig(f'{save_file}', dpi = 300)
@@ -60,11 +62,12 @@ def create_plot(data):
 if __name__ == "__main__":
     parameter_path = 'experiments/pinball/GSP_impl_test.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
-
-    data = load_data(parameter_list[0], 'goal_init')
+    
+    key = 'goal_init'
+    data = load_data(parameter_list[0], key)
 
     # print(data[-1, 0])
     # asda
 
-    create_plot(data)
+    create_plot(data, key)
     exit()

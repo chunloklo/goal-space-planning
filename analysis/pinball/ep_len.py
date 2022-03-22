@@ -37,7 +37,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
     index = 0
 
     ############ STANDARD
-    data = load_data(parameter_list[index], 'num_steps_in_ep')
+    data = np.array(load_data(parameter_list[index], 'num_steps_in_ep'))
 
     print(data.shape)
     run_data = mean_chunk_data(data, STEP_SIZE, 0)
@@ -109,11 +109,9 @@ if __name__ == "__main__":
     ax.set_xlabel('episodes')
     ax.set_ylabel('number of steps per episode')
     # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_optimal.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_opt_option.py')
-
+    # plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_baseline_check.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
     plt.legend()
     # plt.title(alg_name)
 

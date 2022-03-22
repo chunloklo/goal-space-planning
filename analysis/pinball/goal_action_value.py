@@ -70,7 +70,7 @@ def generatePlots(param, data, key):
             init = problem.goal_initiation_func([x, y, 0, 0])
             initiation_map[:, r, c] = init
 
-    fig, axes = plt.subplots(4, 4, figsize=(64, 64))
+    fig, axes = plt.subplots(4, 4, figsize=(90, 90))
     axes = axes.flatten()
 
     save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
@@ -89,8 +89,9 @@ def generatePlots(param, data, key):
 
         texts, patches = _plot_init(ax, columns = COLUMNS, rows = ROWS)
 
-        min_val = np.min(data[g])
-        max_val = np.max(data[g])
+        min_val = np.min(data[g][initiation_map[g] == True])
+        max_val = np.max(data[g][initiation_map[g] == True])
+        print(min_val, max_val)
         
         for r in range(ROWS):
             for c in range(COLUMNS):
@@ -126,7 +127,7 @@ if __name__ == "__main__":
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
-    key = 'goal_q_map'
+    key = 'goal_r_map'
     data = load_data(config, key)
     data = np.squeeze(data)
 

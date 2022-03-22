@@ -23,11 +23,11 @@ from analysis.common import get_best_grouped_param, load_data, load_reward_rate,
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
 
-STEP_SIZE = 50
+STEP_SIZE = 1
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
-def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
+def plot_single_reward_rate(ax, param_file_name: str, label: str=None, key=None):
     if label is None:
         label = Path(param_file_name).stem
 
@@ -37,19 +37,15 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
     index = 0
 
     ############ STANDARD
-    data = load_data(parameter_list[index], 'reward_rate')
+    data = load_data(parameter_list[index], key)
 
     print(data.shape)
     run_data = mean_chunk_data(data, STEP_SIZE, 0)
     # print(run_data.shape)
 
-    # # Accumulating
-    # for i in range(1, len(run_data)):
-    #     run_data[i] = run_data[i] + run_data[i - 1]
-
     x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
 
-    # # print(len(list(x_range)))
+    # print(len(list(x_range)))
     ax.plot(x_range, run_data, label=label)
 
     ####### Individual skip probability weights
@@ -108,22 +104,13 @@ if __name__ == "__main__":
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_xlabel('number of steps x100')
-    ax.set_ylabel('reward rate')
-    # plot_max_reward_rate(ax, 'experiments/chunlok/env_hmaze/GSP_no_direct.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dyna.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/dyna.py')
-    # plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
 
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dynaoptions.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/OCG.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/OCI.py')
-
-
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/dynaoptions.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/OCI.py')
-    # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/OCG.py')
+    key = 'reward_loss'
+    # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/GSP_impl_test.py', key=key)
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_optimal.py')
+    # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_opt_option.py')
 
     plt.legend()
     # plt.title(alg_name)
@@ -131,7 +118,7 @@ if __name__ == "__main__":
     # ax.set_xlim([600, 1200])
 
     # Getting file name
-    save_file = get_file_name('./plots/', f'single_reward_rate', 'png', timestamp=True)
+    save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
     # print(f'Plot will be saved in {save_file}')
     plt.savefig(f'{save_file}', dpi = 300)
     

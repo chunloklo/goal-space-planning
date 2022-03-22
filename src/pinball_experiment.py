@@ -143,6 +143,9 @@ def run(param: dict, aux_config={}):
                     glue.total_reward = 0
                     glue.start()
                 _, _, _, is_terminal = glue.step()
+            
+            # Adding this here so that there's always something logged
+            globals.collector.collect('num_steps_in_ep', 0)
             globals.collector.reset()
     except InvalidRunException as e:
         # [2022-01-24 chunlok] Leaving out error saving for now. This needs to be reimplemented in the data_io library still
@@ -151,7 +154,7 @@ def run(param: dict, aux_config={}):
 
     save_obj = {}
 
-    # Calculating the value at each state approximately
+    # # Calculating the value at each state approximately
     num_goals = problem.num_goals
     last_q_map = np.zeros((20, 20, 5))
     last_goal_q_map = np.zeros((num_goals, 20, 20, 5))
@@ -160,19 +163,21 @@ def run(param: dict, aux_config={}):
     for r, y in enumerate(np.linspace(0, 1, 20)):
         for c, x in enumerate(np.linspace(0, 1, 20)):
             last_q_map[r, c] = agent.behaviour_learner.get_action_values(np.array([x, y, 0.0, 0.0]))
-            for g in range(num_goals):
-                
-                # action_value, reward, gamma = agent.goal_learners[g].get_goal_outputs(np.array([x, y, 0.0, 0.0]))
-                # last_goal_q_map[g, r, c] = action_value
-                # last_reward_map[g, r, c] = reward
-                # last_gamma_map[g, r, c] = gamma
-                pass
+            if hasattr(agent, 'goals'):
+                for g in range(num_goals):
+                    goal_s = np.append([x, y, 0.0, 0.0], np.array(agent.goals[g]))
+                    action_value, reward, gamma = agent.goal_learner.get_goal_outputs(goal_s)
+                    last_goal_q_map[g, r, c] = action_value
+                    last_reward_map[g, r, c] = reward
+                    last_gamma_map[g, r, c] = gamma
+                    pass
 
-    print(last_q_map.shape)
+    # print(last_q_map.shape)
     globals.collector.collect('q_map', last_q_map)
     globals.collector.collect('goal_q_map', last_goal_q_map)
     globals.collector.collect('goal_r_map', last_reward_map)
     globals.collector.collect('goal_gamma_map', last_gamma_map)
+    # globals.collector.collect('num_steps_in_ep', 0)
     globals.collector.reset()
 
     for k in save_logger_keys:
@@ -184,7 +189,10 @@ def run(param: dict, aux_config={}):
 
     # Saving the agent goal learners
     # cloudpickle.dump(agent.behaviour_learner, open('./src/environments/data/pinball/behavior_learner.pkl', 'wb'))
-    # cloudpickle.dump(agent.goal_learners, open('./src/environments/data/pinball/goal_learners.pkl', 'wb'))
+    # 'save_goal_model': [True],
+
+
+    # cloudpickle.dump(agent.goal_learner, open('./src/environments/data/pinball/goal_learner.pkl', 'wb'))
     # cloudpickle.dump(agent.goal_estimate_learner, open('./src/environments/data/pinball/goal_estimate_learner.pkl', 'wb'))
     
     logging.info(f"Experiment Done {param} : {idx}, Time Taken : {time.time() - t_start}")

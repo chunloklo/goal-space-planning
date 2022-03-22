@@ -35,8 +35,10 @@ def load_data(config: dict, key: str):
     # 1 x num_logs
     data = np.array(data[key])
 
+    # print(data.shape)
+
     # Just getting rid of the first dimension
-    return data[0, :]
+    return data[0]
 
 def get_performance(config):
     data = load_reward_rate(config)

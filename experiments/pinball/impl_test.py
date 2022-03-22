@@ -35,7 +35,6 @@ def get_configuration_list():
         'epsilon': [0.1],
         'search_control': ['random'],
         'use_pretrained_behavior': [False],
-        # 'use_pretrained_model': [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

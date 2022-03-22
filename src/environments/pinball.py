@@ -263,7 +263,9 @@ class PinballModel:
     DEC_Y = 3
     ACC_NONE = 4
 
-    STEP_PENALTY = -1
+    # STEP_PENALTY = -1
+    # THRUST_PENALTY = -5
+    STEP_PENALTY = -5
     THRUST_PENALTY = -5
     END_EPISODE = 10000
 
@@ -376,21 +378,12 @@ class PinballModel:
             self.ball.position[1] = 0.05
 
 class PinballEnvironment(BaseEnvironment):
-    """
-    The board is a nxn matrix, with (using NumPy matrix indexing):
-        [n-1, 0] as the start at bottom-left
-        [2, 2] goal, occasional reward: 50, otherwise 0
-        [2, n-3] goal, occasional reward: 40, otherwise 0
-        [n-3,n-3] goal, always gives reward of 1
-
-    Each time step incurs -0.1 reward. An episode terminates when the agent reaches the goal.
-    """
-    def __init__(self, configuration_file, render=False, explore_env=False):
+    def __init__(self, configuration_file, render=False, explore_env=False, continuing=True):
         self.configuration_file = configuration_file
         self.pinball = None
         self.render = render
         self.explore_env = explore_env 
-
+        self.continuing = continuing
         if self.explore_env:
             self.num_steps = 0
             self.max_steps = 250
@@ -424,8 +417,6 @@ class PinballEnvironment(BaseEnvironment):
         if self.render:
             self.environment_view = PinballView(self.screen, self.pinball)
 
-        
-
         return obs
 
     def step(self, action):
@@ -442,8 +433,15 @@ class PinballEnvironment(BaseEnvironment):
 
         # Reset after self.max_steps
         if self.explore_env:
+            # Modifying the reward here to avoid issues with goal values being wonky, since usually this won't be happening
+            if r == self.pinball.END_EPISODE:
+                r = self.pinball.STEP_PENALTY
             terminal = terminal or self.num_steps > self.max_steps
             self.num_steps += 1
+        
+        if terminal and self.continuing:
+            terminal = False
+            s = self.start()
 
         if self.render:
             self.environment_view.blit()
@@ -490,11 +488,11 @@ class PinballView:
                 goals.append((x,y))
         
         goal_radius = 0.04
-        # goal_initiation_radius = 0.25
+        goal_initiation_radius = 0.35
 
-        # for g in goals:
-        #     pygame.draw.circle(
-        #     self.background_surface, self.GOAL_COLOR, self._to_pixels(g), int(goal_radius*self.screen.get_width()))
+        for g in goals:
+            pygame.draw.circle(
+            self.background_surface, self.GOAL_COLOR, self._to_pixels(g), int(goal_radius*self.screen.get_width()))
 
     
         pygame.draw.circle(

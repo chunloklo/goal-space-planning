@@ -48,20 +48,24 @@ class Dyna_NN:
         self.behaviour_learner = QLearner_NN((4,), 5, self.step_size)
         self.goal_policy_learners = []
 
-        self.buffer_size = 200000
-        self.min_buffer_size_before_update = 500
+        self.buffer_size = 1000000
+        self.min_buffer_size_before_update = 1000
         self.buffer = Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': ()}, self.random.randint(0,2**31))
 
         self.num_steps_in_ep = 0
         
         params = self.params
         self.use_pretrained_behavior = param_utils.parse_param(params, 'use_pretrained_behavior', lambda p : isinstance(p, bool), optional=True, default=False)
+        self.polyak_stepsize = param_utils.parse_param(params, 'polyak_step_size', lambda p : isinstance(p, float) and p >= 0)
+        print(self.polyak_stepsize)
 
         if self.use_pretrained_behavior:
             self.behaviour_learner = pickle.load(open('src/environments/data/pinball/behavior_learner.pkl', 'rb'))
             print('using pretrained behavior')
 
         self.cumulative_reward = 0
+
+        self.num_term = 0
 
     def FA(self):
         return "Neural Network"
@@ -92,14 +96,19 @@ class Dyna_NN:
             return 
         # Updating behavior
         data = self.buffer.sample(self.batch_size)
-        self.behaviour_learner.update(data, polyak_stepsize=0.001)
+        self.behaviour_learner.update(data, polyak_stepsize=self.polyak_stepsize)
 
     def update(self, s: Any, a, sp: Any, r, gamma, terminal: bool = False):
         self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma})
         self.num_steps_in_ep += 1
 
-        if terminal:
-            print('terminal')
+        if r == 10000:
+            self.num_term += 1
+            # print(f'terminated! term_number: {self.num_term}')
+            globals.collector.collect('num_steps_in_ep', self.num_steps_in_ep)
+            self.num_steps_in_ep = 0
+        # if terminal:
+            # print('terminal')
 
         # if s == [0.2, 0.9, 0.0, 0.0]:
         #     print(f'{self.behaviour_learner.get_action_values(np.array(s))}')
@@ -137,9 +146,6 @@ class Dyna_NN:
 
     def agent_end(self, s, a, r, gamma):
         self.update(s, a, s, r, 0, terminal=True)
-
-        globals.collector.collect('num_steps_in_ep', self.num_steps_in_ep)
-        self.num_steps_in_ep = 0
         # self.behaviour_learner.episode_end()
         # self.option_model.episode_end()
 
