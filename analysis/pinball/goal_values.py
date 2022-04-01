@@ -61,11 +61,11 @@ def create_plot(data, key):
     plt.savefig(f'{save_file}', dpi = 300)
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_learning.py'
+    parameter_path = 'experiments/pinball/GSP_learning_values.py'
     # parameter_path = 'experiments/pinball/GSP_learning.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
-    key = 'goal_baseline'
+    key = 'goal_values'
     data = load_data(parameter_list[0], key)
 
     # print(data[-1, 0])

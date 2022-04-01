@@ -3,7 +3,7 @@ from src.problems.MountainCar import MountainCar
 from src.problems.GrazingWorld import GrazingWorld, GrazingWorldWithMiddleOption, GrazingWorldSimple, GrazingWorldAdam
 from src.problems.TMaze import TMaze
 from src.problems.HMazeProblem import HMazeProblem
-from src.problems.PinballProblem import PinballProblem
+from src.problems.PinballProblem import PinballProblem, PinballTermProblem
 
 def getProblem(name):
     if name == 'MountainCar':
@@ -22,5 +22,7 @@ def getProblem(name):
         return HMazeProblem
     elif name == 'PinballProblem':
         return PinballProblem
+    elif name == 'PinballTermProblem':
+        return PinballTermProblem
     else: 
         raise NotImplementedError()

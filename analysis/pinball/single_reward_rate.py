@@ -114,7 +114,14 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dyna.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/dyna.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_baseline.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_baseline.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_values.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_values.py')
+
+    
 
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dynaoptions.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/OCG.py')

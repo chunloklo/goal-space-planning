@@ -38,8 +38,8 @@ from src.problems.PinballProblem import PinballProblem
 from src.experiment import ExperimentModel
 
 
-ROWS = 20
-COLUMNS = 20
+ROWS = 40
+COLUMNS = 40
 NUM_GOALS = 16
 
 def generatePlots(param, data, key):
@@ -108,7 +108,7 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_learning.py'
+    parameter_path = 'experiments/pinball/GSP_learning_baseline.py'
     # parameter_path = 'experiments/pinball/impl_test.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 

@@ -57,8 +57,8 @@ class BallModel:
         """
         self.xdot += delta_xdot/5.0
         self.ydot += delta_ydot/5.0
-        self._clip(self.xdot)
-        self._clip(self.ydot)
+        self.xdot = self._clip(self.xdot)
+        self.ydot = self._clip(self.ydot)
 
     def add_drag(self):
         """ Add a fixed amount of drag to the current velocity """
@@ -352,6 +352,9 @@ class PinballModel:
         self.ball.add_drag()
         self._check_bounds()
 
+        # velocity = np.linalg.norm([self.ball.xdot, self.ball.ydot])
+        # print(f'end_velocity: {velocity}')
+
         if action == self.ACC_NONE:
             return self.STEP_PENALTY
 
@@ -382,20 +385,26 @@ class PinballEnvironment(BaseEnvironment):
         self.configuration_file = configuration_file
         self.pinball = None
         self.render = render
+        if render:
+            print('RENDERING!')
         self.explore_env = explore_env 
         self.continuing = continuing
         if self.explore_env:
             self.num_steps = 0
-            self.max_steps = 250
+            self.max_steps = 512
             
             self.start_states = []
             border = 0.05
-            for y in np.linspace(0 + border, 1 - border, 4):
-                for x in np.linspace(0 + border, 1 - border, 4):
+            n = 4
+            for y in np.linspace(0 + border, 1 - border, n):
+                for x in np.linspace(0 + border, 1 - border, n):
                     self.start_states.append([x,y])
+
             # Shifting these two down so they don't start in the obstacle
             self.start_states[10][1] += 0.01
-            self.start_states[11][1] += 0.01
+            self.start_states[11][1] += 0.06
+
+            self.start_states[3] = [0.84, 0.26]
 
         if self.render:
             # Launch interactive pygame
@@ -404,11 +413,35 @@ class PinballEnvironment(BaseEnvironment):
             # Fixing height to be 800
             self.screen = pygame.display.set_mode([800, 800])
 
+        # Setting this to be something wonky right now. It should still work
+        self.terminal_state = [-1.0, -1.0, -1.0, -1.0]
+
     def start(self):
         self.pinball = PinballModel(self.configuration_file)
+        self.terminated = False
+
         if self.explore_env:
+            # Moving terminal state to off the map
+            # self.pinball.target_pos = [8, 8]
+
             # If exploring, set to random start state
-            self.pinball.ball.position = np.copy(self.start_states[np.random.choice(len(self.start_states))])
+            start_state = self.start_states[np.random.choice(len(self.start_states))]
+            self.pinball.ball.position = np.copy(start_state)
+
+            # colliding = True
+            # while colliding:
+            #     start_state = [np.random.uniform(0, 1), np.random.uniform(0, 1)]
+            #     self.pinball.ball.position = np.copy(start_state)
+
+            #     colliding = False
+            #     for obs in self.pinball.obstacles:
+            #         if obs.collision(self.pinball.ball):
+            #             colliding = True
+            #             break
+
+            # self.pinball.ball.xdot = np.random.uniform(-1, 1)
+            # self.pinball.ball.ydot = np.random.uniform(-1, 1)
+            
             self.num_steps = 0
 
         obs = self.pinball.get_state()
@@ -427,21 +460,37 @@ class PinballEnvironment(BaseEnvironment):
         :rtype: :class:`Reward_observation_terminal`
 
         """
+        if self.terminated:
+            s = self.start()
+            r =self.pinball.END_EPISODE
+            terminal = False
+            return (r, s, terminal)
+
         r = self.pinball.take_action(action)
         s = self.pinball.get_state()
         terminal = self.pinball.episode_ended()
 
         # Reset after self.max_steps
+        # if self.explore_env:
+        #     # Modifying the reward here to avoid issues with goal values being wonky, since usually this won't be happening
+        #     if r == self.pinball.END_EPISODE:
+        #         r = self.pinball.STEP_PENALTY
         if self.explore_env:
-            # Modifying the reward here to avoid issues with goal values being wonky, since usually this won't be happening
-            if r == self.pinball.END_EPISODE:
-                r = self.pinball.STEP_PENALTY
-            terminal = terminal or self.num_steps > self.max_steps
+            reset = self.num_steps > self.max_steps
             self.num_steps += 1
         
         if terminal and self.continuing:
             terminal = False
-            s = self.start()
+            self.terminated = True
+            s = np.copy(self.terminal_state)
+            r = self.pinball.STEP_PENALTY
+
+        if self.explore_env:
+            if reset:
+                self.num_steps = 0
+                s = self.start()
+                r = self.pinball.STEP_PENALTY
+                terminal = False
 
         if self.render:
             self.environment_view.blit()
@@ -483,12 +532,16 @@ class PinballView:
         goals = []
         border = 0.05
         n = 4
-        for x in np.linspace(0 + border, 1 - border, n):
-            for y in np.linspace(0 + border, 1 - border, n):
-                goals.append((x,y))
+        for y in np.linspace(0 + border, 1 - border, n):
+            for x in np.linspace(0 + border, 1 - border, n):
+                goals.append([x,y])
         
         goal_radius = 0.04
         goal_initiation_radius = 0.35
+
+        # goals[3] = [0.84, 0.26]
+
+        goals[11][1] += 0.06
 
         for g in goals:
             pygame.draw.circle(

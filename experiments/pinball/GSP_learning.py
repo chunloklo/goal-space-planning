@@ -12,19 +12,19 @@ def get_configuration_list():
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballProblem"],
+        "problem": ["PinballTermProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
         # 'max_steps': [100],
         'max_steps': [100000],
         'exploration_phase': [0],
-        'gamma': [0.99],
-        'render': [True],
+        'gamma': [0.95],
+        'render': [False],
 
         # Logging
         # 'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss')],
-        'log_keys': [('reward_rate', 'q_map', 'num_steps_in_ep', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'goal_r', 'goal_gamma', 'goal_baseline', 'goal_init')],
+        'log_keys': [('reward_rate', 'q_map', 'num_steps_in_ep', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'goal_r', 'goal_gamma', 'goal_baseline', 'goal_init', 'goal_values')],
         # 'log_keys': [('reward_rate', 'goal_baseline', 'goal_values')],
         # 'log_keys': [('reward_rate', 'q_map', 'goal_baseline', 'goal_values')],
         'step_logging_interval': [100],
@@ -36,11 +36,15 @@ def get_configuration_list():
         "agent": ["GSP_NN"],
         'step_size': [1.0],
         'epsilon': [0.1],
-        'kappa': [0.0],
         'search_control': ['random'],
-        'use_pretrained_behavior': [True],
+        'OCI_update_interval': [8],
+        'polyak_stepsize': [0.05],
+        # 'use_goal_values': [True],
+
+        # Saving/Loading of Models/Behavior:
+        'save_behavior': [True],
+        'use_pretrained_behavior': [False],
         'use_pretrained_model': [True],
-        'OCI_update_interval': [4],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

@@ -23,7 +23,7 @@ from analysis.common import get_best_grouped_param, load_data, load_reward_rate,
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
 
-STEP_SIZE = 1
+STEP_SIZE = 10
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
@@ -33,7 +33,6 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None, key=None)
 
     parameter_list = get_configuration_list_from_file_path(param_file_name)
     # print("plotting only the first index of the config list")
-
     index = 0
 
     ############ STANDARD
@@ -105,9 +104,10 @@ if __name__ == "__main__":
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    key = 'reward_loss'
+    key = 'policy_loss'
     # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/GSP_impl_test.py', key=key)
+    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learn_state_to_goal_est.py', key=key)
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py', key=key)
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_optimal.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_opt_option.py')

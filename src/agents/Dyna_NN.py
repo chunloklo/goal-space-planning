@@ -24,7 +24,7 @@ import optax
 import copy
 import pickle
 import traceback
-
+from .components.QLearner_NN import QLearner_NN
 
 from src.utils.log_utils import run_if_should_log
 
@@ -48,24 +48,37 @@ class Dyna_NN:
         self.behaviour_learner = QLearner_NN((4,), 5, self.step_size)
         self.goal_policy_learners = []
 
+        self.goals = problem.goals
+        self.num_goals = len(self.goals)
+
         self.buffer_size = 1000000
         self.min_buffer_size_before_update = 1000
-        self.buffer = Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': ()}, self.random.randint(0,2**31))
+        self.buffer = Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': (), 'goal_term': (self.num_goals, )}, self.random.randint(0,2**31))
 
         self.num_steps_in_ep = 0
         
         params = self.params
         self.use_pretrained_behavior = param_utils.parse_param(params, 'use_pretrained_behavior', lambda p : isinstance(p, bool), optional=True, default=False)
         self.polyak_stepsize = param_utils.parse_param(params, 'polyak_step_size', lambda p : isinstance(p, float) and p >= 0)
-        print(self.polyak_stepsize)
-
+        self.batch_num = param_utils.parse_param(params, 'batch_num', lambda p : isinstance(p, int) and p > 0, optional=True, default=1)
+        
         if self.use_pretrained_behavior:
-            self.behaviour_learner = pickle.load(open('src/environments/data/pinball/behavior_learner.pkl', 'rb'))
+            agent = pickle.load(open('src/environments/data/pinball/agent.pkl', 'rb'))
+            self.behaviour_learner = agent.behaviour_learner
+            self.buffer = agent.buffer
             print('using pretrained behavior')
 
         self.cumulative_reward = 0
 
         self.num_term = 0
+
+
+        self.use_exploration_bonus = param_utils.parse_param(params, 'use_exploration_bonus', lambda p : isinstance(p, bool), optional=True, default=False)
+
+
+        self.tau = np.full(self.num_goals, 13000)
+
+        self.goal_termination_func = problem.goal_termination_func
 
     def FA(self):
         return "Neural Network"
@@ -95,16 +108,23 @@ class Dyna_NN:
             # Not enough samples in buffer to update yet
             return 
         # Updating behavior
-        data = self.buffer.sample(self.batch_size)
-        self.behaviour_learner.update(data, polyak_stepsize=self.polyak_stepsize)
+        for _ in range(self.batch_num):
+            data = self.buffer.sample(self.batch_size)
+            self.behaviour_learner.update(data, polyak_stepsize=self.polyak_stepsize)
 
     def update(self, s: Any, a, sp: Any, r, gamma, terminal: bool = False):
-        self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma})
+
+        goal_term = self.goal_termination_func(sp)
+        self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_term': goal_term})
         self.num_steps_in_ep += 1
+
+        self.tau[np.where(goal_term == True)] = 0
 
         if r == 10000:
             self.num_term += 1
-            # print(f'terminated! term_number: {self.num_term}')
+            if globals.aux_config.get('show_progress'):
+                print(self.tau)
+                print(f'terminated! term_number: {self.num_term} {self.num_steps_in_ep}')
             globals.collector.collect('num_steps_in_ep', self.num_steps_in_ep)
             self.num_steps_in_ep = 0
         # if terminal:
@@ -112,7 +132,6 @@ class Dyna_NN:
 
         # if s == [0.2, 0.9, 0.0, 0.0]:
         #     print(f'{self.behaviour_learner.get_action_values(np.array(s))}')
-
 
         self.update_behavior()
                 # print(s)
@@ -148,77 +167,3 @@ class Dyna_NN:
         self.update(s, a, s, r, 0, terminal=True)
         # self.behaviour_learner.episode_end()
         # self.option_model.episode_end()
-
-class QLearner_funcs():
-    def __init__(self, num_actions: int, learning_rate: float):
-        self.num_actions = num_actions
-
-        def q_function(states):
-            mlp = hk.Sequential([
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(self.num_actions),
-            ])
-            return mlp(states) 
-        self.f_qfunc = hk.without_apply_rng(hk.transform(q_function))
-        self.f_opt = optax.adam(learning_rate)
-
-        def get_q_values(params: hk.Params, x: Any):
-            action_values = self.f_qfunc.apply(params, x)
-            return action_values
-        
-        def get_td_errors(params: hk.Params, target_params: hk.Params, data):
-            r = data['r']
-            x = data['x']
-            a = data['a']
-            xp = data['xp']
-            gamma = data['gamma']
-
-            x_pred = self.f_qfunc.apply(params, x)
-            xp_pred = jax.lax.stop_gradient(jnp.max(self.f_qfunc.apply(target_params, xp), axis=1))
-            prev_pred = jnp.take_along_axis(x_pred, jnp.expand_dims(a, axis=1), axis=1).squeeze()
-            td_error = r + gamma * xp_pred - prev_pred
-            return td_error
-            
-        def loss(params: hk.Params, target_params: hk.Params, data):
-            td_errors = get_td_errors(params, target_params, data)
-            return  jnp.mean(jnp.square(td_errors)), td_errors
-
-        def update(params: hk.Params, target_params: hk.Params, opt_state, data):
-            grads, td_errors = jax.grad(loss, has_aux=True)(params, target_params, data)
-            updates, opt_state = self.f_opt.update(grads, opt_state)
-            params = optax.apply_updates(params, updates)
-            return params, opt_state, td_errors
-
-        self.f_get_q_values = jax.jit(get_q_values)
-        self.f_update = jax.jit(update)  
-        self.f_get_td_errors = jax.jit(get_td_errors)      
-        return
-
-class QLearner_NN():
-    def __init__(self, state_shape, num_actions: int, learning_rate: float):
-        self.num_actions: int = num_actions
-        self.funcs = QLearner_funcs(num_actions, learning_rate)
-
-        dummy_state = jnp.zeros(state_shape)
-        self.params = self.funcs.f_qfunc.init(jax.random.PRNGKey(42), dummy_state)
-        self.opt_state = self.funcs.f_opt.init(self.params)
-
-        # target params for the network
-        self.target_params = copy.deepcopy(self.params)
-
-    def get_action_values(self, x: npt.ArrayLike) -> np.ndarray:
-        action_values = self.funcs.f_get_q_values(self.params, x)
-        return action_values
-
-    def get_target_action_values(self, x: npt.ArrayLike) -> np.ndarray:
-        action_values = self.funcs.f_get_q_values(self.target_params, x)
-        return action_values
-    
-    def get_td_errors(self, data):
-        return self.funcs.f_get_td_errors(self.params, self.target_params, data)
-
-    def update(self, data, polyak_stepsize:float=0.005):
-        self.params, self.opt_state, td_errors = self.funcs.f_update(self.params, self.target_params, self.opt_state, data)
-        self.target_params = optax.incremental_update(self.params, self.target_params, polyak_stepsize)
-        return self.params, td_errors

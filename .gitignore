@@ -39,3 +39,6 @@ results_dbs/
 
 # Local cache for plot info
 local_cache.pkl
+
+# Lets avoiding uploading any pkls for now
+*.pkl

@@ -16,5 +16,8 @@ blackboard = {}
 global param
 param = None
 
+global aux_config
+aux_config = None
+
 global zodb_stuff
 zodb_stuff = None

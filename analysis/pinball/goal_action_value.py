@@ -38,8 +38,8 @@ from src.problems.PinballProblem import PinballProblem
 from src.experiment import ExperimentModel
 
 
-ROWS = 20
-COLUMNS = 20
+ROWS = 40
+COLUMNS = ROWS
 NUM_GOALS = 16
 
 def generatePlots(param, data, key):
@@ -64,9 +64,9 @@ def generatePlots(param, data, key):
 
     # Calculating the value at each state approximately
     num_goals = problem.num_goals
-    initiation_map = np.zeros((num_goals, 20, 20))
-    for r, y in enumerate(np.linspace(0, 1, 20)):
-        for c, x in enumerate(np.linspace(0, 1, 20)):
+    initiation_map = np.zeros((num_goals, ROWS, COLUMNS))
+    for r, y in enumerate(np.linspace(0, 1, ROWS)):
+        for c, x in enumerate(np.linspace(0, 1, ROWS)):
             init = problem.goal_initiation_func([x, y, 0, 0])
             initiation_map[:, r, c] = init
 
@@ -123,7 +123,7 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_impl_test.py'
+    parameter_path = 'experiments/pinball/GSP_learn_state_to_goal_est.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]

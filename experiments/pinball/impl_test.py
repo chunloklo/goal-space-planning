@@ -15,10 +15,10 @@ def get_configuration_list():
         "problem": ["PinballProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         "episodes": [0],
-        'max_steps': [600000],
+        'max_steps': [400000],
         'explore_env': [False],
         'exploration_phase': [0],
-        'gamma': [0.99],
+        'gamma': [0.95],
         'render': [False],
 
         # Logging
@@ -27,7 +27,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10],
+        "seed": [10000],
         
         # Agent
         "agent": ["Dyna_NN"],
@@ -35,6 +35,10 @@ def get_configuration_list():
         'epsilon': [0.1],
         'search_control': ['random'],
         'use_pretrained_behavior': [False],
+        'polyak_step_size': [0.05],
+        'batch_num': [2],
+
+        "save_behavior": [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

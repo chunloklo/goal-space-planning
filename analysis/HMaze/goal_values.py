@@ -36,7 +36,7 @@ from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_pat
 def create_goal_value_plot(config):
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    data = load_data(config, 'goal_values')
+    data = load_data(config, 'goal_baseline')
 
     ax.plot(data, label=range(6))
     

@@ -46,6 +46,7 @@ def run(param: dict, aux_config={}):
     seed = parse_param(param, 'seed', lambda p: isinstance(p, int), default=-1, optional=True)
 
     globals.param = param
+    globals.aux_config = aux_config
 
     np.random.seed(seed)
 
@@ -155,18 +156,21 @@ def run(param: dict, aux_config={}):
     save_obj = {}
 
     # # Calculating the value at each state approximately
+    resolution = 40
     num_goals = problem.num_goals
-    last_q_map = np.zeros((20, 20, 5))
-    last_goal_q_map = np.zeros((num_goals, 20, 20, 5))
-    last_reward_map = np.zeros((num_goals, 20, 20, 5))
-    last_gamma_map = np.zeros((num_goals, 20, 20, 5))
-    for r, y in enumerate(np.linspace(0, 1, 20)):
-        for c, x in enumerate(np.linspace(0, 1, 20)):
+    last_q_map = np.zeros((resolution, resolution, 5))
+    last_goal_q_map = np.zeros((num_goals, resolution, resolution, 5))
+    last_reward_map = np.zeros((num_goals, resolution, resolution, 5))
+    last_gamma_map = np.zeros((num_goals, resolution, resolution, 5))
+    for r, y in enumerate(np.linspace(0, 1, resolution)):
+        for c, x in enumerate(np.linspace(0, 1, resolution)):
             last_q_map[r, c] = agent.behaviour_learner.get_action_values(np.array([x, y, 0.0, 0.0]))
-            if hasattr(agent, 'goals'):
+            if param['agent'] == 'GSP_NN':
                 for g in range(num_goals):
-                    goal_s = np.append([x, y, 0.0, 0.0], np.array(agent.goals[g]))
-                    action_value, reward, gamma = agent.goal_learner.get_goal_outputs(goal_s)
+                    # goal_s = np.append([x, y, 0.0, 0.0], np.array(agent.goals[g]))
+                    # action_value, reward, gamma = agent.goal_learner.get_goal_outputs(goal_s)
+                    # SWITCHING OVER TO 1 NN PER GOAL
+                    action_value, reward, gamma = agent.goal_learners[g].get_goal_outputs(np.array([x, y, 0.0, 0.0]))
                     last_goal_q_map[g, r, c] = action_value
                     last_reward_map[g, r, c] = reward
                     last_gamma_map[g, r, c] = gamma
@@ -181,18 +185,36 @@ def run(param: dict, aux_config={}):
     globals.collector.reset()
 
     for k in save_logger_keys:
-        save_obj[k] = globals.collector.all_data[k]
+        if k in globals.collector.all_data:
+            save_obj[k] = globals.collector.all_data[k]
+        else:
+            print(f'LOGGER KEY {k} WAS NOT SAVED BECAUSE IT WASNT FOUND IN THE COLLECTOR')
     
     save_data_zodb(param, save_obj)
 
     # Saving agent for display:
 
     # Saving the agent goal learners
-    cloudpickle.dump(agent.behaviour_learner, open('./src/environments/data/pinball/behavior_learner.pkl', 'wb'))
+    save_behavior = parse_param(param, 'save_behavior', lambda p: isinstance(p, bool), optional=True, default=False)
+    if save_behavior:
+        if param['agent'] == 'GSP_NN':
+            cloudpickle.dump(agent, open('./src/environments/data/pinball/gsp_agent.pkl', 'wb'))
+        else:
+            cloudpickle.dump(agent, open('./src/environments/data/pinball/agent.pkl', 'wb'))
     # 'save_goal_model': [True],
 
+    save_goal_learner = parse_param(param, 'save_state_to_goal_estimate', lambda p: isinstance(p, bool), optional=True, default=False)
+    
+    if save_goal_learner:
+        # cloudpickle.dump(agent.goal_learner, open('./src/environments/data/pinball/goal_learner.pkl', 'wb'))
+        # cloudpickle.dump(agent.goal_buffer, open('./src/environments/data/pinball/goal_buffer.pkl', 'wb'))
+        
+        # SWITCHING OVER TO HAVING ONE NN PER GOAL
+        cloudpickle.dump(agent.goal_learners, open('./src/environments/data/pinball/goal_learner.pkl', 'wb'))
+        cloudpickle.dump(agent.goal_buffers, open('./src/environments/data/pinball/goal_buffer.pkl', 'wb'))
 
-    # cloudpickle.dump(agent.goal_learner, open('./src/environments/data/pinball/goal_learner.pkl', 'wb'))
+    # if save_buffers:
+
     # cloudpickle.dump(agent.goal_estimate_learner, open('./src/environments/data/pinball/goal_estimate_learner.pkl', 'wb'))
     
     logging.info(f"Experiment Done {param} : {idx}, Time Taken : {time.time() - t_start}")

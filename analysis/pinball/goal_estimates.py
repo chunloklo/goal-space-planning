@@ -43,12 +43,12 @@ def create_plot(data, key):
 
     num_goals = 16
     for g in range(num_goals):
-        axes[g].plot(data[:, g, :], label=list(range(num_goals)))
+        axes[g].plot(data[:, g], label=list(range(num_goals)))
         axes[g].set_title(g)
         axes[g].legend()
 
-        if g == 0:
-            print(data[-1, g, :])
+        # if g == 0:
+        #     print(data[-1, g, :])
 
      # ax.set_xlim([600, 1200])
 
@@ -60,14 +60,15 @@ def create_plot(data, key):
     plt.savefig(f'{save_file}', dpi = 300)
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_impl_test.py'
+    parameter_path = 'experiments/pinball/GSP_learning.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
     
-    key = 'goal_init'
+    key = 'goal_baseline'
     data = load_data(parameter_list[0], key)
 
     # print(data[-1, 0])
     # asda
+    print(data.shape)
 
     create_plot(data, key)
     exit()

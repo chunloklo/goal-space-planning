@@ -49,6 +49,47 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None, color=Non
         # print(len(list(x_range)))
         ax.plot(x_range, run_data, label=param_file_name, color=color)
 
+
+def plot_reward_rate_group(ax, group,  color=None):
+    all_data = []
+    for param in group:
+        ############ STANDARD
+        data = load_data(param, 'reward_rate')
+        all_data.append(data)
+
+        print(data.shape)
+        run_data = mean_chunk_data(data, STEP_SIZE, 0)
+        # print(run_data.shape)
+
+        x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
+
+        # print(len(list(x_range)))
+        ax.plot(x_range, run_data, color=color)
+
+    ####### Individual skip probability weights
+    # data = load_data(parameter_list[index], 'skip_probability_weights')
+    # print(data.shape)
+    
+
+    # for i in range(0, 3840, 196):
+    #     plt.axvline(x=i)
+
+    # for i in [0, 7, 14, 7 + 15]:
+    #     plot_data = data[:, i]
+    #     print(data.shape)
+    #     run_data = mean_chunk_data(plot_data, STEP_SIZE, 0)
+    #     # print(run_data.shape)
+
+    #     # Accumulating
+    #     # for i in range(1, len(run_data)):
+    #     #     run_data[i] = run_data[i] + run_data[i - 1]
+
+    #     x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
+
+    #     # print(len(list(x_range)))
+    #     ax.plot(x_range, run_data, label=i)
+
+
     ####### Individual skip probability weights
     # data = load_data(parameter_list[index], 'skip_probability_weights')
     # print(data.shape)
@@ -112,13 +153,32 @@ if __name__ == "__main__":
     # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_baseline_check.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning.py', color='black')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/impl_test_0.0005.py', color='blue')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/impl_test_0.001.py', color='red')
-    # plt.legend()
-    # plt.title(alg_name)
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning_values_more.py', color=None)
 
-    # ax.set_xlim([600, 1200])
+
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.1.py', color=None)
+
+
+
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/GSP_learning_values.py')
+
+    groups = group_configs(param_list, ignore_keys=['seed'])
+
+    for group in groups:
+        # if group[0]['use_exploration_bonus'] == False:
+        #     plot_reward_rate_group(ax, group[1])
+
+        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+        #     plot_reward_rate_group(ax, group[1])
+        if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == False and group[0]['polyak_stepsize'] == 0.05:
+            plot_reward_rate_group(ax, group[1])
+        # if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.1:
+        #     plot_reward_rate_group(ax, group[1])
+
+
+
+    ax.set_ylim([-20, 180])
 
     # Getting file name
     save_file = get_file_name('./plots/', f'reward_rate', 'png', timestamp=True)

@@ -13,12 +13,12 @@ def get_mean_std(data: np.array):
     assert len(data.shape) == 2, f'data with more than 2 dimension is not supported. Input data has {len(data.shape)} dimensions'
     # Assumes the first dimension is the number of runs, the second is the number of log steps
     data_mean = np.mean(data, axis=0)
-    data_std = np.std(data, axis=0) / data.shape[0]
+    data_std = np.std(data, axis=0)
     return data_mean, data_std
 
 def get_mean_stderr(data: np.array):
     data_mean, data_std = get_mean_std(data)
-    data_stderr = data_std
+    data_stderr = data_std / np.sqrt(data.shape[0])
     return data_mean, data_stderr
 
 

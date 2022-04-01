@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from experiment_utils.sweep_configs.common import get_configuration_list_from_file_path
 
 from src.analysis.plot_utils import load_configuration_list_data
-from  experiment_utils.analysis_common.process_line import get_mean_std, mean_chunk_data
+from  experiment_utils.analysis_common.process_line import get_mean_std, get_mean_stderr, mean_chunk_data
 from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate, plot_mean_ribbon
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
@@ -52,7 +52,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
 
     print(all_data.shape)
 
-    mean, std = get_mean_std(all_data)
+    mean, std = get_mean_stderr(all_data)
 
     mean, std = mean_chunk_data(mean, STEP_SIZE), mean_chunk_data(std, STEP_SIZE)
     x_range = get_x_range(0, mean.shape[0], STEP_SIZE)
@@ -117,15 +117,28 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # ax.set_ylim([0, 10000])
-    ax.set_xlabel('episodes')
-    ax.set_ylabel('number of steps per episode')
-    # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
-    # plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
-    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_baseline_check.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning_0.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning_8.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning_16.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning_32.py')
+    ax.set_xlabel('number of steps x100')
+    ax.set_ylabel('reward rate')
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning_display.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning_baseline_display.py')
+
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.1.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.05.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.01.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.005.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.001.py')
+
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.5.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.1.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.05.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.01.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.005.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.001.py')
+
+    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_1_explore_true.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_2_explore_true.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_4_explore_true.py')
+
     plt.legend()
     # plt.title(alg_name)
 
