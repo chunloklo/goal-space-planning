@@ -36,7 +36,7 @@ def get_configuration_list():
         'search_control': ['random'],
         'use_pretrained_behavior': [False],
         'polyak_step_size': [0.05],
-        'batch_num': [2],
+        'batch_num': [1],
         'use_exploration_bonus': [True],
 
         # "save_behavior": [True],
