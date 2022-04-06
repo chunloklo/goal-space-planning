@@ -8,6 +8,7 @@ from src.agents.OptionPlanning_Tab import OptionPlanning_Tab
 from src.agents.DynaOptions_NN import DynaOptions_NN
 from src.agents.GSP_Tab import GSP_Tab
 from src.agents.Dyna_NN import Dyna_NN
+from src.agents.Dreamer import Dreamer
 
 def getAgent(name):
     if name == 'DynaOptions_Tab':
@@ -28,5 +29,7 @@ def getAgent(name):
         return Dyna_NN
     elif name == 'GSP_NN':
         return GSP_NN
+    elif name == 'Dreamer':
+        return Dreamer
     else:
         raise NotImplementedError()

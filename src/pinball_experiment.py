@@ -111,7 +111,9 @@ def run(param: dict, aux_config={}):
         print(f'Saved logger keys: {save_logger_keys}')
         if exp.episodes == -1:
             print(f'Logging interval: {step_logging_interval}, num steps: {exp.max_steps}')
-        input("Confirm run?")
+
+        if aux_config.get('confirm_run', False):
+            input("Confirm run?")
 
     glue = RlGlue(wrapper, env)
 
