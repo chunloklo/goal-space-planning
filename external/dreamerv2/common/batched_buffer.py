@@ -355,11 +355,14 @@ class JaxSubsequenceParallelEnvReplayBuffer(object):
                 # Assume it is scalar.
                 arg_shape = tuple()
             store_element_shape = tuple(store_element.shape)
-            assert arg_shape[0] == self.n_envs
-            arg_shape = arg_shape[1:]
-            if arg_shape != store_element_shape:
-                raise ValueError('arg {} has shape {}, expected {}'.format(i,
-                                                                           arg_shape, store_element_shape))
+            if len(arg_shape) == 0: 
+                assert self.n_envs == 1
+            else:
+                assert arg_shape[0] == self.n_envs
+                arg_shape = arg_shape[1:]
+                if arg_shape != store_element_shape:
+                    raise ValueError('arg {} has shape {}, expected {}'.format(i,
+                                                                            arg_shape, store_element_shape))
 
     def is_empty(self):
         """Is the Replay Buffer empty?"""

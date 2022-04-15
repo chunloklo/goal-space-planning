@@ -12,7 +12,7 @@ def get_configuration_list():
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballTermProblem"],
+        "problem": ["PinballContinuingProblemWithTermState"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
@@ -44,7 +44,7 @@ def get_configuration_list():
         # Saving/Loading of Models/Behavior:
         'save_behavior': [True],
         'use_pretrained_behavior': [False],
-        'use_pretrained_model': [True],
+        'use_pretrained_model': ['standard'],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

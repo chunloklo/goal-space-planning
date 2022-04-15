@@ -63,7 +63,7 @@ class Dyna_NN:
         self.batch_num = param_utils.parse_param(params, 'batch_num', lambda p : isinstance(p, int) and p > 0, optional=True, default=1)
         
         if self.use_pretrained_behavior:
-            agent = pickle.load(open('src/environments/data/pinball/agent.pkl', 'rb'))
+            agent = pickle.load(open('src/environments/data/pinball/Dyna_NN_agent.pkl', 'rb'))
             self.behaviour_learner = agent.behaviour_learner
             self.buffer = agent.buffer
             print('using pretrained behavior')
@@ -112,7 +112,7 @@ class Dyna_NN:
             data = self.buffer.sample(self.batch_size)
             self.behaviour_learner.update(data, polyak_stepsize=self.polyak_stepsize)
 
-    def update(self, s: Any, a, sp: Any, r, gamma, terminal: bool = False):
+    def update(self, s: Any, a, sp: Any, r, gamma, info, terminal: bool = False):
 
         goal_term = self.goal_termination_func(sp)
         self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_term': goal_term})
@@ -120,6 +120,9 @@ class Dyna_NN:
 
         self.tau[np.where(goal_term == True)] = 0
 
+        # print(s)
+        # print(self.goals)
+        
         if r == 10000:
             self.num_term += 1
             if globals.aux_config.get('show_progress'):
@@ -163,7 +166,7 @@ class Dyna_NN:
 
         return ap
 
-    def agent_end(self, s, a, r, gamma):
-        self.update(s, a, s, r, 0, terminal=True)
+    def agent_end(self, s, a, r, gamma, info):
+        self.update(s, a, s, r, 0, info, terminal=True)
         # self.behaviour_learner.episode_end()
         # self.option_model.episode_end()

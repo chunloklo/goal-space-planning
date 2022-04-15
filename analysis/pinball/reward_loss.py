@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     key = 'policy_loss'
     # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learn_state_to_goal_est.py', key=key)
+    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learn_state_to_goal_est_oracle.py', key=key)
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py', key=key)
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_tmaze/skip_optimal.py')

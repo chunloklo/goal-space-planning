@@ -12,7 +12,7 @@ def get_configuration_list():
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballProblem"],
+        "problem": ["PinballTermProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         "episodes": [0],
         'max_steps': [400000],
@@ -27,7 +27,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10000],
+        "seed": [0],
         
         # Agent
         "agent": ["Dreamer"],
@@ -40,6 +40,7 @@ def get_configuration_list():
         'dreamer_config_path': ['external/dreamerv2/configs.yaml'],
 
         "save_behavior": [True],
+        # "use_pretrained_model": [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

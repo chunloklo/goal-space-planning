@@ -15,15 +15,15 @@ class RlGlue:
         return (obs, self.last_action)
 
     def step(self):
-        (reward, s, term) = self.environment.step(self.last_action)
+        (reward, s, term), info = self.environment.step(self.last_action)
         obs = self.observationChannel(s)
         self.total_reward += reward
         if term:
-            self.agent.end(reward)
+            self.agent.end(reward, info=info)
 
             roat = (reward, obs, None, term)
         else:
-            self.last_action = self.agent.step(reward, obs)     
+            self.last_action = self.agent.step(reward, obs, info=info)     
             roat = (reward, obs, self.last_action, term)
         
 

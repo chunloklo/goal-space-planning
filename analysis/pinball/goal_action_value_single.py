@@ -33,7 +33,7 @@ from src.utils import run_utils
 from analysis.common import load_data
 import matplotlib
 from datetime import datetime
-from src.problems.PinballProblem import PinballProblem
+from src.problems.PinballProblem import PinballOracleProblem, PinballProblem
 
 from src.experiment import ExperimentModel
 
@@ -60,7 +60,7 @@ def generatePlots(param, data, key):
     exp = ExperimentModel.load_from_params(exp_params)
 
 
-    problem = PinballProblem(exp, 0, 0)
+    problem = PinballOracleProblem(exp, 0, 0)
 
     # Calculating the value at each state approximately
     num_goals = problem.num_goals
@@ -75,7 +75,7 @@ def generatePlots(param, data, key):
 
     save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
 
-    g = 3
+    g = 1
     ax = axes
 
 
@@ -92,6 +92,7 @@ def generatePlots(param, data, key):
         min_val = np.min(data[g])
         max_val = np.max(data[g])
     print(min_val, max_val)
+    # print(initiation_map[g].shape)
     
     for r in range(ROWS):
         for c in range(COLUMNS):
@@ -102,7 +103,7 @@ def generatePlots(param, data, key):
                 a_map = {
                     0: 1,
                     1: 0,
-                    2: 3,
+                    2: 4,
                     3: 2,
                 }
 
@@ -127,11 +128,11 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_learn_state_to_goal_est.py'
+    parameter_path = 'experiments/pinball/GSP_learn_state_to_goal_est_oracle_g1.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
-    key = 'goal_r_map'
+    key = 'goal_gamma_map'
     data = load_data(config, key)
     data = np.squeeze(data)
 

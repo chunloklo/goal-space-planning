@@ -12,7 +12,7 @@ def get_configuration_list():
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballTermProblem"],
+        "problem": ["PinballContinuingProblemWithTermState"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],

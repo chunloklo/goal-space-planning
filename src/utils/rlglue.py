@@ -62,11 +62,9 @@ class OneStepWrapper(BaseAgent):
         else:
             globals.blackboard['in_exploration_phase'] = False
 
-    def step(self, r, sp, t=False):
-
-
+    def step(self, r, sp, info=None, t=False):
         r = self.no_reward_if_exploring(r)
-        ap = self.agent.update(self.s, self.a, sp, r, self.gamma)
+        ap = self.agent.update(self.s, self.a, sp, r, self.gamma, info=info)
 
         ap = self.random_action_if_exploring(ap, use_option_action_pair = False)
 
@@ -76,10 +74,10 @@ class OneStepWrapper(BaseAgent):
         self._increment_num_steps()
         return ap
         
-    def end(self, r):
+    def end(self, r, info=None):
         r = self.no_reward_if_exploring(r)
         gamma = 0
-        self.agent.agent_end(self.s, self.a, r, gamma)  
+        self.agent.agent_end(self.s, self.a, r, gamma, info=info)  
 
         self._increment_num_steps()
         self._increment_num_episodes()
@@ -93,9 +91,9 @@ class OptionOneStepWrapper(OneStepWrapper):
 
         return self.a
 
-    def step(self, r, sp, t=False):
+    def step(self, r, sp, info=None, t=False):
         r = self.no_reward_if_exploring(r)
-        op, ap = self.agent.update(self.s, self.o, self.a, sp, r, self.gamma)
+        op, ap = self.agent.update(self.s, self.o, self.a, sp, r, self.gamma, info=info)
 
         op, ap = self.random_action_if_exploring((op, ap), use_option_action_pair = True)
 
@@ -105,10 +103,10 @@ class OptionOneStepWrapper(OneStepWrapper):
 
         self._increment_num_steps()
         return ap
-    def end(self, r):
+    def end(self, r, info=None):
         r = self.no_reward_if_exploring(r)
         gamma = 0
-        self.agent.agent_end(self.s, self.o, self.a, r, gamma)
+        self.agent.agent_end(self.s, self.o, self.a, r, gamma,  info=info)
         
         self._increment_num_steps()
         self._increment_num_episodes()

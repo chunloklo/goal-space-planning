@@ -166,7 +166,8 @@ def run(param: dict, aux_config={}):
     last_gamma_map = np.zeros((num_goals, resolution, resolution, 5))
     for r, y in enumerate(np.linspace(0, 1, resolution)):
         for c, x in enumerate(np.linspace(0, 1, resolution)):
-            last_q_map[r, c] = agent.behaviour_learner.get_action_values(np.array([x, y, 0.0, 0.0]))
+            if param['agent'] != 'Dreamer':
+                last_q_map[r, c] = agent.behaviour_learner.get_action_values(np.array([x, y, 0.0, 0.0]))[:agent.num_actions]
             if param['agent'] == 'GSP_NN':
                 for g in range(num_goals):
                     # goal_s = np.append([x, y, 0.0, 0.0], np.array(agent.goals[g]))
@@ -199,21 +200,19 @@ def run(param: dict, aux_config={}):
     # Saving the agent goal learners
     save_behavior = parse_param(param, 'save_behavior', lambda p: isinstance(p, bool), optional=True, default=False)
     if save_behavior:
-        if param['agent'] == 'GSP_NN':
-            cloudpickle.dump(agent, open('./src/environments/data/pinball/gsp_agent.pkl', 'wb'))
-        else:
-            cloudpickle.dump(agent, open('./src/environments/data/pinball/agent.pkl', 'wb'))
-    # 'save_goal_model': [True],
-
-    save_goal_learner = parse_param(param, 'save_state_to_goal_estimate', lambda p: isinstance(p, bool), optional=True, default=False)
+        cloudpickle.dump(agent, open(f'./src/environments/data/pinball/{param["agent"]}_agent.pkl', 'wb'))
     
-    if save_goal_learner:
+    save_goal_learner_name = parse_param(param, 'save_state_to_goal_estimate', lambda p: isinstance(p, str) or p is None, optional=True, default=None)
+    
+    if save_goal_learner_name is not None:
         # cloudpickle.dump(agent.goal_learner, open('./src/environments/data/pinball/goal_learner.pkl', 'wb'))
         # cloudpickle.dump(agent.goal_buffer, open('./src/environments/data/pinball/goal_buffer.pkl', 'wb'))
         
         # SWITCHING OVER TO HAVING ONE NN PER GOAL
-        cloudpickle.dump(agent.goal_learners, open('./src/environments/data/pinball/goal_learner.pkl', 'wb'))
-        cloudpickle.dump(agent.goal_buffers, open('./src/environments/data/pinball/goal_buffer.pkl', 'wb'))
+        cloudpickle.dump(agent.goal_learners, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_learner.pkl', 'wb'))
+        cloudpickle.dump(agent.goal_buffers, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_buffer.pkl', 'wb'))
+        # cloudpickle.dump(agent.goal_estimate_learner, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_estimate_learner.pkl', 'wb'))
+        cloudpickle.dump(agent.goal_estimate_buffer, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_estimate_buffer.pkl', 'wb'))
 
     # if save_buffers:
 

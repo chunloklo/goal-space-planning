@@ -170,6 +170,9 @@ class EnsembleRSSM(nn.Module):
     def obs_step_scan(self, state, input):
         (prev_stats, prev_stoch, prev_det) = state
         prev_action, embed, is_first, rng = input
+        # print('error_place')
+        # print(is_first.shape)
+        # print(prev_stoch.shape)
         prev_stoch = jnp.einsum('b,b...->b...', 1.0 - is_first, prev_stoch)
         prev_stats = jnp.einsum('b,b...->b...', 1.0 - is_first, prev_stats)
         prev_det = jnp.einsum('b,b...->b...', 1.0 - is_first, prev_det)
@@ -192,14 +195,14 @@ class EnsembleRSSM(nn.Module):
                                                  stats_post, stoch_post, deter)
 
     def obs_step(self, prev_stats, prev_stoch, prev_det, prev_action, embed, is_first, rng, sample=True):
-        print(prev_stats)
-        print(prev_stoch)
-        print(prev_det)
-        print(prev_action)
-        print(embed)
-        print(is_first)
+        # print(prev_stats)
+        # print(prev_stoch)
+        # print(prev_det)
+        # print(prev_action)
+        # print(embed)
+        # print(is_first)
 
-        print(jnp.einsum('b,b...->b...', 1.0 - is_first, prev_stoch))
+        # print(jnp.einsum('b,b...->b...', 1.0 - is_first, prev_stoch))
 
         prev_stoch = jnp.einsum('b,b...->b...', 1.0 - is_first, prev_stoch)
         prev_stats = jnp.einsum('b,b...->b...', 1.0 - is_first, prev_stats)
@@ -473,7 +476,7 @@ class Decoder(nn.Module):
                 features = features.reshape(-1, 1, 1, 32 * self.obs_decoder.cnn_depth)
             x_hat = self.obs_decoder(features)
             # dist = tfd.Independent(tfd.Normal(0.5 * jnp.tanh(x_hat), 1), 3)
-            print(x_hat.shape)
+            # print(x_hat.shape)
 
             dist = tfd.Independent(tfd.Normal(0.5 * jnp.tanh(x_hat), 1), 1)
         return dist
@@ -805,5 +808,5 @@ class PinballDecoder(nn.Module):
         x = get_activation(self.act)(nn.Dense(features=64)(x))
         x = get_activation(self.act)(nn.Dense(features=128)(x))
         x = get_activation(self.act)(nn.Dense(features=128)(x))
-        x = nn.Dense(features=5)(x)
+        x = nn.Dense(features=4)(x)
         return x

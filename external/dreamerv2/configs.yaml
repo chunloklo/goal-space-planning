@@ -241,6 +241,7 @@ debug:
 
 pinball:
   task: atari_pong
+  envs: 1
   encoder: {mlp_keys: [], cnn_keys: ['image'], cnn_type: pinball,}
   decoder: {mlp_keys: [], cnn_keys: ['image'],  cnn_type: pinball,}
   time_limit: 27000
@@ -249,13 +250,25 @@ pinball:
   eval_every: 2.5e5
   log_every: 1e4
   prefill: 50000
-  train_every: 16
+  train_every: 1024
   clip_rewards: tanh
-  rssm: {mlp_hidden: 600, gru_hidden: 600}
+  # rssm: {mlp_hidden: 600, gru_hidden: 600}
   model_opt.lr: 2e-4
   actor_opt.lr: 4e-5
   critic_opt.lr: 1e-4
   actor_ent: 1e-3
-  discount: 0.999
+  discount: 0.95
   loss_scales.kl: 0.1
   loss_scales.discount: 5.0
+
+
+  # World Model
+  # grad_heads: [decoder, reward, discount]
+  # pred_discount: True
+  rssm: {mlp_hidden: 32, gru_hidden: 32}
+  reward_head: {hidden_dims: [32], act: elu, norm: False, dist: mse, activate_final: False}
+  discount_head: {hidden_dims: [32], act: elu, norm: False, dist: binary, activate_final: False}
+
+  # Actor Critic
+  actor: {hidden_dims: [32], act: elu, norm: False, dist: trunc_normal, min_std: 0.1}
+  critic: {hidden_dims: [32], act: elu, norm: False, dist: mse}

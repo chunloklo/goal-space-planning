@@ -130,6 +130,116 @@ def nstep_target(params_target, apply_fn, apply_target_fn, lambda_return_fn, fea
         "target_fn",
         "lambda_return_fn"
 ))
+
+def train_wm(obs,
+          action,
+          reward,
+          is_first,
+          is_terminal,
+          train_state_wm,
+          train_state_actor,
+          train_state_critic,
+          train_state_target,
+          preprocess,
+          encode,
+          decode,
+          observe,
+          get_feat,
+          img_step,
+          decode_reward,
+          decode_discount,
+          kl_loss,
+          policy_fn,
+          value_fn,
+          normalize_rew_fn,
+          target_fn,
+          lambda_return_fn,
+          config,
+          step,
+          stats,
+          stoch,
+          det,
+          rng):
+    # 1. Train WM
+    # print('training okay')
+    start_time = time.time()
+    train_state_wm, (model_loss, (stoch_post, deter,
+                                  stats_post, loss_r, loss_d,
+                                  loss_rec, kl_loss, rec_obs), grads_wm) = \
+        opt_wrapper(wm_loss_fn,
+                    train_state_wm,
+                    config["half_precision"],
+                    (
+                        train_state_wm.params,
+                        train_state_wm,
+                        preprocess,
+                        encode,
+                        decode,
+                        observe,
+                        get_feat,
+                        decode_reward,
+                        decode_discount,
+                        kl_loss,
+                        config["grad_heads"],
+                        config["pred_discount"],
+                        config["loss_scales"]['kl'],
+                        config["loss_scales"]['reward'],
+                        config["loss_scales"]['discount'],
+                        config["loss_scales"]['proprio'],
+                        config['rescale_rewards_wm_critic'],
+                        rng,
+                        obs,
+                        action,
+                        reward,
+                        is_first,
+                        is_terminal,
+                        stats,
+                        stoch,
+                        det,))
+
+    print("WM train took {}".format(time.time() - start_time))
+
+    # metrics = {
+    #     'loss_reward': loss_r,
+    #     'loss_discount': loss_d,
+    #     'loss_reconstruction': loss_rec,
+    #     'loss_kl': kl_loss,
+    #     'loss_actor': actor_loss,
+    #     'loss_critic': critic_loss,
+    #     **wm_gradnorms,
+    #     'gradnorm_actor': compute_grad_norm(grads_actor),
+    #     'gradnorm_critic': compute_grad_norm(grads_critic),
+    #     'policy_entropy': ent.mean(),
+    #     'mean_img_action_var': action_acc.reshape(-1, action.shape[-1]).var(0).mean(),
+    #     'mean_img_reward': img_reward.sum(-1).mean(),
+    #     'mean_img_nstep_targets': target.mean(),
+    #     'mean_true_reward': reward.sum(-1).mean()
+    # }
+    metrics = {}
+
+    return (train_state_wm, train_state_actor, train_state_critic, train_state_target), \
+           (stats_post[:, -1], stoch_post[:, -1], deter[:, -1]), metrics, rec_obs
+
+@functools.partial(jax.jit, static_argnames=(
+        'wm',
+        'ac',
+        'config',
+        'preprocess',
+        'encode',
+        'decode',
+        'observe',
+        'get_feat',
+        'img_step',
+        'decode_reward',
+        'decode_discount',
+        'kl_loss',
+        "policy_fn",
+        "value_fn",
+        "normalize_rew_fn",
+        "target_fn",
+        "lambda_return_fn"
+))
+
 def train(obs,
           action,
           reward,
@@ -373,14 +483,17 @@ def wm_loss_fn(
     inp = feat if 'reward' in grad_heads else jax.lax.stop_gradient(feat)
     dist = train_state_wm.apply_fn({'params': params},
                                    inp, method=decode_reward_fn)
-    like_r = dist.log_prob(jnp.expand_dims(reward, -1))
+    # print(dist.shape)
+    # like_r = dist.log_prob(jnp.expand_dims(reward, -1))
+    like_r = dist.log_prob(reward)
     loss_r = -like_r.mean() + jax.lax.stop_gradient(dist.log_prob(dist.mean()).mean())
 
     if pred_discount:
         inp = feat if 'discount' in grad_heads else jax.lax.stop_gradient(feat)
         dist = train_state_wm.apply_fn({'params': params},
                                        inp, method=decode_discount_fn)
-        like_d = dist.log_prob(jnp.expand_dims(discount, -1))
+        # like_d = dist.log_prob(jnp.expand_dims(discount, -1))
+        like_d = dist.log_prob(discount)
         loss_d = -like_d.mean() + jax.lax.stop_gradient(dist.log_prob(dist.mean()).mean())
     else:
         loss_d = 0.
@@ -615,7 +728,6 @@ def apply_policy(obs, is_first, state, reward,
         det = det[:1]
         action = jnp.zeros((len(obs),) + act_shape)
         state = (stats, stoch, det), action
-        
     latent, action = state
     if obs.dtype == jnp.uint8:
         obs = obs.astype(jnp.float32) / 255.0 - 0.5
@@ -829,6 +941,70 @@ class Agent:
                                                 )
         state = (latent, action)
         return action, state
+
+    def train_wm(self,
+              obs,
+              action,
+              reward,
+              is_first,
+              is_terminal,
+              stats,
+              stoch,
+              det,
+              reinit=False):
+        # 1. Train WM
+
+        if reinit:
+            stats, stoch, det = self.wm.init_rssm(self.rng)
+        self.rng, key = jax.random.split(self.rng)
+
+        (self.train_state_wm, self.train_state_actor, self.train_state_critic,
+         self.train_state_target), carry, metrics, rec_obs = train_wm(
+            obs,
+            action,
+            reward,
+            is_first,
+            is_terminal,
+            train_state_wm=self.train_state_wm,
+            train_state_actor=self.train_state_actor,
+            train_state_critic=self.train_state_critic,
+            train_state_target=self.train_state_target,
+            preprocess=self.wm.preprocess,
+            encode=self.wm.encode,
+            decode=self.wm.decode,
+            observe=self.wm.observe,
+            get_feat=self.wm.get_feat,
+            img_step=self.wm.img_step,
+            decode_reward=self.wm.decode_reward,
+            decode_discount=self.wm.decode_discount,
+            kl_loss=self.wm.kl_loss,
+            policy_fn=self.ac.policy,
+            value_fn=self.ac.value,
+            normalize_rew_fn=self.ac.normalize_rew,
+            target_fn=self.ac.target,
+            lambda_return_fn=self.ac.lambda_return,
+            config=FrozenDict(self.config),
+            step=self.step.value,
+            stats=stats,
+            stoch=stoch,
+            det=det,
+            rng=key,
+        )
+        self.updates += 1
+        metrics_ = {}
+        for k,v in metrics.items():
+            try:
+                metrics_[k] = v.item()
+            except:
+                metrics_[k] = v
+        metrics = metrics_
+
+        if self.config.half_precision:
+            metrics["loss_scale_wm"] = self.train_state_wm.dynamic_scale.scale.item()
+            metrics["loss_scale_actor"] = self.train_state_actor.dynamic_scale.scale.item()
+            metrics["loss_scale_critic"] = self.train_state_critic.dynamic_scale.scale.item()
+
+        return carry, metrics, rec_obs
 
     def train(self,
               obs,

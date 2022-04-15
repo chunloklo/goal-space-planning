@@ -74,14 +74,17 @@ class Buffer():
         self.buffer_head %= self.buffer_size
         pass
 
-    def sample(self, num_samples: int):
+    def sample(self, num_samples: int, copy=True):
         # Currently sampling with replacement which shouldn't make too much of a difference
         sample_range = self.buffer_size if self.buffer_full else self.buffer_head 
         sample_indices = self.random.choice(sample_range, num_samples)
 
         return_dict = {}
         for k in self.keys:
-            return_dict[k] = np.copy(self.buffer[k][sample_indices])
+            if copy:
+                return_dict[k] = np.copy(self.buffer[k][sample_indices])
+            else:
+                return_dict[k] = self.buffer[k][sample_indices]
 
         return return_dict
 

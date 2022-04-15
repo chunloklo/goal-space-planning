@@ -26,6 +26,7 @@ import pathlib
 import external
 import time
 import jax.numpy as jnp
+import pickle
 
 if TYPE_CHECKING:
     # Important for forward reference
@@ -60,6 +61,27 @@ class Dreamer:
 
         self.step = common.Counter(0)
         act_space = {'action': spaces.Box(0, 1, (5, ), dtype=np.bool)}
+
+        action_act_space = act_space['action']
+
+        def _sample_action(self):
+            actions = action_act_space.n
+            index = self._random.randint(0, actions)
+            reference = np.zeros(actions, dtype=np.float32)
+            reference[index] = 1.0
+            print(reference)
+            return reference
+
+        act_space['action'].sample = _sample_action
+
+        self.prefill = param_utils.parse_param(param, 'prefill', lambda p: isinstance(p, bool), optional=True, default=False)
+
+        self.use_pretrained_model = param_utils.parse_param(param, 'use_pretrained_model', lambda p: isinstance(p, bool), optional=True, default=False)
+
+        if self.use_pretrained_model:
+            agent = pickle.load(open('src/environments/data/pinball/Dreamer_agent_WM_pretrain.pkl', 'rb'))
+            self.dreamer_agent = agent.dreamer_agent
+            self.train_replay = agent.train_replay
 
         # @property
         # def act_space(self):
@@ -116,7 +138,7 @@ class Dreamer:
         # Replay buffers
 
         # no_framestack_shape = list(train_envs.obs_space["image"].shape)
-        no_framestack_shape = list((5,))
+        no_framestack_shape = list((4,))
         no_framestack_shape[-1] = no_framestack_shape[-1] // config.framestack
         self.train_replay = buffer_cls(
             stack_size=config.framestack,
@@ -153,6 +175,7 @@ class Dreamer:
         self.first_episode_update = True
         self.num_episodes = 0
         self.cumulative_reward = 0
+        self.num_steps_in_ep = 0
 
     def FA(self):
         return "NN"
@@ -171,14 +194,20 @@ class Dreamer:
                                             mode='explore'
                                             if self.should_expl(self.step) else 'train', reset=reset)
                                             
-    def _postprocess_sample(sample_dict):
+    def _postprocess_sample(self, sample_dict):
         # Need to transpose last 2 channels to make sure colors are continuous
-        image = sample_dict["state"].transpose(0,1,2,3,5,4)
-        sample_dict["image"] = image.reshape(*image.shape[:-2], -1)
+        image = sample_dict["state"]
+        # sample_dict["image"] = image.reshape(*image.shape[:-2], -1)
+        sample_dict["image"] = np.squeeze(image)
         sample_dict['same_trajectory'] = sample_dict['same_trajectory'].astype(np.int32)
         # sample_dict = {k: train_driver._convert(jnp.array(v)) for k, v in sample_dict.items()}
         sample_dict = {k: jnp.array(v) for k, v in sample_dict.items()}
+        sample_dict["terminal"] = sample_dict["terminal"][..., np.newaxis]
         sample_dict["is_terminal"] = sample_dict["terminal"]
+        # sample_dict["is_first"] = sample_dict["is_first"][..., np.newaxis]
+        sample_dict["reward"] = sample_dict["reward"][..., np.newaxis]
+
+        # print(sample_dict['image'].shape, sample_dict['action'].shape, sample_dict['reward'].shape, sample_dict['is_first'].shape, sample_dict["terminal"].shape)
         return sample_dict['image'], sample_dict['action'], sample_dict['reward'], sample_dict['is_first'], sample_dict["terminal"]
 
     def _train_step(self):
@@ -195,26 +224,43 @@ class Dreamer:
                 metrics, rec_obs = train_agent(obs, action, reward, is_first, terminal)
                 metrics["train_time"] = time.time() - start
                 metrics["sample_time"] = sample_time
+    
+    def _train_wm_step(self):
+        x = self.should_train(self.step)
+        train_agent = common.CarryOverState(self.dreamer_agent.train_wm, init_state=self.dreamer_agent.init_policy_state(self.config.dataset.batch)[0])
+        for _ in range(x):
+            for _ in range(self.config.train_steps):
+                start = time.time()
+                sample = self.train_replay.sample()[1]
+                sample_time = time.time() - start
+                obs, action, reward, is_first, terminal = self._postprocess_sample(sample)
+                
+                start = time.time()
+                metrics, rec_obs = train_agent(obs, action, reward, is_first, terminal)
+                metrics["train_time"] = time.time() - start
+                metrics["sample_time"] = sample_time
 
     def update(self, s, a, sp, r, gamma, terminal: bool = False):
+        self.num_steps_in_ep += 1
+        if terminal:
+            print(f'terminated! num_term: {self.num_episodes} num_steps: {self.num_steps_in_ep}')
+            self.num_steps_in_ep = 0
+        
         s = np.array([s])
         sp = np.array([sp])
         self.step.increment(self.config.envs)
         
-        if self.num_episodes > 0:
-            self._train_step()
-            
-
         obs = {}
         obs['image'] = sp
         obs['reward'] = r
-        obs['is_terminal'] = terminal
+        obs['is_terminal'] = np.array([terminal])
         obs['is_first'] = np.array([1 if self.first_episode_update else 0])
-        obs['is_last'] = terminal # Hmm this doesn't feel quite right. But leaving this here for now.
-
-        print(f'############### FIRST EP{self.first_episode_update}')
-
-        ap, self._state = self._train_policy(obs, self._state, reset = self.first_episode_update)
+        obs['is_last'] = np.array([terminal]) # Hmm this doesn't feel quite right. But leaving this here for now.
+        
+        if self.prefill:
+            ap = np.array([self.random.uniform(size=self.num_actions)])
+        else:
+            ap, self._state = self._train_policy(obs, self._state, reset = self.first_episode_update)
 
         # if not terminal:
         #     ap = self.selectAction(sp)
@@ -223,7 +269,6 @@ class Dreamer:
         # print(ap)
         # obs['action'] = create_onehot(self.num_actions, ap)
         obs['action'] = ap
-
         
         self.train_replay.add(
             obs["image"], 
@@ -233,7 +278,13 @@ class Dreamer:
             obs["is_first"],
             obs["is_last"],
             episode_end=obs["is_last"])
-    
+
+        if self.num_episodes > 0:
+            if self.prefill:
+                self._train_wm_step()
+            else:
+                self._train_step()
+            
         self.cumulative_reward += r
         def log(): 
             # globals.collector.collect('Q', np.copy(self.behaviour_learner.Q)) 
@@ -243,7 +294,12 @@ class Dreamer:
 
         self.first_episode_update = False
 
-        return ap
+        next_action = np.argmax(np.asarray(ap))
+
+        # TODO: Taking a random action for now for testing.
+        # return self.selectAction(sp)
+
+        return next_action
 
     def agent_end(self, s, a, r, gamma):
         self.update(s, a, s, r, gamma, terminal=True)

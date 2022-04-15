@@ -14,14 +14,7 @@ from re import S
 import numpy as np
 from RlGlue import BaseEnvironment
 from itertools import *
-
-# from rlglue.types import Action
-# from rlglue.types import Observation
-# from pyrl.rlglue import TaskSpecRLGlue
-# from rlglue.types import Reward_observation_terminal
-# from rlglue.environment.Environment import Environment
-# from rlglue.environment import EnvironmentLoader as EnvironmentLoader
-# from pyrl.rlglue.registry import register_environment
+from .PinballGoals import PinballGoals
 
 try:
     import pygame
@@ -268,17 +261,27 @@ class PinballModel:
     STEP_PENALTY = -5
     THRUST_PENALTY = -5
     END_EPISODE = 10000
+    """ Read a configuration file for Pinball and draw the domain to screen
+            :param configuration: a configuration file containing the polygons,
+                source(s) and target location.
+            :type configuration: str
+    """
 
-    def __init__(self, configuration):
-        """ Read a configuration file for Pinball and draw the domain to screen
+    def __init__(self, configuration, use_config_termination: bool = True):
+        """ead a configuration file for Pinball and draw the domain to screen
 
-    :param configuration: a configuration file containing the polygons,
-        source(s) and target location.
-    :type configuration: str
-
+        Args:
+            configuration (str): a configuration file containing the polygons, source(s), and target location.
+            use_config_termination (bool, optional): Whether the environment should handle termination and use termination from the config file. 
+                                                    If False, the environment will never terminate. Defaults to True.
         """
+        
         self.action_effects = {self.ACC_X:(1, 0), self.ACC_Y:(0, 1), self.DEC_X:(-1, 0), self.DEC_Y:(0, -1), self.ACC_NONE:(0, 0)}
-
+        
+        # [chunlok 2022-04-14] This use_config_termination setting was added by me to disable environment terminations
+        # such that the wrapper can implement its own termination. 
+        # TODO test self.use_config_termination = True
+        self.use_config_termination = use_config_termination
         random.seed()
 
         # Set up the environment according to the configuration
@@ -286,7 +289,7 @@ class PinballModel:
         self.target_pos = []
         self.target_rad = 0.01
 
-        ball_rad = 0.01
+        self.ball_rad = 0.01
         start_pos = []
         with open(configuration) as fp:
             for line in fp.readlines():
@@ -302,9 +305,13 @@ class PinballModel:
                 elif tokens[0] == 'start':
                     start_pos = list(zip(*[iter(map(float, tokens[1:]))]*2))
                 elif tokens[0] == 'ball':
-                    ball_rad = float(tokens[1])
+                    self.ball_rad = float(tokens[1])
 
-        self.ball = BallModel(list(random.choice(start_pos)), ball_rad)
+        self.start_pos = start_pos
+        self.reset_ball_to_start_state()
+        
+    def reset_ball_to_start_state(self):
+        self.ball = BallModel(list(random.choice(self.start_pos)), self.ball_rad)
 
     def get_state(self):
         """ Access the current 4-dimensional state vector
@@ -317,11 +324,10 @@ class PinballModel:
 
     def take_action(self, action):
         """ Take a step in the environment
+        :param action: The action to apply over the ball
+            :type action: int
 
-    :param action: The action to apply over the ball
-        :type action: int
-
-    """
+        """
         for i in range(20):
             if i == 0:
                 self.ball.add_impulse(*self.action_effects[action])
@@ -362,11 +368,11 @@ class PinballModel:
 
     def episode_ended(self):
         """ Find out if the ball reached the target
-
             :returns: True if the ball reched the target position
-        :rtype: bool
-
+            :rtype: bool
         """
+        if not self.use_config_termination:
+            return False
         return np.linalg.norm(np.array(self.ball.position)-np.array(self.target_pos)) < self.target_rad
 
     def _check_bounds(self):
@@ -385,26 +391,17 @@ class PinballEnvironment(BaseEnvironment):
         self.configuration_file = configuration_file
         self.pinball = None
         self.render = render
+        # Hard setting this for now. We might need this to be parameterized later on
+        self.pinball_goals = PinballGoals()  
         if render:
-            print('RENDERING!')
+            print('RENDERING PINBALL ENVIRONMENT!')
         self.explore_env = explore_env 
         self.continuing = continuing
         if self.explore_env:
+
             self.num_steps = 0
-            self.max_steps = 512
-            
-            self.start_states = []
-            border = 0.05
-            n = 4
-            for y in np.linspace(0 + border, 1 - border, n):
-                for x in np.linspace(0 + border, 1 - border, n):
-                    self.start_states.append([x,y])
-
-            # Shifting these two down so they don't start in the obstacle
-            self.start_states[10][1] += 0.01
-            self.start_states[11][1] += 0.06
-
-            self.start_states[3] = [0.84, 0.26]
+            self.max_steps = 20
+            self.start_states = self.pinball_goals.goals
 
         if self.render:
             # Launch interactive pygame
@@ -413,44 +410,54 @@ class PinballEnvironment(BaseEnvironment):
             # Fixing height to be 800
             self.screen = pygame.display.set_mode([800, 800])
 
-        # Setting this to be something wonky right now. It should still work
-        self.terminal_state = [-1.0, -1.0, -1.0, -1.0]
+        self.pinball = PinballModel(self.configuration_file, use_config_termination=False)
 
-    def start(self):
-        self.pinball = PinballModel(self.configuration_file)
-        self.terminated = False
+        self.terminal_goal_index = 3 # Set the environment to terminate after arriving at goal 3
 
-        if self.explore_env:
-            # Moving terminal state to off the map
-            # self.pinball.target_pos = [8, 8]
-
-            # If exploring, set to random start state
-            start_state = self.start_states[np.random.choice(len(self.start_states))]
+    def _set_random_env_state(self):
+        """Sets the environment state to a random state that doesn't collide with any obstacles.
+        Mainly used right now for getting uniform random data.
+        """
+        colliding = True
+        while colliding:
+            start_state = [np.random.uniform(0, 1), np.random.uniform(0, 1)]
             self.pinball.ball.position = np.copy(start_state)
 
-            # colliding = True
-            # while colliding:
-            #     start_state = [np.random.uniform(0, 1), np.random.uniform(0, 1)]
-            #     self.pinball.ball.position = np.copy(start_state)
+            colliding = False
+            for obs in self.pinball.obstacles:
+                if obs.collision(self.pinball.ball):
+                    colliding = True
+                    break
+        self.pinball.ball.xdot = np.random.uniform(-1, 1)
+        self.pinball.ball.ydot = np.random.uniform(-1, 1)
 
-            #     colliding = False
-            #     for obs in self.pinball.obstacles:
-            #         if obs.collision(self.pinball.ball):
-            #             colliding = True
-            #             break
+    def start(self):
+        self.pinball.reset_ball_to_start_state()
 
-            # self.pinball.ball.xdot = np.random.uniform(-1, 1)
-            # self.pinball.ball.ydot = np.random.uniform(-1, 1)
-            
+        if self.explore_env:
+            self._set_random_env_state()
             self.num_steps = 0
 
         obs = self.pinball.get_state()
-
         
         if self.render:
-            self.environment_view = PinballView(self.screen, self.pinball)
+            self.environment_view = PinballView(self.screen, self.pinball, self.pinball_goals, self.terminal_goal_index)
 
         return obs
+
+    def _check_termination(self, s):
+        """Checks whether the environment should terminate at the current state
+
+        Args:
+            s (List): The environment's current state.
+
+        Returns:
+            bool: whether the environment should terminate or not.
+        """
+        if self.pinball_goals.goal_termination(s)[self.terminal_goal_index]:
+            return True
+        else:
+            return False
 
     def step(self, action):
         """ Take a step in the environment
@@ -460,43 +467,34 @@ class PinballEnvironment(BaseEnvironment):
         :rtype: :class:`Reward_observation_terminal`
 
         """
-        if self.terminated:
-            s = self.start()
-            r =self.pinball.END_EPISODE
-            terminal = False
-            return (r, s, terminal)
-
-        r = self.pinball.take_action(action)
-        s = self.pinball.get_state()
-        terminal = self.pinball.episode_ended()
-
-        # Reset after self.max_steps
-        # if self.explore_env:
-        #     # Modifying the reward here to avoid issues with goal values being wonky, since usually this won't be happening
-        #     if r == self.pinball.END_EPISODE:
-        #         r = self.pinball.STEP_PENALTY
-        if self.explore_env:
-            reset = self.num_steps > self.max_steps
-            self.num_steps += 1
+        current_state = self.pinball.get_state()
+        # [chunlok 2022-04-14] Terminate if currently at the goal state.
+        # This is important to make sure the option terminates before the environment terminates to allow 
+        # the agent to anchor to a specific goal state.
+        # We might need to do terminatins another way in the future :\ but this will work for now.
         
-        if terminal and self.continuing:
-            terminal = False
-            self.terminated = True
-            s = np.copy(self.terminal_state)
-            r = self.pinball.STEP_PENALTY
-
         if self.explore_env:
-            if reset:
+            if self.num_steps > self.max_steps:
                 self.num_steps = 0
-                s = self.start()
-                r = self.pinball.STEP_PENALTY
-                terminal = False
+                next_state = self.start()
+                return (0, next_state, False), {'reset': True}
+            else:
+                self.num_steps += 1
+
+        if self._check_termination(current_state):
+            next_state = self.start()
+            reward = self.pinball.END_EPISODE
+            print('TERMINATED')
+            return (reward, next_state, not self.continuing), {'reset': False}
+
+        reward = self.pinball.take_action(action)
+        next_state = self.pinball.get_state()
 
         if self.render:
             self.environment_view.blit()
             pygame.display.flip()
 
-        return (r, s, terminal)
+        return (reward, next_state, False), {'reset': False}
 
 class PinballView:
     """ This class displays a :class:`PinballModel`
@@ -507,7 +505,7 @@ class PinballView:
     We use `pygame <http://www.pygame.org/>` to draw the environment.
 
     """
-    def __init__(self, screen, model):
+    def __init__(self, screen, model, goals: PinballGoals = None, terminal_goal_index: int = None):
         """
         :param screen: a pygame surface
         :type screen: :class:`pygame.Surface`
@@ -529,27 +527,27 @@ class PinballView:
         for obs in model.obstacles:
             pygame.draw.polygon(self.background_surface, self.DARK_GRAY, list(map(self._to_pixels, obs.points)), 0)
 
-        goals = []
-        border = 0.05
-        n = 4
-        for y in np.linspace(0 + border, 1 - border, n):
-            for x in np.linspace(0 + border, 1 - border, n):
-                goals.append([x,y])
+        self.goals = goals
+        self.terminal_goal_index = terminal_goal_index
         
-        goal_radius = 0.04
-        goal_initiation_radius = 0.35
+        if self.goals is not None:
+            for g in range(self.goals.num_goals):
+                goal = self.goals.goals[g]
+                radius = self.goals.termination_radius
+                initiation_radius = self.goals.initiation_radius
+                pygame.draw.circle(
+                    self.background_surface, self.GOAL_COLOR, self._to_pixels(goal), int(radius*self.screen.get_width()))
+                pygame.draw.circle(
+                    self.background_surface, self.GOAL_COLOR, self._to_pixels(goal), int(initiation_radius*self.screen.get_width()), width=1)
 
-        # goals[3] = [0.84, 0.26]
-
-        goals[11][1] += 0.06
-
-        for g in goals:
+        if self.goals and self.terminal_goal_index:
+            goal = self.goals.goals[self.terminal_goal_index]
+            radius = self.goals.termination_radius
             pygame.draw.circle(
-            self.background_surface, self.GOAL_COLOR, self._to_pixels(g), int(goal_radius*self.screen.get_width()))
-
-    
-        pygame.draw.circle(
-            self.background_surface, self.TARGET_COLOR, self._to_pixels(self.model.target_pos), int(self.model.target_rad*self.screen.get_width()))
+                self.background_surface, self.TARGET_COLOR, self._to_pixels(goal), int(radius*self.screen.get_width()))
+        else:
+            pygame.draw.circle(
+                self.background_surface, self.TARGET_COLOR, self._to_pixels(self.model.target_pos), int(self.model.target_rad*self.screen.get_width()))
 
     def _to_pixels(self, pt):
         """ Converts from real units in the 0-1 range to pixel units
@@ -585,8 +583,9 @@ def run_pinballview(width, height, configuration):
     pygame.display.set_caption('Pinball Domain')
     screen = pygame.display.set_mode([width, height])
 
+    goals = PinballGoals()
     environment = PinballModel(configuration)
-    environment_view = PinballView(screen, environment)
+    environment_view = PinballView(screen, environment, goals)
 
     actions = {pygame.K_d:PinballModel.ACC_X, pygame.K_w:PinballModel.DEC_Y, pygame.K_a:PinballModel.DEC_X, pygame.K_s:PinballModel.ACC_Y}
 

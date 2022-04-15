@@ -19,7 +19,7 @@ def get_configuration_list():
         'explore_env': [False],
         'exploration_phase': [0],
         'gamma': [0.95],
-        'render': [False],
+        'render': [True],
 
         # Logging
         'log_keys': [('reward_rate', 'num_steps_in_ep', 'q_map')],
@@ -36,7 +36,7 @@ def get_configuration_list():
         'search_control': ['random'],
         'use_pretrained_behavior': [False],
         'polyak_step_size': [0.05],
-        'batch_num': [2],
+        'batch_num': [1],
 
         "save_behavior": [True],
     }
