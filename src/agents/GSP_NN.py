@@ -1,4 +1,5 @@
 
+from functools import partial
 import numpy as np
 from src.utils import rlglue
 from src.utils import globals
@@ -14,8 +15,11 @@ import optax
 import copy
 import pickle
 from .components.QLearner_NN import QLearner_NN
+from .components.EQRC_model import GoalLearner_EQRC_NN
+from .components.DQN_model import GoalLearner_DQN_NN
+import cloudpickle
 
-from src.utils.log_utils import run_if_should_log
+from src.utils.log_utils import get_last_pinball_action_value_map, run_if_should_log
 from src.utils.numpy_utils import create_onehot
 
 if TYPE_CHECKING:
@@ -30,52 +34,80 @@ class GSP_NN:
         self.num_actions = problem.actions
         self.params = problem.params
         self.random = np.random.RandomState(problem.seed)
+
+        # Initializing goal information
         self.goals = problem.goals
-        self.num_goals = len(self.goals)
-        self.goal_termination_func = problem.goal_termination_func
-        self.goal_initiation_func = problem.goal_initiation_func
+        self.num_goals = self.goals.num_goals
+        self.goal_termination_func = self.goals.goal_termination
+        self.goal_initiation_func = self.goals.goal_initiation
 
         params = self.params
-        self.step_size = 1e-3
-        self.batch_size = 16
+        # Controls the number of samples to sample from the buffer when performing an update 
+        self.batch_size = param_utils.parse_param(params, 'batch_size', lambda p : isinstance(p, int) and p >= 0.0)
+        # Step size for both the behaviour and model learner. These are combined for now
+        self.step_size = param_utils.parse_param(params, 'step_size', lambda p : isinstance(p, float) and p >= 0.0) 
+        # Epsilon for epsilon-greedy policy
         self.epsilon = param_utils.parse_param(params, 'epsilon', lambda p : isinstance(p, float) and p >= 0.0)
+        # Polyak stepsize for DQN and model learning. They are combined for now
+        self.polyak_stepsize = param_utils.parse_param(params, 'polyak_stepsize', lambda p : isinstance(p, float) and p >= 0)
 
-        self.behaviour_learner = QLearner_NN((4,), 5, self.step_size)
 
-        self.goal_features = 2
+        self.OCI_update_interval = param_utils.parse_param(params, 'OCI_update_interval', lambda p : isinstance(p, int) and p >= 0) # Number of update steps between each OCI update
+        
+        # Optional parameters
 
+        # Whether to use the baseline or goal values for OCI
+        self.use_goal_values = param_utils.parse_param(params, 'use_goal_values', lambda p : isinstance(p, bool), optional=True, default=False) 
+        # Whether the agent should only learn the model, and not learn the behaviour
+        self.learn_model_only = param_utils.parse_param(params, 'learn_model_only', lambda p : isinstance(p, bool), optional=True, default=False)
+        # Additional parameter for controlling adam's epsilon parameter for model learning
+        self.adam_eps = param_utils.parse_param(params, 'adam_eps', lambda p : isinstance(p, float) and p >= 0, optional=True, default=1e-8)
+        # Whether to use goal-based exploration bonus or not
+        self.use_exploration_bonus = param_utils.parse_param(params, 'use_exploration_bonus', lambda p : isinstance(p, bool), optional=True, default=False)
+        # The amount of time to simply add to the buffer and not learn anything 
+        self.prefill_buffer_time = param_utils.parse_param(params, 'prefill_buffer_time', lambda p : isinstance(p, int) and p >= 0, optional=True, default=0)
+        # Whether to only train the state to goal models on specific goals.
+        # For now, the list is a tuple since lists aren't hashable.
+        self.learn_select_goal_models = param_utils.parse_param(params, 'learn_select_goal_models', lambda p : isinstance(p, tuple) or p is None, optional=True, default=None)
+
+        # Name of the file that contains the pretrained behavior that the agent should load. If None, its starts from scratch
+        self.pretrained_behavior_name = param_utils.parse_param(params, 'pretrained_behavior_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
+        # Name for the pre-trained model
+        self.pretrained_model_name = param_utils.parse_param(params, 'pretrained_model_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
+        # Name for the pre-filled buffer
+        self.prefill_buffer = param_utils.parse_param(params, 'prefill_buffer_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
+    
+        # Some fixed parameters that might want to get parameterized later
         self.buffer_size = 1000000
         self.min_buffer_size_before_update = 10000
-        self.buffer = Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': (), 'goal_inits': (self.num_goals, ), 'goal_terms': (self.num_goals, )}, self.random.randint(0,2**31), type_map={'a': np.int64})
-        self.goal_estimate_buffer = Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': (), 'goal_inits': (self.num_goals, ), 'goal_terms': (self.num_goals, )}, self.random.randint(0,2**31))
-        self.goal_buffer = Buffer(self.buffer_size * self.num_goals, {'x': (4 + 2,), 'a': (), 'xp': (4 + 2,), 'r': (), 'gamma': (), 'goal_policy_cumulant': (), 'goal_discount': ()}, self.random.randint(0,2**31), type_map={'a': np.int64})
+        # Hard coding this for the environment for now
+        self.obs_shape = (4, )
+        
+        self.goal_value_learner = GoalValueLearner(self.num_goals)
+        self.behaviour_learner = QLearner_NN(self.obs_shape, 5, self.step_size)
+
+        self.buffer = Buffer(self.buffer_size, {
+            'x': self.obs_shape, 'a': (), 'xp': self.obs_shape, 'r': (), 'gamma': (), 'goal_inits': (self.num_goals, ), 'goal_terms': (self.num_goals, )}, 
+            self.random.randint(0,2**31), 
+            type_map={'a': np.int64})
+
+        self.goal_estimate_buffer = Buffer(self.buffer_size, 
+            {'xp': self.obs_shape, 'goal_inits': (self.num_goals, ), 'goal_terms': (self.num_goals, )},
+            self.random.randint(0,2**31))
 
         self.goal_buffers = []
         for _ in range(self.num_goals):
-            self.goal_buffers.append(Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': (), 'goal_policy_cumulant': (), 'goal_discount': ()}, self.random.randint(0,2**31), type_map={'a': np.int64}))
+            self.goal_buffers.append(Buffer(self.buffer_size, 
+                {'x': self.obs_shape, 'a': (), 'xp': self.obs_shape, 'r': (), 'gamma': (), 'goal_policy_cumulant': (), 'goal_discount': ()}, 
+                self.random.randint(0,2**31), 
+                type_map={'a': np.int64}))
         
         self.goal_estimate_learner = GoalEstimates(self.num_goals)
-        self.num_steps_in_ep = 0
+        self.goal_learners = [GoalLearner_EQRC_NN(self.obs_shape, self.num_actions, self.step_size, 0.1, beta=1.0) for _ in range(self.num_goals)]
+        # self.goal_learners = [GoalLearner_DQN_NN(self.obs_shape, self.num_actions, self.step_size, 0.1, self.polyak_stepsize, self.adam_eps) for _ in range(self.num_goals)]
 
-        self.OCI_update_interval = param_utils.parse_param(params, 'OCI_update_interval', lambda p : isinstance(p, int) and p >= 0) # Number of update steps between each OCI update
-        self.use_goal_values = param_utils.parse_param(params, 'use_goal_values', lambda p : isinstance(p, bool), optional=True, default=False) # Whether to use the baseline or goal values for OCI
-        self.polyak_stepsize = param_utils.parse_param(params, 'polyak_stepsize', lambda p : isinstance(p, float) and p >= 0)
-        self.learn_model_only = param_utils.parse_param(params, 'learn_model_only', lambda p : isinstance(p, bool), optional=True, default=False)
-        self.goal_value_learner = GoalValueLearner(self.num_goals)
-        self.use_pretrained_behavior = param_utils.parse_param(params, 'use_pretrained_behavior', lambda p : isinstance(p, bool), optional=True, default=False)
-        self.use_exploration_bonus = param_utils.parse_param(params, 'use_exploration_bonus', lambda p : isinstance(p, bool), optional=True, default=False)
-        self.prefill_buffer_time = param_utils.parse_param(params, 'prefill_buffer_time', lambda p : isinstance(p, int) and p >= 0, optional=True, default=0)
-
-
-        self.adam_eps = param_utils.parse_param(params, 'adam_eps', lambda p : isinstance(p, float) and p >= 0, optional=True, default=1e-8)
-
-        self.goal_learners: List[GoalLearner_NN] = []
-        for _ in range(self.num_goals):
-            self.goal_learners.append(GoalLearner_NN((4,), self.num_actions, 1e-3, 0.1, self.adam_eps))
-
-        if self.use_pretrained_behavior:
+        if self.pretrained_behavior_name:
             agent = pickle.load(open('src/environments/data/pinball/gsp_agent.pkl', 'rb'))
-            # self.goal_buffer = agent.goal_buffer
             self.behaviour_learner = agent.behaviour_learner
             self.buffer = agent.buffer
             self.goal_learners = agent.goal_learners
@@ -83,19 +115,32 @@ class GSP_NN:
             self.goal_buffers = agent.goal_buffers
             self.goal_value_learner = agent.goal_value_learner
 
-        self.use_pretrained_model_name = param_utils.parse_param(params, 'use_pretrained_model', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
-        if self.use_pretrained_model_name is not None:
-            self.goal_learners = pickle.load(open(f'./src/environments/data/pinball/{self.use_pretrained_model_name}_goal_learner.pkl', 'rb'))
-            self.goal_buffers = pickle.load(open(f'./src/environments/data/pinball/{self.use_pretrained_model_name}_goal_buffer.pkl', 'rb'))
+        # [chunlok 20202-04-15] TODO The specific path of these saved models might need to be changed later to be more general
+        if self.pretrained_model_name is not None:
+            self.goal_learners = pickle.load(open(f'./src/environments/data/pinball/{self.pretrained_model_name}_goal_learner.pkl', 'rb'))
+            self.goal_buffers = pickle.load(open(f'./src/environments/data/pinball/{self.pretrained_model_name}_goal_buffer.pkl', 'rb'))
+            self.goal_estimate_buffer = pickle.load(open(f'./src/environments/data/pinball/{self.pretrained_model_name}_goal_estimate_buffer.pkl', 'rb'))
+            for g in range(self.num_goals):
+                possible.append(self.goal_buffers[g].num_in_buffer)
+            asdsa
 
-        self.use_prefill_buffer = param_utils.parse_param(params, 'use_prefill_buffer', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
-        if self.use_prefill_buffer is not None:
-            self.goal_buffers = pickle.load(open(f'./src/environments/data/pinball/{self.use_prefill_buffer}_goal_buffer.pkl', 'rb'))
+        self.prefill_buffer = param_utils.parse_param(params, 'use_prefill_buffer', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
+        if self.prefill_buffer is not None:
+            self.goal_buffers = pickle.load(open(f'./src/environments/data/pinball/{self.prefill_buffer}_goal_buffer.pkl', 'rb'))
+
+            possible = []
+            for g in range(self.num_goals):
+                possible.append(self.goal_buffers[g].num_in_buffer)
+                #     possible.append(True)
+                # else:
+                #     possible.append(False)
+            print(f'Size of each goal buffer: {possible}')
 
         self.cumulative_reward = 0
         self.num_term = 0
         self.num_updates = 0
         self.tau = np.full(self.num_goals, 13000)
+        self.num_steps_in_ep = 0
 
     def FA(self):
         return "Neural Network"
@@ -112,10 +157,10 @@ class GSP_NN:
         # epsilon greedy
         a = np.argmax(action_values)
             
-        probs = np.zeros(self.num_actions)
-        probs += self.epsilon / (self.num_actions)
-        probs[a] += 1 - self.epsilon
-        return probs
+        policy = np.zeros(self.num_actions)
+        policy += self.epsilon / (self.num_actions)
+        policy[a] += 1 - self.epsilon
+        return policy
 
     # public method for rlglue
     def selectAction(self, s: Any) -> int:
@@ -127,7 +172,7 @@ class GSP_NN:
         self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_inits': goal_inits, 'goal_terms': goal_terms})
 
         if np.any(goal_terms):
-            self.goal_estimate_buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_inits': goal_inits, 'goal_terms': goal_terms})
+            self.goal_estimate_buffer.update({'xp': sp, 'goal_inits': goal_inits, 'goal_terms': goal_terms})
         
         sp_goal_init = self.goal_initiation_func(sp)
 
@@ -142,12 +187,12 @@ class GSP_NN:
         zeros = np.zeros(goal_terms.shape)
 
         for g in range(self.num_goals):
-            # Don't learn with experience that takes you "outside" of the goal initiation zone.
+            # If the experience takes you outside the initiation zone, then the policy definitely doesn't want to go that way.
             if goal_inits[g]:
                 if goal_terms[g] or sp_goal_init[g] != False:
                     self.goal_buffers[g].update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_policy_cumulant': goal_policy_cumulant[g], 'goal_discount': goal_discount[g]})
                 else:
-                    self.goal_buffers[g].update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_policy_cumulant': zeros[g], 'goal_discount': goal_discount[g]})
+                    self.goal_buffers[g].update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_policy_cumulant': zeros[g], 'goal_discount': zeros[g]})
 
     def _direct_rl_update(self):
         if self.buffer.num_in_buffer >= self.min_buffer_size_before_update:
@@ -156,12 +201,42 @@ class GSP_NN:
             self.behaviour_learner.update(data, polyak_stepsize=self.polyak_stepsize)
 
     def _state_to_goal_estimate_update(self):
-        for g in range(self.num_goals):
+        # for g in range(self.num_goals):
+        iter = self.learn_select_goal_models if self.learn_select_goal_models is not None else range(self.num_goals)
+        for g in iter:
             if self.goal_buffers[g].num_in_buffer >= self.min_buffer_size_before_update:
                 batch_num = 1
                 for _ in range(batch_num):
-                    data = self.goal_buffers[g].sample(16, copy=False)
-                    self.goal_learners[g].update(data, polyak_stepsize=self.polyak_stepsize) 
+                    data = self.goal_buffers[g].sample(self.batch_size, copy=False)
+
+                    # if np.sum(data['goal_policy_cumulant']) > 0:
+                    #     index = np.where(data['goal_policy_cumulant'] > 0)[0][0]
+                    #     state = data['x'][index]
+                    #     sp = data['xp'][index]
+                    #     action = data['a'][index]
+                    #     print(index, state, action, sp)
+
+                    #     print(f'before {self.goal_learners[g].get_goal_outputs(state)[0][action]}')
+                    #     print(self.goal_termination_func(state, action, sp))
+                        
+                    #     goal_speeds = self.goals.goal_speeds
+                    #     speed_radius_squared = self.goals.speed_radius_squared
+                    #     speed_close = np.sum(np.power(sp[2:] - goal_speeds, 2), axis=1) <= speed_radius_squared
+                    #     print('getting term')
+                    #     print(speed_close)
+
+                        # print(np.where(data['goal_policy_cumulant'] > 0))
+                        # print('hi')
+                    self.goal_learners[g].update(data) 
+                    # self.goal_learners[g].update(data) 
+
+                    # if np.sum(data['goal_policy_cumulant']) > 0:
+                    #     index = np.where(data['goal_policy_cumulant'] > 0)[0][0]
+                    #     state = data['x'][index]
+                    #     action = data['a'][index]
+                    #     # print(index, state, action)
+
+                    #     print(f'after {self.goal_learners[g].get_goal_outputs(state)[0][action]}')
     
     def _goal_estimate_update(self):
         batch_size = 1
@@ -170,8 +245,8 @@ class GSP_NN:
         data = self.goal_estimate_buffer.sample(batch_size)
         
         sps = data['xp']
-        data['goal_rs'] = np.zeros((batch_size, self.num_goals))
-        data['goal_gammas'] = np.zeros((batch_size, self.num_goals))
+        data['goal_rs'] = np.zeros((batch_size, self.num_goals, self.num_actions))
+        data['goal_gammas'] = np.zeros((batch_size, self.num_goals, self.num_actions))
         data['option_pi_x'] = np.zeros((batch_size, self.num_goals, self.num_actions))
         data['action_values'] = np.zeros((batch_size, self.num_goals, self.num_actions))
 
@@ -255,7 +330,7 @@ class GSP_NN:
         self.num_steps_in_ep += 1
 
         goal_init = self.goal_initiation_func(s)
-        goal_terms = self.goal_termination_func(sp)
+        goal_terms = self.goal_termination_func(s, a, sp)
 
         if r == 10000:
             self.num_term += 1
@@ -263,17 +338,17 @@ class GSP_NN:
             # print(goal_init)
             # print(goal_terms)
             if globals.aux_config.get('show_progress'):
-                # print(f'terminated! num_term: {self.num_term} num_steps: {self.num_steps_in_ep} tau: {self.tau}')
+                print(f'terminated! num_term: {self.num_term} num_steps: {self.num_steps_in_ep} tau: {self.tau}')
                 
-                # possible = []
-                # for g in range(self.num_goals):
-                #     possible.append(self.goal_buffers[g].num_in_buffer)
-                #     #     possible.append(True)
-                #     # else:
-                #     #     possible.append(False)
-                # print(f'goal buffer enough: {possible}')
-                # print(f'goal_baseline: {self.goal_estimate_learner.goal_baseline}\ngoal_values: {self.goal_value_learner.goal_values}')
-                # print(self.goal_estimate_learner.goal_baseline)
+                possible = []
+                for g in range(self.num_goals):
+                    possible.append(self.goal_buffers[g].num_in_buffer)
+                    #     possible.append(True)
+                    # else:
+                    #     possible.append(False)
+                print(f'goal buffer enough: {possible}')
+                print(f'goal_baseline: {self.goal_estimate_learner.goal_baseline}\ngoal_values: {self.goal_value_learner.goal_values}')
+                print(self.goal_estimate_learner.goal_baseline)
                 pass
 
             
@@ -309,35 +384,44 @@ class GSP_NN:
         def log():
             globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
             self.cumulative_reward = 0
+
+            # possible = []
+            # for g in range(self.num_goals):
+            #     possible.append(self.goal_buffers[g].num_in_buffer)
+            #     #     possible.append(True)
+            #     # else:
+            #     #     possible.append(False)
+            # print(f'goal buffer enough: {possible}')
+            
         run_if_should_log(log)
 
 
-        try:
-            if globals.blackboard['num_steps_passed'] % 5000 == 0:
-                # # Calculating the value at each state approximately
-                resolution = 40
-                num_goals = self.num_goals
-                last_q_map = np.zeros((resolution, resolution, 5))
-                last_goal_q_map = np.zeros((num_goals, resolution, resolution, 5))
-                last_reward_map = np.zeros((num_goals, resolution, resolution, 5))
-                last_gamma_map = np.zeros((num_goals, resolution, resolution, 5))
-                for r, y in enumerate(np.linspace(0, 1, resolution)):
-                    for c, x in enumerate(np.linspace(0, 1, resolution)):
-                            for g in range(num_goals):
-                                # goal_s = np.append([x, y, 0.0, 0.0], np.array(agent.goals[g]))
-                                # action_value, reward, gamma = agent.goal_learner.get_goal_outputs(goal_s)
-                                # SWITCHING OVER TO 1 NN PER GOAL
-                                action_value, reward, gamma_map = self.goal_learners[g].get_goal_outputs(np.array([x, y, 0.0, 0.0]))
-                                last_goal_q_map[g, r, c] = action_value
-                                last_reward_map[g, r, c] = reward
-                                last_gamma_map[g, r, c] = gamma_map
-                                pass
-                # globals.collector.collect('step_goal_q_map', np.copy(last_goal_q_map))
-                # globals.collector.collect('step_goal_reward_map', np.copy(last_goal_q_map))
-                globals.collector.collect('step_goal_gamma_map', np.copy(last_gamma_map))
+        # try:
+        if globals.blackboard['num_steps_passed'] % 5000 == 0:
+            # # Calculating the value at each state approximately
+            resolution = 40
+            num_goals = self.num_goals
+            last_q_map = np.zeros((resolution, resolution, 5))
+            last_goal_q_map = np.zeros((num_goals, resolution, resolution, 5))
+            last_reward_map = np.zeros((num_goals, resolution, resolution, 5))
+            last_gamma_map = np.zeros((num_goals, resolution, resolution, 5))
+            for r, y in enumerate(np.linspace(0, 1, resolution)):
+                for c, x in enumerate(np.linspace(0, 1, resolution)):
+                        for g in range(num_goals):
+                            # goal_s = np.append([x, y, 0.0, 0.0], np.array(agent.goals[g]))
+                            # action_value, reward, gamma = agent.goal_learner.get_goal_outputs(goal_s)
+                            # SWITCHING OVER TO 1 NN PER GOAL
+                            action_value, reward, gamma_map = self.goal_learners[g].get_goal_outputs(np.array([x, y, 0.0, 0.0]))
+                            last_goal_q_map[g, r, c] = action_value
+                            last_reward_map[g, r, c] = reward
+                            last_gamma_map[g, r, c] = gamma_map
+                            pass
+            # globals.collector.collect('step_goal_q_map', np.copy(last_goal_q_map))
+            # globals.collector.collect('step_goal_reward_map', np.copy(last_goal_q_map))
+            globals.collector.collect('step_goal_gamma_map', np.copy(last_gamma_map))
 
-        except KeyError as e:
-            pass
+        # except KeyError as e:
+        #     pass
     
         if not terminal:
             ap = self.selectAction(sp)
@@ -352,110 +436,41 @@ class GSP_NN:
         # self.behaviour_learner.episode_end()
         # self.option_model.episode_end()
 
-class GoalLearner_NN():
-    def __init__(self, state_shape, num_actions: int, step_size: float, epsilon: float, adam_eps):
-        self.num_actions: int = num_actions
-        self.epsilon = epsilon
-        self.adam_eps = adam_eps
-
-        # Initializing jax functions
-        def q_function(states):
-            q_mlp = hk.Sequential([
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(self.num_actions),
-            ])
-
-            v_mlp = hk.Sequential([
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(self.num_actions),
-            ])
-
-            return q_mlp(states), v_mlp(states)
-
-        self.f_qfunc = hk.without_apply_rng(hk.transform(q_function))
-
-        self.f_opt = optax.adam(step_size, eps=adam_eps)
-
-        def _take_action_index(data, action):
-            return jnp.take_along_axis(data, jnp.expand_dims(action, axis=1), axis=1).squeeze()
+    def experiment_end(self):
+        # Things to log after the final logging
+        save_goal_learner_name = param_utils.parse_param(self.params, 'save_state_to_goal_estimate_name', lambda p: isinstance(p, str) or p is None, optional=True, default=None)
     
-        def _loss(params: hk.Params, target_params: hk.Params, data):
-            r = data['r']
-            x = data['x']
-            a = data['a']
-            xp = data['xp']
-            # gamma = data['gamma']
-            goal_policy_cumulant = data['goal_policy_cumulant']
-            goal_discount = data['goal_discount']
+        if save_goal_learner_name is not None:
+            cloudpickle.dump(self.goal_learners, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_learner.pkl', 'wb'))
+            cloudpickle.dump(self.goal_buffers, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_buffer.pkl', 'wb'))
+            cloudpickle.dump(self.goal_estimate_buffer, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_estimate_buffer.pkl', 'wb'))
 
-            policy_pred, reward_pred, gamma_pred = self.f_get_goal_output(params, x)
-            # Getting values for specific actions
-            policy_pred = _take_action_index(policy_pred, a)
-            reward_pred = _take_action_index(reward_pred, a)
-            gamma_pred = _take_action_index(gamma_pred, a)
-            
-            xp_policy_pred, xp_reward_pred, xp_gamma_pred = jax.lax.stop_gradient(self.f_get_goal_output(target_params, xp))
-            xp_ap = jnp.argmax(xp_policy_pred, axis=1)
+        # Saving the agent goal learners
+        save_behaviour_name = param_utils.parse_param(self.params, 'save_behaviour_name', lambda p: isinstance(p, bool), optional=True, default=False)
+        if save_behaviour_name:
+            cloudpickle.dump(self, open(f'./src/environments/data/pinball/{save_behaviour_name}_agent.pkl', 'wb'))
 
-            # ESarsa version rather than Q version
-            # policy = jax.nn.one_hot(xp_ap, self.num_actions) * (1 - self.epsilon) + (self.epsilon / self.num_actions)
-            # policy_target = goal_policy_cumulant + goal_discount * jnp.average(xp_policy_pred, axis=1, weights=policy)
-            # reward_target = r + goal_discount * jnp.average(xp_reward_pred, axis=1, weights=policy)
+        def get_goal_outputs(s, g):
+            action_value, reward, gamma = self.goal_learners[g].get_goal_outputs(s)
+            return np.vstack([action_value, reward, gamma])
 
-            policy_target = goal_policy_cumulant + goal_discount * _take_action_index(xp_policy_pred, xp_ap)
-            reward_target = r + goal_discount * _take_action_index(xp_reward_pred, xp_ap)
+        RESOLUTION = 40
+        last_goal_q_map = np.zeros((self.num_goals, RESOLUTION, RESOLUTION, self.num_actions))
+        last_reward_map = np.zeros((self.num_goals, RESOLUTION, RESOLUTION, self.num_actions))
+        last_gamma_map = np.zeros((self.num_goals, RESOLUTION, RESOLUTION, self.num_actions))
+        for g in range(self.num_goals):
+            goal_action_value = get_last_pinball_action_value_map(3, partial(get_goal_outputs, g=g))
+            last_goal_q_map[g] = goal_action_value[0]
+            last_reward_map[g] = goal_action_value[1]
+            last_gamma_map[g] = goal_action_value[2]
 
-            policy_loss = jnp.mean(jnp.square(policy_target - policy_pred))
-            reward_loss = jnp.mean(jnp.square(reward_target - reward_pred))
+        globals.collector.collect('goal_q_map', last_goal_q_map)
+        globals.collector.collect('goal_r_map', last_reward_map)
+        globals.collector.collect('goal_gamma_map', last_gamma_map)
+        # print(last_gamma_map)
 
-            # return policy_loss, (jax.lax.stop_gradient(policy_loss), jax.lax.stop_gradient(reward_loss))
-
-            return policy_loss + reward_loss, (jax.lax.stop_gradient(policy_loss), jax.lax.stop_gradient(reward_loss))
-
-        def _get_goal_output(params: hk.Params, x: Any):
-            policy_output, v_output = self.f_qfunc.apply(params, x)
-            # Since the problem is shortest path and we're trying to maximize the reward anyways, the signals are essentially identical.
-            gamma_output = policy_output
-            return policy_output, v_output, gamma_output
-
-        def _update(params: hk.Params, target_params: hk.Params, opt_state, data):
-            grads, reward_loss = jax.grad(_loss, has_aux=True)(params, target_params, data)
-            updates, opt_state = self.f_opt.update(grads, opt_state)
-            params = optax.apply_updates(params, updates)
-            return params, opt_state, reward_loss
-            
-        self.f_get_goal_output = jax.jit(_get_goal_output)
-        self.f_update = jax.jit(_update)
-        # self.f_update = _update
-
-        # Initialization
-        dummy_state = jnp.zeros(state_shape)
-        self.params = self.f_qfunc.init(jax.random.PRNGKey(42), dummy_state)
-        self.opt_state = self.f_opt.init(self.params)
-
-        # target params for the network
-        self.target_params = copy.deepcopy(self.params)
-
-    def get_goal_outputs(self, x: npt.ArrayLike) -> np.ndarray:
-        return self.f_get_goal_output(self.params, x)
-
-    def update(self, data, polyak_stepsize:float=0.005):
-        self.params, self.opt_state, (policy_loss, reward_loss) = self.f_update(self.params, self.target_params, self.opt_state, data)
-        
-        def log():
-            globals.collector.collect('reward_loss', reward_loss)
-            globals.collector.collect('policy_loss', policy_loss)
-        run_if_should_log(log)
-
-        self.target_params = optax.incremental_update(self.params, self.target_params, polyak_stepsize)
-        # return self.params
+        q_map = get_last_pinball_action_value_map(1, self.behaviour_learner.get_action_values)
+        globals.collector.collect('q_map', q_map[0])
 
 class GoalEstimates:
     def __init__(self, num_goals):

@@ -60,14 +60,14 @@ def generatePlots(param, data, key):
     exp = ExperimentModel.load_from_params(exp_params)
 
 
-    problem = PinballOracleProblem(exp, 0, 0)
+    problem = PinballProblem(exp, 0, 0)
 
     # Calculating the value at each state approximately
-    num_goals = problem.num_goals
+    num_goals = problem.goals.num_goals
     initiation_map = np.zeros((num_goals, ROWS, COLUMNS))
     for r, y in enumerate(np.linspace(0, 1, ROWS)):
         for c, x in enumerate(np.linspace(0, 1, ROWS)):
-            init = problem.goal_initiation_func([x, y, 0, 0])
+            init = problem.goals.goal_initiation([x, y, 0, 0])
             initiation_map[:, r, c] = init
 
     fig, axes = plt.subplots(4, 4, figsize=(90, 90))
@@ -123,7 +123,7 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_learn_state_to_goal_est_oracle.py'
+    parameter_path = 'experiments/pinball/GSP_goal_model_learn_test.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     data = np.squeeze(data)
 
     print(data.shape)
-
+    sdfsd
     generatePlots(config, data, key)
 
     exit()

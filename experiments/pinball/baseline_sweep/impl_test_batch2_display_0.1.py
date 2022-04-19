@@ -38,7 +38,7 @@ def get_configuration_list():
         'polyak_step_size': [0.1],
         'batch_num': [2],
 
-        "save_behavior": [True],
+        'save_behaviour_name': [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

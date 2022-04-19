@@ -39,7 +39,7 @@ def get_configuration_list():
         'batch_num': [2],
         'dreamer_config_path': ['external/dreamerv2/configs.yaml'],
 
-        "save_behavior": [True],
+        'save_behaviour_name': [True],
         # "use_pretrained_model": [True],
     }
 

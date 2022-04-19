@@ -155,38 +155,10 @@ def run(param: dict, aux_config={}):
         logging.critical(f"Experiment errored {param} : {idx}, Time Taken : {time.time() - t_start}")
         raise e
 
-    save_obj = {}
-
-    # # Calculating the value at each state approximately
-    resolution = 40
-    num_goals = problem.num_goals
-    last_q_map = np.zeros((resolution, resolution, 5))
-    last_goal_q_map = np.zeros((num_goals, resolution, resolution, 5))
-    last_reward_map = np.zeros((num_goals, resolution, resolution, 5))
-    last_gamma_map = np.zeros((num_goals, resolution, resolution, 5))
-    for r, y in enumerate(np.linspace(0, 1, resolution)):
-        for c, x in enumerate(np.linspace(0, 1, resolution)):
-            if param['agent'] != 'Dreamer':
-                last_q_map[r, c] = agent.behaviour_learner.get_action_values(np.array([x, y, 0.0, 0.0]))[:agent.num_actions]
-            if param['agent'] == 'GSP_NN':
-                for g in range(num_goals):
-                    # goal_s = np.append([x, y, 0.0, 0.0], np.array(agent.goals[g]))
-                    # action_value, reward, gamma = agent.goal_learner.get_goal_outputs(goal_s)
-                    # SWITCHING OVER TO 1 NN PER GOAL
-                    action_value, reward, gamma = agent.goal_learners[g].get_goal_outputs(np.array([x, y, 0.0, 0.0]))
-                    last_goal_q_map[g, r, c] = action_value
-                    last_reward_map[g, r, c] = reward
-                    last_gamma_map[g, r, c] = gamma
-                    pass
-
-    # print(last_q_map.shape)
-    globals.collector.collect('q_map', last_q_map)
-    globals.collector.collect('goal_q_map', last_goal_q_map)
-    globals.collector.collect('goal_r_map', last_reward_map)
-    globals.collector.collect('goal_gamma_map', last_gamma_map)
-    # globals.collector.collect('num_steps_in_ep', 0)
+    agent.experiment_end()
     globals.collector.reset()
 
+    save_obj = {}
     for k in save_logger_keys:
         if k in globals.collector.all_data:
             save_obj[k] = globals.collector.all_data[k]
@@ -195,28 +167,5 @@ def run(param: dict, aux_config={}):
     
     save_data_zodb(param, save_obj)
 
-    # Saving agent for display:
-
-    # Saving the agent goal learners
-    save_behavior = parse_param(param, 'save_behavior', lambda p: isinstance(p, bool), optional=True, default=False)
-    if save_behavior:
-        cloudpickle.dump(agent, open(f'./src/environments/data/pinball/{param["agent"]}_agent.pkl', 'wb'))
-    
-    save_goal_learner_name = parse_param(param, 'save_state_to_goal_estimate', lambda p: isinstance(p, str) or p is None, optional=True, default=None)
-    
-    if save_goal_learner_name is not None:
-        # cloudpickle.dump(agent.goal_learner, open('./src/environments/data/pinball/goal_learner.pkl', 'wb'))
-        # cloudpickle.dump(agent.goal_buffer, open('./src/environments/data/pinball/goal_buffer.pkl', 'wb'))
-        
-        # SWITCHING OVER TO HAVING ONE NN PER GOAL
-        cloudpickle.dump(agent.goal_learners, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_learner.pkl', 'wb'))
-        cloudpickle.dump(agent.goal_buffers, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_buffer.pkl', 'wb'))
-        # cloudpickle.dump(agent.goal_estimate_learner, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_estimate_learner.pkl', 'wb'))
-        cloudpickle.dump(agent.goal_estimate_buffer, open(f'./src/environments/data/pinball/{save_goal_learner_name}_goal_estimate_buffer.pkl', 'wb'))
-
-    # if save_buffers:
-
-    # cloudpickle.dump(agent.goal_estimate_learner, open('./src/environments/data/pinball/goal_estimate_learner.pkl', 'wb'))
-    
     logging.info(f"Experiment Done {param} : {idx}, Time Taken : {time.time() - t_start}")
     return

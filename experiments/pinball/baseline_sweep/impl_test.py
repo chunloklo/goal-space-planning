@@ -37,7 +37,7 @@ def get_configuration_list():
         'use_pretrained_behavior': [False],
         'polyak_step_size': [0.01, 0.05, 0.1, 0.005, 0.001],
 
-        "save_behavior": [False],
+        'save_behaviour_name': [False],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

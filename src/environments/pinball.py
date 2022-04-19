@@ -387,15 +387,14 @@ class PinballModel:
             self.ball.position[1] = 0.05
 
 class PinballEnvironment(BaseEnvironment):
-    def __init__(self, configuration_file, render=False, explore_env=False, continuing=True):
+    def __init__(self, configuration_file, goals: PinballGoals, render=False, explore_env=False, continuing=True):
         self.configuration_file = configuration_file
         self.pinball = None
         self.render = render
-        # Hard setting this for now. We might need this to be parameterized later on
-        self.pinball_goals = PinballGoals()  
+        self.pinball_goals = goals 
         if render:
             print('RENDERING PINBALL ENVIRONMENT!')
-        self.explore_env = explore_env 
+        self.explore_env = explore_env # Environment used to learn the goal model
         self.continuing = continuing
         if self.explore_env:
 
@@ -418,18 +417,32 @@ class PinballEnvironment(BaseEnvironment):
         """Sets the environment state to a random state that doesn't collide with any obstacles.
         Mainly used right now for getting uniform random data.
         """
-        colliding = True
-        while colliding:
-            start_state = [np.random.uniform(0, 1), np.random.uniform(0, 1)]
-            self.pinball.ball.position = np.copy(start_state)
+        # Adding some probability to start gathering data around the start state
+        prob_start_at_goal = 0.01
 
-            colliding = False
-            for obs in self.pinball.obstacles:
-                if obs.collision(self.pinball.ball):
-                    colliding = True
-                    break
-        self.pinball.ball.xdot = np.random.uniform(-1, 1)
-        self.pinball.ball.ydot = np.random.uniform(-1, 1)
+        if np.random.uniform() < prob_start_at_goal:
+            goal_index = np.random.randint(0, self.pinball_goals.num_goals)
+            goal_state = np.copy(self.pinball_goals.goals[goal_index])
+            goal_speed = self.pinball_goals.goal_speeds[goal_index]
+
+            # Spread is the amount of noise around the start state when gathering data
+            spread = 0.01
+            self.pinball.ball.position = goal_state + [np.random.uniform(-spread, spread), np.random.uniform(-spread, spread)]
+            self.pinball.ball.xdot = goal_speed[0] + np.random.uniform(-spread, spread)
+            self.pinball.ball.ydot = goal_speed[1] + np.random.uniform(-spread, spread)
+        else:
+            colliding = True
+            while colliding:
+                start_state = [np.random.uniform(0, 1), np.random.uniform(0, 1)]
+                self.pinball.ball.position = np.copy(start_state)
+
+                colliding = False
+                for obs in self.pinball.obstacles:
+                    if obs.collision(self.pinball.ball):
+                        colliding = True
+                        break
+            self.pinball.ball.xdot = np.random.uniform(-1, 1)
+            self.pinball.ball.ydot = np.random.uniform(-1, 1)
 
     def start(self):
         self.pinball.reset_ball_to_start_state()
@@ -454,7 +467,7 @@ class PinballEnvironment(BaseEnvironment):
         Returns:
             bool: whether the environment should terminate or not.
         """
-        if self.pinball_goals.goal_termination(s)[self.terminal_goal_index]:
+        if self.pinball_goals.goal_termination(None, None, s)[self.terminal_goal_index]:
             return True
         else:
             return False
@@ -484,7 +497,6 @@ class PinballEnvironment(BaseEnvironment):
         if self._check_termination(current_state):
             next_state = self.start()
             reward = self.pinball.END_EPISODE
-            print('TERMINATED')
             return (reward, next_state, not self.continuing), {'reset': False}
 
         reward = self.pinball.take_action(action)

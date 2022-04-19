@@ -39,7 +39,7 @@ def get_configuration_list():
         'batch_num': [2],
         'use_exploration_bonus': [True],
 
-        "save_behavior": [False],
+        'save_behaviour_name': [False],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

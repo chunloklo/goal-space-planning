@@ -25,8 +25,9 @@ import copy
 import pickle
 import traceback
 from .components.QLearner_NN import QLearner_NN
+import cloudpickle
 
-from src.utils.log_utils import run_if_should_log
+from src.utils.log_utils import get_last_pinball_action_value_map, run_if_should_log
 
 if TYPE_CHECKING:
     # Important for forward reference
@@ -49,7 +50,7 @@ class Dyna_NN:
         self.goal_policy_learners = []
 
         self.goals = problem.goals
-        self.num_goals = len(self.goals)
+        self.num_goals = self.goals.num_goals
 
         self.buffer_size = 1000000
         self.min_buffer_size_before_update = 1000
@@ -78,7 +79,7 @@ class Dyna_NN:
 
         self.tau = np.full(self.num_goals, 13000)
 
-        self.goal_termination_func = problem.goal_termination_func
+        self.goal_termination_func = self.goals.goal_termination
 
     def FA(self):
         return "Neural Network"
@@ -114,7 +115,7 @@ class Dyna_NN:
 
     def update(self, s: Any, a, sp: Any, r, gamma, info, terminal: bool = False):
 
-        goal_term = self.goal_termination_func(sp)
+        goal_term = self.goal_termination_func(s, a, sp)
         self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_term': goal_term})
         self.num_steps_in_ep += 1
 
@@ -170,3 +171,12 @@ class Dyna_NN:
         self.update(s, a, s, r, 0, info, terminal=True)
         # self.behaviour_learner.episode_end()
         # self.option_model.episode_end()
+
+    def experiment_end(self):
+        # Saving the agent goal learners
+        save_behaviour_name = param_utils.parse_param(self.params, 'save_behaviour_name', lambda p: isinstance(p, bool), optional=True, default=False)
+        if save_behaviour_name:
+            cloudpickle.dump(self, open(f'./src/environments/data/pinball/{save_behaviour_name}_agent.pkl', 'wb'))
+
+        q_map = get_last_pinball_action_value_map(1, self.behaviour_learner.get_action_values)
+        globals.collector.collect('q_map', q_map[0])

@@ -42,7 +42,7 @@ ROWS = 40
 COLUMNS = ROWS
 NUM_GOALS = 16
 
-def generatePlots(param, data, key):
+def generatePlots(param, data, key, goal):
     time_str = datetime.now().strftime("%m-%d-%Y--%H-%M-%S")
     # folder = f'./plots/{key}_{time_str}'
     # os.makedirs(folder)
@@ -63,19 +63,19 @@ def generatePlots(param, data, key):
     problem = PinballOracleProblem(exp, 0, 0)
 
     # Calculating the value at each state approximately
-    num_goals = problem.num_goals
+    num_goals = problem.goals.num_goals
     initiation_map = np.zeros((num_goals, ROWS, COLUMNS))
     for r, y in enumerate(np.linspace(0, 1, ROWS)):
         for c, x in enumerate(np.linspace(0, 1, ROWS)):
-            init = problem.goal_initiation_func([x, y, 0, 0])
+            init = problem.goals.goal_initiation([x, y, 0, 0])
             initiation_map[:, r, c] = init
 
     fig, axes = plt.subplots(1, figsize=(40, 40))
     # axes = axes.flatten()
 
-    save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
+    save_file = get_file_name('./plots/', f'{key}_goal_{goal}', 'png', timestamp=True)
 
-    g = 1
+    g = goal
     ax = axes
 
 
@@ -128,7 +128,8 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_learn_state_to_goal_est_oracle_g1.py'
+    parameter_path = 'experiments/pinball/GSP_goal_model_learn.py'
+    goal = 15
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
@@ -138,6 +139,6 @@ if __name__ == "__main__":
 
     print(data.shape)
 
-    generatePlots(config, data, key)
+    generatePlots(config, data, key, goal)
 
     exit()

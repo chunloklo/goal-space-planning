@@ -40,7 +40,7 @@ def get_configuration_list():
         'dreamer_config_path': ['external/dreamerv2/configs.yaml'],
         'prefill': [True],
 
-        "save_behavior": [True],
+        'save_behaviour_name': [True],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

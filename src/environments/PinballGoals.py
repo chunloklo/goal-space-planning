@@ -18,7 +18,7 @@ from itertools import *
 class PinballGoals():
 
     termination_radius = 0.04
-    initiation_radius = 0.45
+    initiation_radius = 0.48
     speed_radius = 0.2
     
     # Caching calculation for functions
@@ -46,15 +46,21 @@ class PinballGoals():
 
         self.goal_speeds = np.zeros(self.goals.shape)
         
-    def goal_termination(self, s):
-        state_close = np.sum(np.power(self.goals - s[:2], 2), axis=1) <= self.termination_radius_squared
-        speed_close = np.sum(np.power(s[2:] - self.goal_speeds, 2), axis=1) <= self.speed_radius_squared
+    def goal_termination(self, s, a, sp):
+        # [chunlok 2022-04-15] It's important here that sp is used instead of s because the way the environment works.
+        # This is so that the reward is obtained by the agent right AFTER the option terminates, rather than on the transition on which the option terminates
+        state_close = np.sum(np.power(self.goals - sp[:2], 2), axis=1) <= self.termination_radius_squared
+        speed_close = np.sum(np.power(sp[2:] - self.goal_speeds, 2), axis=1) <= self.speed_radius_squared
         terms = np.logical_and(state_close, speed_close)
         return terms
 
     def goal_initiation(self, s):
         state_close = np.sum(np.power(self.goals - s[:2], 2), axis=1) <= self.initiation_radius_squared
-        return state_close
+
+        # Checks for termination. Don't let a goal wrap around to itself
+        goal_term = self.goal_termination(None, None, s)
+        
+        return np.logical_and(state_close, ~goal_term)
 
 class PinballOracleGoals(PinballGoals):
     def __init__(self):
