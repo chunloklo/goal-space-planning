@@ -446,16 +446,16 @@ class PinballEnvironment(BaseEnvironment):
 
     def start(self):
         self.pinball.reset_ball_to_start_state()
-
-        if self.explore_env:
-            self._set_random_env_state()
-            self.num_steps = 0
-
         obs = self.pinball.get_state()
         
         if self.render:
             self.environment_view = PinballView(self.screen, self.pinball, self.pinball_goals, self.terminal_goal_index)
 
+        return obs
+
+    def exploring_reset(self):
+        self._set_random_env_state()
+        obs = self.pinball.get_state()
         return obs
 
     def _check_termination(self, s):
@@ -489,7 +489,7 @@ class PinballEnvironment(BaseEnvironment):
         if self.explore_env:
             if self.num_steps > self.max_steps:
                 self.num_steps = 0
-                next_state = self.start()
+                next_state = self.exploring_reset()
                 return (0, next_state, False), {'reset': True}
             else:
                 self.num_steps += 1

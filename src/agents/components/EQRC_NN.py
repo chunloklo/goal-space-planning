@@ -25,10 +25,10 @@ class EQRC_NN():
             hidden = hk.Sequential([
                 hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
                 hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
-                hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
-                hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
-                hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
-                hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
+                hk.Linear(64, w_init=init, b_init=b_init), jax.nn.relu,
+                hk.Linear(64, w_init=init, b_init=b_init), jax.nn.relu,
+                # hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
+                # hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
             ])
 
             values = hk.Sequential([
@@ -73,15 +73,14 @@ class EQRC_NN():
         x = data['x']
         a = data['a']
         xp = data['xp']
-        goal_policy_cumulant = data['goal_policy_cumulant']
-        goal_discount = data['goal_discount']
+        gamma = data['gamma']
         
         q, phi = self.network.apply(params['w'], x)
         qp, _ = self.network.apply(params['w'], xp)
 
         h = self.h.apply(params['h'], phi) 
 
-        v_loss, h_loss = jax.vmap(partial(qc_loss, self.epsilon), in_axes=0)(q, a, goal_policy_cumulant, goal_discount, qp, h)
+        v_loss, h_loss = jax.vmap(partial(qc_loss, self.epsilon), in_axes=0)(q, a, r, gamma, qp, h)
         h_loss = h_loss.mean()
         v_loss = v_loss.mean()
 

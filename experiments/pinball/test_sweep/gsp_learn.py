@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10],
+        "seed": [0, 1, 2, 3, 4],
         
         # Agent
         "agent": ["GSP_NN"],
@@ -49,11 +49,11 @@ def get_configuration_list():
 
         # oci configs
         'oci_update_interval': [16],
-        'oci_batch_num': [4],
-        'oci_batch_size': [32],
+        'oci_batch_num': [2, 4, 8, 16],
+        'oci_batch_size': [16, 32],
 
         # Exploration
-        'use_exploration_bonus': [True],
+        'use_exploration_bonus': [True, False],
         'exploration_bonus_amount': [5000.0],   
 
         'pretrained_model_name': ['GSP_model_800k_new'],

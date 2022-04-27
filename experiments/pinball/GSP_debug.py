@@ -33,6 +33,7 @@ def get_configuration_list():
         # Agent
         "agent": ["GSP_NN"],
         'epsilon': [0.1],
+        'kappa': [0.0],
         
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
@@ -48,13 +49,12 @@ def get_configuration_list():
         'goal_estimate_step_size': [0.005],
 
         # oci configs
-        'oci_update_interval': [16],
+        'oci_update_interval': [0],
         'oci_batch_num': [4],
-        'oci_batch_size': [32],
+        'oci_batch_size': [16],
 
         # Exploration
-        'use_exploration_bonus': [True],
-        'exploration_bonus_amount': [5000.0],   
+        'use_exploration_bonus': [False],        
 
         'pretrained_model_name': ['GSP_model_800k_new'],
 

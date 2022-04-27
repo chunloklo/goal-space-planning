@@ -123,16 +123,21 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_goal_model_learn.py'
+    parameter_path = 'experiments/pinball/GSP_goal_model_learn_sweep.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
-    config = parameter_list[0]
-    key = 'goal_gamma_map'
-    data = load_data(config, key)
-    data = np.squeeze(data)
+    for config in parameter_list:
+        for key in ['goal_gamma_map', 'goal_r_map']:
+            name = f"{key}_batch_{config['batch_size']}_stepsize_{config['step_size']}"
 
-    print(f'data_shape: {data.shape}')
-    # sdfsd
-    generatePlots(config, data, key)
+            # config = parameter_list[0]
+            # key = 'goal_gamma_map'
+            data = load_data(config, key)
+            data = np.squeeze(data)
+
+            print(f'data_shape: {data.shape}')
+            # sdfsd
+
+            generatePlots(config, data, name)
 
     exit()

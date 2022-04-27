@@ -14,39 +14,31 @@ def get_configuration_list():
         #Environment/Experiment
         "problem": ["PinballProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
-        'explore_env': [False],
         "episodes": [0],
-        # 'max_steps': [100],
-        'max_steps': [200000],
+        'max_steps': [400000],
+        'explore_env': [False],
         'exploration_phase': [0],
         'gamma': [0.95],
-        'render': [True],
+        'render': [False],
 
         # Logging
-        # 'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss')],
-        'log_keys': [('reward_rate', 'q_map', 'num_steps_in_ep', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'goal_r', 'goal_gamma', 'goal_baseline', 'goal_init')],
-        # 'log_keys': [('reward_rate', 'goal_baseline', 'goal_values')],
-        # 'log_keys': [('reward_rate', 'q_map', 'goal_baseline', 'goal_values')],
+        'log_keys': [('reward_rate', 'num_steps_in_ep', 'q_map')],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [102309],
+        "seed": [0, 1, 2, 3, 4],
+        # "seed": list(range(30)),
         
         # Agent
         "agent": ["Dyna_NN"],
-        'step_size': [1.0],
+        'step_size': [1e-3],
         'epsilon': [0.1],
-        'kappa': [0.0],
-        'search_control': ['random'],
-        'use_pretrained_behavior': [True],
-        'use_pretrained_model': [True],
-        'polyak_step_size': [0.05],
+        'behaviour_alg': ['DQN'],
+        'polyak_stepsize': [0.1],
+        'batch_num': [4],
+        'batch_size':[16],
 
-        # Saving/Loading of Models:
-        'save_behavior': [False],
-
-        # Not needed,  dummy
-        'polyak_stepsize': [0.0],
+        'save_behaviour_name': ['QRC'],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

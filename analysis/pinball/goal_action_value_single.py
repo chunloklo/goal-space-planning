@@ -91,6 +91,9 @@ def generatePlots(param, data, key, goal):
     else:
         min_val = np.min(data[g])
         max_val = np.max(data[g])
+    
+    # min_val = -50
+    # max_val = 0
     print(min_val, max_val)
     # print(initiation_map[g].shape)
     
@@ -129,11 +132,11 @@ def generatePlots(param, data, key, goal):
 
 if __name__ == "__main__":
     parameter_path = 'experiments/pinball/GSP_goal_model_learn.py'
-    goal = 15
+    goal = 2
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
-    key = 'goal_gamma_map'
+    key = 'goal_r_map'
     data = load_data(config, key)
     data = np.squeeze(data)
 

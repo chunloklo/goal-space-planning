@@ -4,6 +4,8 @@ sys.path.append(os.getcwd())
 
 from experiment_utils.sweep_configs.generate_configs import get_sorted_configuration_list_from_dict
 
+# This file is used for pre-learning the model.
+
 # get_configuration_list function is required for 
 def get_configuration_list():
     parameter_dict = {
@@ -16,37 +18,48 @@ def get_configuration_list():
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
-        # 'max_steps': [100],
-        'max_steps': [200000],
+        'max_steps': [400000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [True],
 
         # Logging
-        # 'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss')],
-        'log_keys': [('reward_rate', 'q_map', 'num_steps_in_ep', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'goal_r', 'goal_gamma', 'goal_baseline', 'goal_init')],
-        # 'log_keys': [('reward_rate', 'goal_baseline', 'goal_values')],
-        # 'log_keys': [('reward_rate', 'q_map', 'goal_baseline', 'goal_values')],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss')],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [102309],
+        "seed": [10],
         
         # Agent
         "agent": ["GSP_NN"],
-        'step_size': [1.0],
         'epsilon': [0.1],
-        'kappa': [0.0],
-        'search_control': ['random'],
-        'use_pretrained_behavior': [True],
-        'use_pretrained_model': [True],
-        'OCI_update_interval': [32],
+        
+        # Behaviour agent specific configs
+        'behaviour_alg': ['DQN'],
+        'polyak_stepsize': [0.1],
+        'step_size': [1e-3],
+        'adam_eps': [1e-8],
+        'batch_num': [4],
+        'batch_size': [16],
 
-        # Saving/Loading of Models:
-        'save_behavior': [False],
+        # Goal Estimate Configs
+        'goal_estimate_batch_size': [256],
+        'goal_estimate_update_interval': [256],
+        'goal_estimate_step_size': [0.005],
 
-        # Not needed,  dummy
-        'polyak_stepsize': [0.0],
+        # oci configs
+        'oci_update_interval': [0],
+        'oci_batch_num': [4],
+        'oci_batch_size': [16],
+
+        # Exploration
+        'use_exploration_bonus': [False],        
+
+        'pretrained_model_name': ['GSP_model_800k_new'],
+        'pretrained_behaviour_name': ['GSP_standard']
+        # 'save_behaviour': ['GSP_standard'],
+        # 'learn_model_only': [False],
+        # 'learn_select_goal_models': [(15,)]
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

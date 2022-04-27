@@ -109,9 +109,10 @@ if __name__ == "__main__":
     ax.set_xlabel('episodes')
     ax.set_ylabel('number of steps per episode')
     # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_baseline.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/dqn.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/QRC.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_baseline.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
     plt.legend()
     # plt.title(alg_name)
 

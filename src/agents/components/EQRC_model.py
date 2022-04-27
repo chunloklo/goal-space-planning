@@ -83,9 +83,12 @@ class GoalLearner_EQRC_NN():
         q, phi = self.network.apply(params['gamma_w'], x)
         qp, _ = self.network.apply(params['gamma_w'], xp)
 
-        h = self.h.apply(params['gamma_h'], phi) 
+        h = self.h.apply(params['gamma_h'], phi)
 
-        v_loss, h_loss = jax.vmap(partial(qc_loss, self.epsilon), in_axes=0)(q, a, goal_policy_cumulant, goal_discount, qp, h)
+        pi_qp = _argmax_with_random_tie_breaking(qp)
+        pi_qp = (1.0 - self.epsilon) * pi_qp + (self.epsilon / qp.shape[0])
+
+        v_loss, h_loss = jax.vmap(qc_loss, in_axes=0)(q, a, goal_policy_cumulant, goal_discount, qp, h, pi_qp)
         h_loss = h_loss.mean()
         v_loss = v_loss.mean()
 
@@ -99,7 +102,7 @@ class GoalLearner_EQRC_NN():
 
         h = self.h.apply(params['value_h'], phi) 
 
-        v_loss, h_loss = jax.vmap(partial(qc_loss, self.epsilon), in_axes=0)(q, a, r, goal_discount, qp, h)
+        v_loss, h_loss = jax.vmap(qc_loss, in_axes=0)(q, a, r, goal_discount, qp, h, pi_qp)
         h_loss = h_loss.mean()
         v_loss = v_loss.mean()
 
@@ -138,13 +141,9 @@ def _argmax_with_random_tie_breaking(preferences):
     optimal_actions = (preferences == preferences.max(axis=-1, keepdims=True))
     return optimal_actions / optimal_actions.sum(axis=-1, keepdims=True)
 
-def qc_loss(epsilon, q, a, r, gamma, qp, h):
-    pi = _argmax_with_random_tie_breaking(qp)
-
-    pi = (1.0 - epsilon) * pi + (epsilon / qp.shape[0])
-    pi = jax.lax.stop_gradient(pi)
-
-    vp = qp.dot(pi)
+def qc_loss(q, a, r, gamma, qp, h, pi_qp):
+    pi_qp = jax.lax.stop_gradient(pi_qp) 
+    vp = qp.dot(pi_qp)
     target = r + gamma * vp
     target = jax.lax.stop_gradient(target)
 
@@ -155,3 +154,6 @@ def qc_loss(epsilon, q, a, r, gamma, qp, h):
     h_loss = 0.5 * (jax.lax.stop_gradient(delta) - delta_hat)**2
 
     return v_loss, h_loss
+class GoalLearner_QRC_NN(GoalLearner_EQRC_NN):
+    def __init__(self, state_shape, num_actions: int, step_size: float, beta: float = 1.0):
+        super().__init__(state_shape, num_actions, step_size, 0, beta)

@@ -92,3 +92,6 @@ class FilteredCollector(Collector):
         if name in self.save_keys:
             super().collect(name, value)
         # Ignore if not set to save
+
+    def has_key(self, key):
+        return key in self.save_keys

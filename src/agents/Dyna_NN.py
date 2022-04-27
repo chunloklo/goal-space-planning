@@ -2,6 +2,7 @@
 import numpy as np
 from PyExpUtils.utils.random import argmax, choice
 import random
+from src.agents.components.EQRC_NN import EQRC_NN
 from src.agents.components.learners import ESarsaLambda, QLearner, QLearner_ImageNN
 from src.agents.components.search_control import ActionModelSearchControl_Tabular
 from src.environments.GrazingWorldAdam import GrazingWorldAdamImageFeature, get_pretrained_option_model, state_index_to_coord
@@ -42,44 +43,41 @@ class Dyna_NN:
         self.params = problem.params
         self.random = np.random.RandomState(problem.seed)
         
-        self.step_size = 1e-3
-        self.batch_size = 16
-        self.epsilon = self.params['epsilon']
+        params = self.params
+        self.step_size = param_utils.parse_param(params, 'step_size', lambda p : isinstance(p, float) and p >= 0)
+        self.batch_size = param_utils.parse_param(params, 'batch_size', lambda p : isinstance(p, int) and p > 0)
+        self.epsilon = param_utils.parse_param(params, 'step_size', lambda p : isinstance(p, float) and p >= 0)
+        self.batch_num = param_utils.parse_param(params, 'batch_num', lambda p : isinstance(p, int) and p > 0, optional=True, default=1)
+        self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['DQN', 'QRC'])
 
-        self.behaviour_learner = QLearner_NN((4,), 5, self.step_size)
-        self.goal_policy_learners = []
 
+        if self.behaviour_alg == 'QRC':
+            self.beta = param_utils.parse_param(params, 'beta', lambda p : isinstance(p, float), optional=True, default=1.0)
+            self.behaviour_learner = EQRC_NN((4,), self.num_actions, self.step_size, self.epsilon, beta=self.beta)
+        elif self.behaviour_alg == 'DQN':
+            self.polyak_stepsize = param_utils.parse_param(params, 'polyak_stepsize', lambda p : isinstance(p, float) and p >= 0)
+            self.behaviour_learner = QLearner_NN((4,), 5, self.step_size, self.polyak_stepsize)
+        
         self.goals = problem.goals
         self.num_goals = self.goals.num_goals
 
         self.buffer_size = 1000000
-        self.min_buffer_size_before_update = 1000
-        self.buffer = Buffer(self.buffer_size, {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': (), 'goal_term': (self.num_goals, )}, self.random.randint(0,2**31))
-
+        self.min_buffer_size_before_update = 10000
+        self.buffer = Buffer(self.buffer_size, 
+            {'x': (4,), 'a': (), 'xp': (4,), 'r': (), 'gamma': ()}, 
+            self.random.randint(0,2**31),
+            {'a': np.int32})
         self.num_steps_in_ep = 0
-        
-        params = self.params
-        self.use_pretrained_behavior = param_utils.parse_param(params, 'use_pretrained_behavior', lambda p : isinstance(p, bool), optional=True, default=False)
-        self.polyak_stepsize = param_utils.parse_param(params, 'polyak_step_size', lambda p : isinstance(p, float) and p >= 0)
-        self.batch_num = param_utils.parse_param(params, 'batch_num', lambda p : isinstance(p, int) and p > 0, optional=True, default=1)
-        
-        if self.use_pretrained_behavior:
-            agent = pickle.load(open('src/environments/data/pinball/Dyna_NN_agent.pkl', 'rb'))
+
+        # Name of the file that contains the pretrained behavior that the agent should load. If None, its starts from scratch
+        self.pretrained_behavior_name = param_utils.parse_param(params, 'pretrained_behavior_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
+        if self.pretrained_behavior_name is not None:
+            agent = pickle.load(open(f'src/environments/data/pinball/{self.pretrained_behavior_name}_agent.pkl', 'rb'))
             self.behaviour_learner = agent.behaviour_learner
             self.buffer = agent.buffer
-            print('using pretrained behavior')
 
         self.cumulative_reward = 0
-
         self.num_term = 0
-
-
-        self.use_exploration_bonus = param_utils.parse_param(params, 'use_exploration_bonus', lambda p : isinstance(p, bool), optional=True, default=False)
-
-
-        self.tau = np.full(self.num_goals, 13000)
-
-        self.goal_termination_func = self.goals.goal_termination
 
     def FA(self):
         return "Neural Network"
@@ -111,48 +109,22 @@ class Dyna_NN:
         # Updating behavior
         for _ in range(self.batch_num):
             data = self.buffer.sample(self.batch_size)
-            self.behaviour_learner.update(data, polyak_stepsize=self.polyak_stepsize)
+            self.behaviour_learner.update(data)
 
     def update(self, s: Any, a, sp: Any, r, gamma, info, terminal: bool = False):
 
-        goal_term = self.goal_termination_func(s, a, sp)
-        self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_term': goal_term})
+        self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma})
         self.num_steps_in_ep += 1
-
-        self.tau[np.where(goal_term == True)] = 0
-
-        # print(s)
-        # print(self.goals)
         
         if r == 10000:
             self.num_term += 1
             if globals.aux_config.get('show_progress'):
-                print(self.tau)
                 print(f'terminated! term_number: {self.num_term} {self.num_steps_in_ep}')
             globals.collector.collect('num_steps_in_ep', self.num_steps_in_ep)
             self.num_steps_in_ep = 0
-        # if terminal:
-            # print('terminal')
-
-        # if s == [0.2, 0.9, 0.0, 0.0]:
-        #     print(f'{self.behaviour_learner.get_action_values(np.array(s))}')
 
         self.update_behavior()
-                # print(s)
-        # Calculating the value at each state approximately
-        # term_map = np.zeros((20, 20))
-        # for row, y in enumerate(np.linspace(0, 1, 20)):
-        #     for c, x in enumerate(np.linspace(0, 1, 20)):
-        #         goal_terms = self.goal_termination_func(np.array([x, y, 0, 0]))
-        #         term_map[row, c] = 1 if goal_terms[5] == True else 0
 
-        # init_map = np.zeros((20, 20))
-        # for row, y in enumerate(np.linspace(0, 1, 20)):
-        #     for c, x in enumerate(np.linspace(0, 1, 20)):
-        #         goal_init = self.goal_initiation_func(np.array([x, y, 0, 0]))
-        #         init_map[row, c] = 1 if goal_init[5] == True else 0
-
-        
         # # Logging
         self.cumulative_reward += r
         def log():
@@ -174,7 +146,7 @@ class Dyna_NN:
 
     def experiment_end(self):
         # Saving the agent goal learners
-        save_behaviour_name = param_utils.parse_param(self.params, 'save_behaviour_name', lambda p: isinstance(p, bool), optional=True, default=False)
+        save_behaviour_name = param_utils.parse_param(self.params, 'save_behaviour_name', lambda p: isinstance(p, str), optional=True, default=False)
         if save_behaviour_name:
             cloudpickle.dump(self, open(f'./src/environments/data/pinball/{save_behaviour_name}_agent.pkl', 'wb'))
 

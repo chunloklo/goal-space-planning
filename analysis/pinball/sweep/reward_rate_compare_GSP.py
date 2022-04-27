@@ -83,7 +83,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
     #     ax.plot(x_range, run_data, label=i)
 
 
-def plot_reward_rate_group(ax, group, color=None, postfix=''):
+def plot_reward_rate_group(ax, group, color=None, postfix='', label=None):
     all_data = []
     for param in group:
         ############ STANDARD
@@ -108,7 +108,6 @@ def plot_reward_rate_group(ax, group, color=None, postfix=''):
     mean, std = mean_chunk_data(mean, STEP_SIZE), mean_chunk_data(std, STEP_SIZE)
     x_range = get_x_range(0, mean.shape[0], STEP_SIZE)
 
-    label = f"polyak_stepsize:{group[0]['polyak_step_size']}"
     # label = f"OCI_{group[0]['OCI_update_interval']}_bonus_{group[0]['use_exploration_bonus']}_polyak_{group[0]['polyak_stepsize']} {postfix}"
 
     plot_mean_ribbon(ax, mean, std, x_range, label=label, color=color)
@@ -217,17 +216,27 @@ if __name__ == "__main__":
     #         plot_reward_rate_group(ax, group[1])
 
     
-    plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.1.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.05.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.1.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.05.py')
+
+    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/dqn.py', 'dqn')
 
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/baseline_sweep/impl_test_batch2_explore.py')
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/gsp_learn.py')
 
     groups = group_configs(param_list, ignore_keys=['seed'])
 
     for group in groups:
         # if group[0]['use_exploration_bonus'] == False:
-        plot_reward_rate_group(ax, group[1])
+                # 'oci_batch_num': [2, 4, 8, 16],
+        # 'oci_batch_size': [16, 32],
+
+        # Exploration
+        # 'use_exploration_bonus': [True, False],
+        label = f"explore:{group[0]['use_exploration_bonus']} oci_batch_size:{group[0]['oci_batch_size']} oci_batch_num: {group[0]['oci_batch_num']}"
+        
+        if group[0]['use_exploration_bonus'] and group[0]['oci_batch_num'] == 4:
+            plot_reward_rate_group(ax, group[1], label=label)
 
         # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
         #     plot_reward_rate_group(ax, group[1])
@@ -246,6 +255,7 @@ if __name__ == "__main__":
     # plt.title(alg_name)
 
     # ax.set_xlim([600, 1200])
+    ax.set_ylim(-10, 160)
 
     # Getting file name
     save_file = get_file_name('./plots/', f'reward_rate', 'png', timestamp=True)

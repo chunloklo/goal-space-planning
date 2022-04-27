@@ -19,11 +19,10 @@ def get_configuration_list():
         'explore_env': [False],
         'exploration_phase': [0],
         'gamma': [0.95],
-        'render': [True],
+        'render': [False],
 
         # Logging
         'log_keys': [('reward_rate', 'num_steps_in_ep', 'q_map')],
-        # 'log_keys': [('reward_rate', 'q_map')],
         'step_logging_interval': [100],
 
         # Seed
@@ -31,14 +30,14 @@ def get_configuration_list():
         
         # Agent
         "agent": ["Dyna_NN"],
-        'step_size': [1.0],
+        'step_size': [1e-3],
         'epsilon': [0.1],
-        'search_control': ['random'],
-        'use_pretrained_behavior': [False],
-        'polyak_step_size': [0.05],
-        'batch_num': [1],
+        'behaviour_alg': ['DQN'],
+        'polyak_stepsize': [0.1],
+        'batch_num': [4],
+        'batch_size':[16],
 
-        'save_behaviour_name': [True],
+        'save_behaviour_name': ['QRC'],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

@@ -23,7 +23,7 @@ from analysis.common import get_best_grouped_param, load_data, load_reward_rate,
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
 
-STEP_SIZE = 50
+STEP_SIZE = 100
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
@@ -114,8 +114,9 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dyna.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/dyna.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_oracle.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/GSP_baseline.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/dqn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_oracle.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_baseline.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/dreamer.py')
@@ -136,6 +137,7 @@ if __name__ == "__main__":
     # plt.title(alg_name)
 
     # ax.set_xlim([600, 1200])
+    ax.set_ylim(-10, 160)
 
     # Getting file name
     save_file = get_file_name('./plots/', f'single_reward_rate', 'png', timestamp=True)

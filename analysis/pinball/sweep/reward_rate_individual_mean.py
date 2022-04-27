@@ -178,19 +178,19 @@ if __name__ == "__main__":
 
     # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.1.py', color=None)
 
-    plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.1.py', color='#EE6677')
-    plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.05.py', color='#228833')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.1.py', color='#EE6677')
+    # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.05.py', color='#228833')
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/GSP_learning.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/GSP_learning.py')
 
-    groups = group_configs(param_list, ignore_keys=['seed'])
+    # groups = group_configs(param_list, ignore_keys=['seed'])
     
-    color_list = ['#4477AA', '#EE6677', '#228833', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB', '#77AADD', '#EE8866', '#EEDD88', '#FFAABB', '#99DDFF', '#44BB99', '#BBCC33', '#AAAA00', '#DDDDDD']
-    for i, group in enumerate(groups):
-        # if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
-        #     plot_reward_rate_group(ax, group[1], postfix='baseline', color='#CCBB44')
-        if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == False and group[0]['polyak_stepsize'] == 0.1:
-            plot_reward_rate_group(ax, group[1], postfix='baseline', color='#4477AA')
+    # color_list = ['#4477AA', '#EE6677', '#228833', '#CCBB44', '#66CCEE', '#AA3377', '#BBBBBB', '#77AADD', '#EE8866', '#EEDD88', '#FFAABB', '#99DDFF', '#44BB99', '#BBCC33', '#AAAA00', '#DDDDDD']
+    # for i, group in enumerate(groups):
+    #     # if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+    #     #     plot_reward_rate_group(ax, group[1], postfix='baseline', color='#CCBB44')
+    #     if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == False and group[0]['polyak_stepsize'] == 0.1:
+    #         plot_reward_rate_group(ax, group[1], postfix='baseline', color='#4477AA')
 
 
 
@@ -208,9 +208,11 @@ if __name__ == "__main__":
     #     if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.1:
     #         plot_reward_rate_group(ax, group[1], color='#4477AA')
 
+    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/qrc_display.py', color='#EE6677')
+
 
     plt.legend()
-    ax.set_ylim([-20, 180])
+    # ax.set_ylim([-20, 180])
 
     # Getting file name
     save_file = get_file_name('./plots/', f'reward_rate', 'png', timestamp=True)

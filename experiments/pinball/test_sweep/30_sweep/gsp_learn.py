@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_impl_test"],
+        "db_folder": ["30_sweep"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10],
+        "seed": list(range(30)),
         
         # Agent
         "agent": ["GSP_NN"],
@@ -58,7 +58,7 @@ def get_configuration_list():
 
         'pretrained_model_name': ['GSP_model_800k_new'],
 
-        'save_behaviour': ['GSP_standard'],
+        # 'save_behaviour': ['GSP_standard'],
         'learn_model_only': [False],
         # 'learn_select_goal_models': [(15,)]
     }
