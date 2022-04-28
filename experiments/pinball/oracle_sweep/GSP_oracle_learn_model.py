@@ -38,7 +38,7 @@ def get_configuration_list():
         'kappa': [0.0],
         'polyak_stepsize': [0.00],
         'search_control': ['random'],
-        'use_prefill_buffer': ['oracle_circle_prefill'],
+        'use_prefill_goal_buffer': ['oracle_circle_prefill'],
         'OCI_update_interval': [0], ## Not needed, but still requried
         'polyak_stepsize': [0.000],
         'learn_model_only': [True],

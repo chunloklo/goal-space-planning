@@ -39,7 +39,7 @@ def get_configuration_list():
         'prefill_buffer_time': [400000],
         # 'use_pretrained_behavior': [True],
         # 'use_pretrained_model': ['oracle6'],
-        # 'use_prefill_buffer': ['oracle_prefill'],
+        # 'use_prefill_goal_buffer': ['oracle_prefill'],
         # Not needed, but still required
         'batch_size': [16],
         'step_size': [1e-3],

@@ -115,7 +115,10 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/dyna.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
     plot_single_reward_rate(ax, 'experiments/pinball/GSP_baseline.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/gsp_target.py')
     plot_single_reward_rate(ax, 'experiments/pinball/dqn.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/gsp_pretrain_test.py')
+
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_oracle.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_baseline.py')

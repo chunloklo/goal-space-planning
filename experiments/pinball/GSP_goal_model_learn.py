@@ -40,7 +40,7 @@ def get_configuration_list():
         'adam_eps': [1e-8],
         'batch_size': [16],
         # 'use_pretrained_model': ['GSP_model_100k'],
-        'use_prefill_buffer': ['GSP_prefill_400k_all'],
+        'use_prefill_goal_buffer': ['GSP_prefill_400k_all'],
         'OCI_update_interval': [0], ## Not needed, but still requried
         'save_state_to_goal_estimate_name': ['GSP_model_800k_new'], # 400k is actually 800k steps. It's also been renamed to 'standard_800k' since it doesn't use the oracle goals
         'learn_model_only': [True],

@@ -111,9 +111,9 @@ class DynaOptions_NN:
             # for g in [12]:
             #     self.goal_learners[g] = GoalLearner_NN((4,), self.num_actions, self.step_size, 0.1)
 
-        self.use_prefill_buffer = param_utils.parse_param(params, 'use_prefill_buffer', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
-        if self.use_prefill_buffer is not None:
-            self.goal_buffers = pickle.load(open(f'./src/environments/data/pinball/{self.use_prefill_buffer}_goal_buffer.pkl', 'rb'))
+        self.use_prefill_goal_buffer = param_utils.parse_param(params, 'use_prefill_goal_buffer', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
+        if self.use_prefill_goal_buffer is not None:
+            self.goal_buffers = pickle.load(open(f'./src/environments/data/pinball/{self.use_prefill_goal_buffer}_goal_buffer.pkl', 'rb'))
 
             
 

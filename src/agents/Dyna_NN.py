@@ -50,13 +50,12 @@ class Dyna_NN:
         self.batch_num = param_utils.parse_param(params, 'batch_num', lambda p : isinstance(p, int) and p > 0, optional=True, default=1)
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['DQN', 'QRC'])
 
-
         if self.behaviour_alg == 'QRC':
             self.beta = param_utils.parse_param(params, 'beta', lambda p : isinstance(p, float), optional=True, default=1.0)
             self.behaviour_learner = EQRC_NN((4,), self.num_actions, self.step_size, self.epsilon, beta=self.beta)
         elif self.behaviour_alg == 'DQN':
             self.polyak_stepsize = param_utils.parse_param(params, 'polyak_stepsize', lambda p : isinstance(p, float) and p >= 0)
-            self.behaviour_learner = QLearner_NN((4,), 5, self.step_size, self.polyak_stepsize)
+            self.behaviour_learner = QLearner_NN((4,), 5, self.step_size, self.polyak_stepsize, 0.0)
         
         self.goals = problem.goals
         self.num_goals = self.goals.num_goals
@@ -94,7 +93,6 @@ class Dyna_NN:
 
         probs[a] += 1 - self.epsilon
         return probs
-
 
     # public method for rlglue
     def selectAction(self, s: Any) -> int:
@@ -146,7 +144,7 @@ class Dyna_NN:
 
     def experiment_end(self):
         # Saving the agent goal learners
-        save_behaviour_name = param_utils.parse_param(self.params, 'save_behaviour_name', lambda p: isinstance(p, str), optional=True, default=False)
+        save_behaviour_name = param_utils.parse_param(self.params, 'save_behaviour_name', lambda p: isinstance(p, str) or p is None, optional=True, default=None)
         if save_behaviour_name:
             cloudpickle.dump(self, open(f'./src/environments/data/pinball/{save_behaviour_name}_agent.pkl', 'wb'))
 

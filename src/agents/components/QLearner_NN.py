@@ -11,10 +11,11 @@ from functools import partial
 
 
 class QLearner_NN():
-    def __init__(self, state_shape, num_actions: int, learning_rate: float, polyak_stepsize: float, num_options: int = 0):
+    def __init__(self, state_shape, num_actions: int, learning_rate: float, polyak_stepsize: float, beta, num_options: int = 0):
         self.num_actions = num_actions
         self.num_options = num_options
         self.polyak_stepsize = polyak_stepsize
+        self.beta = beta
 
         def q_function(states):
                 mlp = hk.Sequential([
@@ -107,7 +108,6 @@ class QLearner_NN():
         a = data['a']
         xp = data['xp']
         gamma = data['gamma']
-
         target = data['target']
 
         x_pred = self.network.apply(params, x)
@@ -115,14 +115,14 @@ class QLearner_NN():
         ap = jnp.argmax(self.network.apply(params, xp), axis=1)
         xp_pred = self._take_action_index(xp_action_values, ap)
         prev_pred = self._take_action_index(x_pred, a)
-        td_error = beta * target + (1 - beta) * r + gamma * xp_pred - prev_pred
+        td_error = r + gamma * (beta * target + (1 - beta) * xp_pred) - prev_pred
         loss = 0.5 * td_error**2
 
         return loss.mean()
 
     @partial(jax.jit, static_argnums=0)
-    def _oci_target_update(self, params: hk.Params, target_params: hk.Params, opt_state, polyak_stepsize, data):
-        delta, grad = jax.value_and_grad(self._oci_loss)(params, data)
+    def _oci_target_update(self, params: hk.Params, target_params: hk.Params, opt_state, polyak_stepsize, beta, data):
+        delta, grad = jax.value_and_grad(self._oci_target_loss)(params, target_params, beta, data)
 
         updates, opt_state = self.opt.update(grad, opt_state)
         params = optax.apply_updates(params, updates)
@@ -132,6 +132,6 @@ class QLearner_NN():
         return params, target_params, opt_state, jnp.sqrt(delta)
 
     def oci_target_update(self, data):
-        self.params, self.target_params, self.opt_state, delta = self._oci_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, data)
+        self.params, self.target_params, self.opt_state, delta = self._oci_target_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, self.beta, data)
         return delta
 

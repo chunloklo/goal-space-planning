@@ -219,24 +219,24 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.1.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_display_0.05.py')
 
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/dqn.py', 'dqn')
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/30_sweep/dqn.py', 'dqn')
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/30_sweep/gsp_learn.py', 'gsp_learn')
 
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/gsp_learn.py')
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/gsp_learn.py')
+    # groups = group_configs(param_list, ignore_keys=['seed'])
 
-    groups = group_configs(param_list, ignore_keys=['seed'])
+    # for group in groups:
+    #     # if group[0]['use_exploration_bonus'] == False:
+    #             # 'oci_batch_num': [2, 4, 8, 16],
+    #     # 'oci_batch_size': [16, 32],
 
-    for group in groups:
-        # if group[0]['use_exploration_bonus'] == False:
-                # 'oci_batch_num': [2, 4, 8, 16],
-        # 'oci_batch_size': [16, 32],
-
-        # Exploration
-        # 'use_exploration_bonus': [True, False],
-        label = f"explore:{group[0]['use_exploration_bonus']} oci_batch_size:{group[0]['oci_batch_size']} oci_batch_num: {group[0]['oci_batch_num']}"
+    #     # Exploration
+    #     # 'use_exploration_bonus': [True, False],
+    #     label = f"explore:{group[0]['use_exploration_bonus']} oci_batch_size:{group[0]['oci_batch_size']} oci_batch_num: {group[0]['oci_batch_num']}"
         
-        if group[0]['use_exploration_bonus'] and group[0]['oci_batch_num'] == 4:
-            plot_reward_rate_group(ax, group[1], label=label)
+    #     if group[0]['use_exploration_bonus'] and group[0]['oci_batch_num'] == 4:
+    #         plot_reward_rate_group(ax, group[1], label=label)
 
         # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
         #     plot_reward_rate_group(ax, group[1])
@@ -251,10 +251,22 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_2_explore_true.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_4_explore_true.py')
 
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/gsp_pretrain_sweep.py')
+    for param in param_list:
+        # if group[0]['use_exploration_bonus'] == False:
+                # 'oci_batch_num': [2, 4, 8, 16],
+        # 'oci_batch_size': [16, 32],
+
+        # Exploration
+        # 'use_exploration_bonus': [True, False],
+        label = f"oci_beta: {param['oci_beta']}"
+        plot_reward_rate_group(ax, [param], label=label)
+
+
     plt.legend()
     # plt.title(alg_name)
 
-    # ax.set_xlim([600, 1200])
+    ax.set_xlim([-100, 3000])
     ax.set_ylim(-10, 160)
 
     # Getting file name
