@@ -115,7 +115,7 @@ class QLearner_NN():
         ap = jnp.argmax(self.network.apply(params, xp), axis=1)
         xp_pred = self._take_action_index(xp_action_values, ap)
         prev_pred = self._take_action_index(x_pred, a)
-        td_error = r + gamma * (beta * target + (1 - beta) * xp_pred) - prev_pred
+        td_error = r + gamma * (beta * jnp.where(jnp.isnan(target), xp_pred, target) + (1 - beta) * xp_pred) - prev_pred
         loss = 0.5 * td_error**2
 
         return loss.mean()
@@ -134,4 +134,33 @@ class QLearner_NN():
     def oci_target_update(self, data):
         self.params, self.target_params, self.opt_state, delta = self._oci_target_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, self.beta, data)
         return delta
+
+    
+    def _option_value_loss(self, params, target_params, data):
+        x = data['x']
+        valid_goals = data['goal_inits']
+        goal_values = data['goal_values']
+
+        x_pred = self.network.apply(params, x)
+
+        error = jnp.where(valid_goals == True, x_pred[self.num_actions:] - goal_values, 0)
+        loss = 0.5 * error**2
+
+        return loss.mean() + self._loss(params, target_params, data)
+
+    @partial(jax.jit, static_argnums=0)
+    def _option_value_update(self, params: hk.Params, target_params: hk.Params, opt_state, polyak_stepsize, beta, data):
+        delta, grad = jax.value_and_grad(self._option_value_loss)(params, target_params, beta, data)
+
+        updates, opt_state = self.opt.update(grad, opt_state)
+        params = optax.apply_updates(params, updates)
+
+        target_params = optax.incremental_update(params, target_params, polyak_stepsize)
+
+        return params, target_params, opt_state, jnp.sqrt(delta)
+    
+    def option_value_update(self, data):
+        self.params, self.target_params, self.opt_state, delta = self._option_value_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, self.beta, data)
+        return delta
+    
 

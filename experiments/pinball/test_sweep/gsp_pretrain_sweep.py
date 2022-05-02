@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["30_sweep"],
+        "db_folder": ["gsp_beta_sweep"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10000],
+        "seed": list(range(5)),
         
         # Agent
         "agent": ["GSP_NN"],
@@ -47,9 +47,13 @@ def get_configuration_list():
         'goal_estimate_update_interval': [256],
         'goal_estimate_step_size': [0.005],
 
+        # Goal space planning configs
+        'use_goal_values': [True],
+
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [0.0, 0.25, 0.5, 0.75, 1.0],
+        # 'oci_beta': [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 0.8, 0.9, 1.0],
+        'oci_beta': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0],
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],
@@ -65,7 +69,7 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
     
         'pretrained_model_name': ['GSP_model_800k_new'],
-        'load_buffer_name': ['100k_standard'],
+        'load_buffer_name': ['100k_random'],
 
         # 'save_behaviour': ['GSP_standard'],
         'learn_model_only': [False],

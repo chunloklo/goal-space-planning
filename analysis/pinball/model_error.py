@@ -23,7 +23,7 @@ from analysis.common import get_best_grouped_param, load_data, load_reward_rate,
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
 
-STEP_SIZE = 100
+STEP_SIZE = 1
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
@@ -37,7 +37,8 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
     index = 0
 
     ############ STANDARD
-    data = np.array(load_data(parameter_list[index], 'num_steps_in_ep'))
+    data = np.array(load_data(parameter_list[index], 'model_error'))
+    data = np.nan_to_num(data, 0)
 
     print(data.shape)
     run_data = mean_chunk_data(data, STEP_SIZE, 0)
@@ -46,7 +47,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
     x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
 
     # print(len(list(x_range)))
-    ax.plot(x_range, run_data, label=label, alpha=0.5)
+    ax.plot(x_range, run_data, label=label)
 
     ####### Individual skip probability weights
     # data = load_data(parameter_list[index], 'skip_probability_weights')
@@ -105,27 +106,28 @@ if __name__ == "__main__":
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    ax.set_ylim([0, 10000])
-    ax.set_xlabel('episodes')
-    ax.set_ylabel('number of steps per episode')
+    # ax.set_ylim([0, 10000])
+    # ax.set_xlabel('episodes')
+    # ax.set_ylabel('number of steps per episode')
     # plot_max_reward_rate(ax, 'experiments/chunlok/env_tmaze/baseline.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/dqn.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/QRC.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_baseline.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
-    
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_learn.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values.py')
+
+    plot_single_reward_rate(ax, 'experiments/pinball/oracle_gsp_goal_model_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/gsp_target.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/dqn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/gsp_pretrain_test.py')
+
 
     plt.legend()
     # plt.title(alg_name)
 
     # ax.set_xlim([600, 1200])
-    ax.set_ylim([0, 1000])
 
     # Getting file name
-    save_file = get_file_name('./plots/', f'num_steps_in_ep', 'png', timestamp=True)
+    save_file = get_file_name('./plots/', f'model_error', 'png', timestamp=True)
     # print(f'Plot will be saved in {save_file}')
     plt.savefig(f'{save_file}', dpi = 300)
     

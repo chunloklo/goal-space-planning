@@ -69,9 +69,9 @@ class Dyna_NN:
         self.num_steps_in_ep = 0
 
         # Name of the file that contains the pretrained behavior that the agent should load. If None, its starts from scratch
-        self.pretrained_behavior_name = param_utils.parse_param(params, 'pretrained_behavior_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
-        if self.pretrained_behavior_name is not None:
-            agent = pickle.load(open(f'src/environments/data/pinball/{self.pretrained_behavior_name}_agent.pkl', 'rb'))
+        self.load_behaviour_name = param_utils.parse_param(params, 'load_behaviour_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
+        if self.load_behaviour_name is not None:
+            agent = pickle.load(open(f'src/environments/data/pinball/{self.load_behaviour_name}_agent.pkl', 'rb'))
             self.behaviour_learner = agent.behaviour_learner
             self.buffer = agent.buffer
 

@@ -10,30 +10,29 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_impl_test"],
+        "db_folder": ["30_sweep"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballProblem"],
+        "problem": ["PinballOracleProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
-        'max_steps': [400000],
+        'max_steps': [300000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss')],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss', 'num_steps_in_ep')],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10],
+        "seed": list(range(20)),
         
         # Agent
         "agent": ["GSP_NN"],
         'epsilon': [0.1],
-        'kappa': [0.0],
         
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
@@ -44,22 +43,39 @@ def get_configuration_list():
         'batch_size': [16],
 
         # Goal Estimate Configs
-        'goal_estimate_batch_size': [256],
-        'goal_estimate_update_interval': [256],
+        'goal_estimate_batch_size': [32],
+        'goal_estimate_update_interval': [32],
         'goal_estimate_step_size': [0.005],
 
+        # Goal space planning configs
+        'use_goal_values': [True],
+
         # oci configs
-        'oci_update_interval': [0],
-        'oci_batch_num': [4],
-        'oci_batch_size': [16],
+        'use_oci_target_update': [True],
+        'oci_beta': [0.0, 0.5, 1.0],
+        'load_behaviour_as_goal_values': ['q_learn'],
+        # 'oci_update_interval': [16],
+        # 'oci_batch_num': [4],
+        # 'oci_batch_size': [32],
 
         # Exploration
-        'use_exploration_bonus': [False],        
+        'use_exploration_bonus': [False],
+        # 'exploration_bonus_amount': [5000.0],   
 
-        'pretrained_model_name': ['GSP_model_800k_new'],
+        # Pretrain goal values:
+        # 'pretrain_goal_values': [True],
+        # 'save_pretrain_goal_values': ['oracle_goal_values'],
+        'load_pretrain_goal_values': ['oracle_goal_values'],
+        'use_pretrained_goal_values_optimization': [True],
+        'batch_buffer_add_size': [1024],
+        
+        # Model training
+        # 'pretrained_model_name': ['oracle_gsp_model_100k'],
+        'learn_model_mode': ['fixed'],
+        'goal_learner_step_size': [1e-4],
+        # 'load_buffer_name': ['100k_standard'],
 
-        'save_behaviour': ['GSP_standard'],
-        'learn_model_only': [False],
+        # 'save_behaviour_name': ['q_learn'],
         # 'learn_select_goal_models': [(15,)]
     }
 

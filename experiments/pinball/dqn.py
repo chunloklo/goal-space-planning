@@ -15,7 +15,7 @@ def get_configuration_list():
         "problem": ["PinballProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         "episodes": [0],
-        'max_steps': [400000],
+        'max_steps': [300000],
         'explore_env': [False],
         'exploration_phase': [0],
         'gamma': [0.95],

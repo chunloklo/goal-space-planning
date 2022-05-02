@@ -14,17 +14,17 @@ def get_configuration_list():
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballProblem"],
+        "problem": ["PinballOracleProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
-        'max_steps': [400000],
+        'max_steps': [300000],
         'exploration_phase': [0],
         'gamma': [0.95],
-        'render': [False],
+        'render': [True],
 
         # Logging
-        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss')],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss', 'num_steps_in_ep')],
         'step_logging_interval': [100],
 
         # Seed
@@ -37,31 +37,49 @@ def get_configuration_list():
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
         'polyak_stepsize': [0.1],
-        'step_size': [1e-3],
+        # 'step_size': [1e-3],
+        'step_size': [0.0],
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
 
         # Goal Estimate Configs
-        'goal_estimate_batch_size': [256],
-        'goal_estimate_update_interval': [256],
+        'goal_estimate_batch_size': [32],
+        'goal_estimate_update_interval': [32],
         'goal_estimate_step_size': [0.005],
+
+        # Goal space planning configs
+        'use_goal_values': [True],
 
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [0.4],
+        'oci_beta': [1.0],
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],
 
+        # Sanity Check Steps
+        'load_behaviour_as_goal_values': ['q_learn'],
+        'behaviour_goal_value_mode': ['only_values'],
+
         # Exploration
-        'use_exploration_bonus': [True],
-        'exploration_bonus_amount': [5000.0],   
+        'use_exploration_bonus': [False],
+        # 'exploration_bonus_amount': [5000.0],   
 
-        'pretrained_model_name': ['GSP_model_800k_new'],
+        # Pretrain goal values:
+        # 'pretrain_goal_values': [True],
+        # 'save_pretrain_goal_values': ['oracle_goal_values'],
+        'load_pretrain_goal_values': ['oracle_goal_values'],
+        'use_pretrained_goal_values_optimization': [True],
+        'batch_buffer_add_size': [1024],
+        
+        # Model training
+        'pretrained_model_name': ['oracle_gsp_model_1000k_test'],
+        'learn_model_mode': ['fixed'],
+        'goal_learner_step_size': [1e-4],
+        # 'load_buffer_name': ['100k_standard'],
 
-        # 'save_behaviour': ['GSP_standard'],
-        'learn_model_only': [False],
+        'load_behaviour_name': ['q_learn'],
         # 'learn_select_goal_models': [(15,)]
     }
 

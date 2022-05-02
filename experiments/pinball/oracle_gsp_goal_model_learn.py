@@ -10,11 +10,11 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["gsp_beta_sweep"],
+        "db_folder": ["pinball_impl_test"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballProblem"],
+        "problem": ["PinballOracleProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
@@ -24,15 +24,14 @@ def get_configuration_list():
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate', 'num_steps_in_ep')],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'model_error')],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": list(range(30)),
+        "seed": [10],
         
-        # Agent
+         # Agent
         "agent": ["GSP_NN"],
-        'epsilon': [0.1],
         
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
@@ -41,6 +40,11 @@ def get_configuration_list():
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
+        'epsilon': [0.1],
+
+        # Sanity Check Steps
+        'load_behaviour_as_goal_values': ['q_learn'],
+        'behaviour_goal_value_mode': ['direct'],
 
         # Goal Estimate Configs
         'goal_estimate_batch_size': [256],
@@ -52,27 +56,27 @@ def get_configuration_list():
 
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0],
+        'oci_beta': [0.0],
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],
 
         # Exploration
         'use_exploration_bonus': [False],
-        # 'exploration_bonus_amount': [5000.0],   
 
         # Pretrain goal values:
-        # 'pretrain_goal_values': [True],
-        'use_pretrained_goal_values': [True],
+        # 'use_pretrained_goal_values': [True],
         'use_pretrained_goal_values_optimization': [True],
         'batch_buffer_add_size': [1024],
-    
-        'pretrained_model_name': ['GSP_model_800k_new'],
-        'load_buffer_name': ['100k_standard'],
+        
+        # Model training
+        # 'save_state_to_goal_estimate_name': ['oracle_gsp_model_100k'],
+        'save_state_to_goal_estimate_name': ['oracle_gsp_model_100k_test'],
+        'goal_learner_step_size': [1e-3],
 
-        # 'save_behaviour': ['GSP_standard'],
-        'learn_model_only': [False],
-        # 'learn_select_goal_models': [(15,)]
+        'learn_model_mode': ['online'],
+
+        # 'learn_select_goal_models': [(2,)]
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

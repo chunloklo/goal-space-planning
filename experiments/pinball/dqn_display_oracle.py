@@ -4,8 +4,6 @@ sys.path.append(os.getcwd())
 
 from experiment_utils.sweep_configs.generate_configs import get_sorted_configuration_list_from_dict
 
-# This file is used for pre-learning the model.
-
 # get_configuration_list function is required for 
 def get_configuration_list():
     parameter_dict = {
@@ -14,40 +12,32 @@ def get_configuration_list():
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballProblem"],
+        "problem": ["PinballOracleProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
-        'explore_env': [True],
         "episodes": [0],
-        'max_steps': [400000],
+        'max_steps': [300000],
+        'explore_env': [False],
         'exploration_phase': [0],
         'gamma': [0.95],
-        'render': [False],
+        'render': [True],
 
         # Logging
-        'log_keys': [()],
+        'log_keys': [('reward_rate', 'num_steps_in_ep', 'q_map')],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10],
+        "seed": [10000],
         
         # Agent
-        "agent": ["GSP_NN"],
-        'step_size': [1.0],
-        'epsilon': [1.0],
-        'kappa': [0.0],
-        'search_control': ['random'],
-        'prefill_buffer_time': [400000],
-        # 'use_pretrained_behavior': [True],
-        # 'use_pretrained_model': ['oracle6'],
-        # 'use_prefill_goal_buffer': ['oracle_prefill'],
-        # Not needed, but still required
-        'batch_size': [16],
+        "agent": ["Dyna_NN"],
         'step_size': [1e-3],
+        'epsilon': [0.1],
+        'behaviour_alg': ['DQN'],
+        'polyak_stepsize': [0.1],
+        'batch_num': [4],
+        'batch_size':[16],
 
-        'OCI_update_interval': [0],
-        'save_state_to_goal_estimate_name': ['GSP_prefill_400k_all'],
-        'polyak_stepsize': [0.000],
-        'learn_model_only': [True],
+        'load_behaviour_name': ['QRC'],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

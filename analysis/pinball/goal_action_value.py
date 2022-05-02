@@ -34,13 +34,14 @@ from analysis.common import load_data
 import matplotlib
 from datetime import datetime
 from src.problems.PinballProblem import PinballOracleProblem, PinballProblem
+from src.problems.registry import getProblem
 
 from src.experiment import ExperimentModel
 
 
 ROWS = 40
 COLUMNS = ROWS
-NUM_GOALS = 16
+NUM_GOALS = 4
 
 def generatePlots(param, data, key):
     time_str = datetime.now().strftime("%m-%d-%Y--%H-%M-%S")
@@ -59,8 +60,8 @@ def generatePlots(param, data, key):
 
     exp = ExperimentModel.load_from_params(exp_params)
 
-
-    problem = PinballProblem(exp, 0, 0)
+    problem = getProblem(param['problem'])(exp, 0, 0)
+    # problem = PinballProblem(exp, 0, 0)
 
     # Calculating the value at each state approximately
     num_goals = problem.goals.num_goals
@@ -123,7 +124,7 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/GSP_goal_model_learn.py'
+    parameter_path = 'experiments/pinball/oracle_gsp_goal_model_learn.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]

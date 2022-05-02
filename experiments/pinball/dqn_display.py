@@ -15,7 +15,7 @@ def get_configuration_list():
         "problem": ["PinballProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         "episodes": [0],
-        'max_steps': [400000],
+        'max_steps': [300000],
         'explore_env': [False],
         'exploration_phase': [0],
         'gamma': [0.95],
@@ -32,12 +32,12 @@ def get_configuration_list():
         "agent": ["Dyna_NN"],
         'step_size': [1e-3],
         'epsilon': [0.1],
-        'behaviour_alg': ['QRC'],
-        'batch_num': [2],
+        'behaviour_alg': ['DQN'],
+        'polyak_stepsize': [0.1],
+        'batch_num': [4],
         'batch_size':[16],
-        'pretrained_behavior_name': ['QRC']
 
-        # 'save_behaviour_name': ['QRC'],
+        'load_behaviour_name': ['QRC'],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

@@ -60,8 +60,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None, color=Non
 
 
 
-def plot_reward_rate_group(ax, group,  color=None, postfix=''):
-    label =f"OCI_{group[0]['OCI_update_interval']}_bonus_{group[0]['use_exploration_bonus']}_polyak_{group[0]['polyak_stepsize']} {postfix}"
+def plot_reward_rate_group(ax, group, label, color=None):
     all_data = []
     for param in group:
         ############ STANDARD
@@ -74,7 +73,7 @@ def plot_reward_rate_group(ax, group,  color=None, postfix=''):
         x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
 
         # print(len(list(x_range)))
-        ax.plot(x_range, run_data, color=color, alpha=0.5)
+        ax.plot(x_range, run_data, color=color, alpha=0.1)
 
     all_data = np.vstack(all_data)
     print(all_data.shape)
@@ -208,7 +207,25 @@ if __name__ == "__main__":
     #     if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.1:
     #         plot_reward_rate_group(ax, group[1], color='#4477AA')
 
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/qrc_display.py', color='#EE6677')
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/qrc_display.py', color='#EE6677')
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/30_sweep/gsp_pretrain_sweep.py')
+    groups = group_configs(param_list, ignore_keys=['seed'])
+    for group in groups:
+        # if group[0]['use_exploration_bonus'] == False:
+                # 'oci_batch_num': [2, 4, 8, 16],
+        # 'oci_batch_size': [16, 32],
+
+        # Exploration
+        # 'use_exploration_bonus': [True, False],
+        if group[0]['oci_beta'] != 0.0 and group[0]['oci_beta'] != 0.4:
+            continue
+        label = f"oci_beta: {group[0]['oci_beta']}"
+        if group[0]['oci_beta'] == 0.0:
+            color='#CCBB44'
+        else:
+            color = '#4477AA'
+        plot_reward_rate_group(ax, group[1], label=label, color=color)
 
 
     plt.legend()

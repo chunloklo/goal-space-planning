@@ -114,10 +114,18 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/2022_03_07_small_sweep/dyna.py')
     # plot_single_reward_rate(ax, 'experiments/chunlok/env_hmaze/dyna.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/impl_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/GSP_baseline.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/gsp_target.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/dqn.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/gsp_pretrain_test.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/GSP_baseline.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/gsp_target.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/dqn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/gsp_pretrain_test.py')
+
+    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_learn.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values.py')
+    
+    # plot_single_reward_rate(ax, 'experiments/pinball/dqn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/gsp_pretrain_test.py')
 
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_oracle.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')

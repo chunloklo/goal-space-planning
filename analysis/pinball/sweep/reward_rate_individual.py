@@ -161,20 +161,22 @@ if __name__ == "__main__":
 
 
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/GSP_learning_values.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/GSP_learning_values.py')
 
-    groups = group_configs(param_list, ignore_keys=['seed'])
+    # groups = group_configs(param_list, ignore_keys=['seed'])
 
-    for group in groups:
-        # if group[0]['use_exploration_bonus'] == False:
-        #     plot_reward_rate_group(ax, group[1])
+    # for group in groups:
+    #     # if group[0]['use_exploration_bonus'] == False:
+    #     #     plot_reward_rate_group(ax, group[1])
 
-        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
-        #     plot_reward_rate_group(ax, group[1])
-        if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == False and group[0]['polyak_stepsize'] == 0.05:
-            plot_reward_rate_group(ax, group[1])
-        # if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.1:
-        #     plot_reward_rate_group(ax, group[1])
+    #     # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+    #     #     plot_reward_rate_group(ax, group[1])
+    #     if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == False and group[0]['polyak_stepsize'] == 0.05:
+    #         plot_reward_rate_group(ax, group[1])
+    #     # if group[0]['OCI_update_interval'] == 1 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.1:
+    #     #     plot_reward_rate_group(ax, group[1])
+
+
 
 
 

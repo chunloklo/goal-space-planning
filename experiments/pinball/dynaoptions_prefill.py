@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["gsp_beta_sweep"],
+        "db_folder": ["30_sweep"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -18,20 +18,20 @@ def get_configuration_list():
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
-        'max_steps': [300000],
+        'max_steps': [100000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate', 'num_steps_in_ep')],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss')],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": list(range(30)),
+        "seed": [10000],
         
         # Agent
-        "agent": ["GSP_NN"],
+        "agent": ["DynaOptions_NN"],
         'epsilon': [0.1],
         
         # Behaviour agent specific configs
@@ -47,19 +47,16 @@ def get_configuration_list():
         'goal_estimate_update_interval': [256],
         'goal_estimate_step_size': [0.005],
 
-        # Goal space planning configs
-        'use_goal_values': [True],
-
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0],
+        'oci_beta': [0.4],
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],
 
         # Exploration
         'use_exploration_bonus': [False],
-        # 'exploration_bonus_amount': [5000.0],   
+        'exploration_bonus_amount': [5000.0],   
 
         # Pretrain goal values:
         # 'pretrain_goal_values': [True],
@@ -68,7 +65,8 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
     
         'pretrained_model_name': ['GSP_model_800k_new'],
-        'load_buffer_name': ['100k_standard'],
+
+        # 'load_buffer_name': ['100k_dynaoptions'],
 
         # 'save_behaviour': ['GSP_standard'],
         'learn_model_only': [False],

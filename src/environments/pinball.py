@@ -387,7 +387,7 @@ class PinballModel:
             self.ball.position[1] = 0.05
 
 class PinballEnvironment(BaseEnvironment):
-    def __init__(self, configuration_file, goals: PinballGoals, render=False, explore_env=False, continuing=True):
+    def __init__(self, configuration_file, goals: PinballGoals, render=False, explore_env=False, continuing=True, terminal_goal_index = 3):
         self.configuration_file = configuration_file
         self.pinball = None
         self.render = render
@@ -399,7 +399,7 @@ class PinballEnvironment(BaseEnvironment):
         if self.explore_env:
 
             self.num_steps = 0
-            self.max_steps = 20
+            self.max_steps = 10
             self.start_states = self.pinball_goals.goals
 
         if self.render:
@@ -411,7 +411,7 @@ class PinballEnvironment(BaseEnvironment):
 
         self.pinball = PinballModel(self.configuration_file, use_config_termination=False)
 
-        self.terminal_goal_index = 3 # Set the environment to terminate after arriving at goal 3
+        self.terminal_goal_index = terminal_goal_index # Defaults to 3 (the terminal goal for the original)
 
     def _set_random_env_state(self):
         """Sets the environment state to a random state that doesn't collide with any obstacles.
@@ -552,7 +552,7 @@ class PinballView:
                 pygame.draw.circle(
                     self.background_surface, self.GOAL_COLOR, self._to_pixels(goal), int(initiation_radius*self.screen.get_width()), width=1)
 
-        if self.goals and self.terminal_goal_index:
+        if self.goals and self.terminal_goal_index is not None:
             goal = self.goals.goals[self.terminal_goal_index]
             radius = self.goals.termination_radius
             pygame.draw.circle(

@@ -11,8 +11,8 @@ from src.utils.run_utils import experiment_completed
 def get_configuration_list():
     root = 'experiments/pinball/test_sweep/'
     files = [
-        'GSP_learning_values.py',
-        'GSP_learning.py',
+        'oracle_q_test.py',
+        # 'GSP_learning.py',
     ]
     
     parameter_list = [param  for file in files for param in get_configuration_list_from_file_path(root + file)]

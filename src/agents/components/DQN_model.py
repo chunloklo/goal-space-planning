@@ -18,17 +18,20 @@ class GoalLearner_DQN_NN():
         # Initializing jax functions
         def q_function(states):
             q_mlp = hk.Sequential([
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
                 hk.Linear(64), jax.nn.relu,
                 hk.Linear(64), jax.nn.relu,
                 hk.Linear(self.num_actions),
             ])
 
             v_mlp = hk.Sequential([
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
+                hk.Linear(128), jax.nn.relu,
                 hk.Linear(64), jax.nn.relu,
                 hk.Linear(64), jax.nn.relu,
                 hk.Linear(self.num_actions),

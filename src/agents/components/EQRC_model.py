@@ -23,12 +23,16 @@ class GoalLearner_EQRC_NN():
 
         def network(states):
             hidden = hk.Sequential([
+                # hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
+                # hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
+                # hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
+                # hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
+                # hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
+                # hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
                 hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
                 hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
-                hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
-                hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
-                hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
-                hk.Linear(128, w_init=init, b_init=b_init), jax.nn.relu,
+                hk.Linear(64, w_init=init, b_init=b_init), jax.nn.relu,
+                hk.Linear(64, w_init=init, b_init=b_init), jax.nn.relu,
             ])
 
             values = hk.Sequential([
