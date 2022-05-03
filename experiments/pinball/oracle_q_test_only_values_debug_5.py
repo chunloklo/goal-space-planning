@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["30_sweep"],
+        "db_folder": ["test_sweep_3"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -21,10 +21,10 @@ def get_configuration_list():
         'max_steps': [300000],
         'exploration_phase': [0],
         'gamma': [0.95],
-        'render': [True],
+        'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss', 'num_steps_in_ep', 'model_error_heatmap')],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss', 'num_steps_in_ep')],
         'step_logging_interval': [100],
 
         # Seed
@@ -37,8 +37,7 @@ def get_configuration_list():
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
         'polyak_stepsize': [0.1],
-        # 'step_size': [1e-3],
-        'step_size': [0.0],
+        'step_size': [1e-3],
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
@@ -53,7 +52,7 @@ def get_configuration_list():
 
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [1.0],
+        'oci_beta': [0.5],
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],
@@ -74,12 +73,12 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'pretrained_model_name': ['oracle_gsp_model_1000k_test'],
+        'pretrained_model_name': ['oracle_gsp_model_explore_4'],
         'learn_model_mode': ['fixed'],
         'goal_learner_step_size': [1e-4],
         # 'load_buffer_name': ['100k_standard'],
 
-        'load_behaviour_name': ['q_learn_only_values'],
+        'save_behaviour_name': ['q_learn_only_values'],
         # 'learn_select_goal_models': [(15,)]
     }
 

@@ -125,6 +125,7 @@ if __name__ == "__main__":
     # plt.title(alg_name)
 
     # ax.set_xlim([600, 1200])
+    # ax.set_ylim([0, 1e6])
 
     # Getting file name
     save_file = get_file_name('./plots/', f'model_error', 'png', timestamp=True)

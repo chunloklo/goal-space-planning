@@ -45,6 +45,12 @@ class GSP_NN:
         self.goal_termination_func = self.goals.goal_termination
         self.goal_initiation_func = self.goals.goal_initiation
 
+        def modified_goal_init(xs):  
+            init =  self.goals.goal_initiation(xs)
+            return init
+        
+        self.goal_initiation_func = modified_goal_init
+
         params = self.params
         
         # BEHAVIOUR PARAMS
@@ -116,6 +122,7 @@ class GSP_NN:
         # Some fixed parameters that might want to get parameterized later
         self.buffer_size = 1000000
         self.min_buffer_size_before_update = 10000
+        self.goal_min_buffer_size_before_update = 1000
         # self.min_buffer_size_before_update = 1000
 
         # Hard coding this for the environment for now
@@ -274,6 +281,57 @@ class GSP_NN:
 
         return np.max(targets, axis=1)
 
+    def _log_model_error_heatmap(self):
+        if not globals.collector.has_key('model_error_heatmap'):
+            return
+
+        def get_error(s):
+            batch_size = 1
+            xs = np.array([s])
+            goal_states = np.hstack((self.goals.goals, self.goals.goal_speeds))
+            goal_dest_values = np.array(self.behaviour_goal_value.get_action_values(goal_states))
+            goal_dest_values = np.max(goal_dest_values, axis=1)
+
+            goal_r = np.empty((batch_size, self.num_goals, self.num_actions))
+            goal_gammas = np.empty((batch_size, self.num_goals, self.num_actions))
+            # The goal policy is not used right now
+            goal_policy_q = np.empty((batch_size, self.num_goals, self.num_actions)) 
+
+            for g in range(self.num_goals):
+                goal_policy_q[:, g, :], goal_r[:, g, :], goal_gammas[:, g, :] = self.goal_learners[g].get_goal_outputs(xs)
+            pass
+
+            # Getting one-hot policies for the goal policies
+            goal_policies = np.zeros((batch_size, self.num_goals, self.num_actions))
+            np.put_along_axis(goal_policies, np.expand_dims(np.argmax(goal_policy_q, axis=2), -1), 1, axis=2)
+
+            goal_r = np.sum(goal_r * goal_policies, axis=2)
+            goal_gammas = np.sum(goal_gammas * goal_policies, axis=2)
+
+            goal_gammas = np.clip(goal_gammas, 0, 1)
+            
+            goal_values = goal_r + goal_gammas * goal_dest_values
+
+            # Masking out invalid goals based on the initiation func
+            for i in range(batch_size):
+                x_goal_init = self.goal_initiation_func(xs[i])
+                invalid_goals = np.where(x_goal_init == False)[0]
+                goal_values[i, invalid_goals] = np.nan
+            targets = np.nanmax(goal_values, axis=1)
+
+            ##### Mainly checking for errors
+            oracle_goal_values = self._get_behaviour_goal_values(xs)
+
+            return np.nanmean(np.square(oracle_goal_values - targets))
+
+        RESOLUTION = 40
+        last_goal_q_map = np.zeros((RESOLUTION, RESOLUTION, self.num_actions))
+        goal_action_value = get_last_pinball_action_value_map(1, get_error, resolution=RESOLUTION)
+        last_goal_q_map = goal_action_value[0]
+
+        globals.collector.collect('model_error_heatmap', last_goal_q_map)
+        pass
+
     def _log_model_error(self):
         if not globals.collector.has_key('model_error'):
             return
@@ -326,6 +384,58 @@ class GSP_NN:
 
             globals.collector.collect('model_error', mse)
 
+        # def log():
+        #     batch_size = 1024
+        #     if batch_size > self.buffer.num_in_buffer:
+        #         globals.collector.collect('model_error', 0)
+        #         return
+
+        #     data = self.buffer.sample(batch_size)
+        #     xs = data['xp']
+
+        #     batch_size = xs.shape[0]
+        #     goal_states = np.hstack((self.goals.goals, self.goals.goal_speeds))
+        #     goal_dest_values = np.array(self.behaviour_goal_value.get_action_values(goal_states))
+        #     goal_dest_values = np.max(goal_dest_values, axis=1)
+
+        #     goal_r = np.empty((batch_size, self.num_goals, self.num_actions))
+        #     goal_gammas = np.empty((batch_size, self.num_goals, self.num_actions))
+        #     # The goal policy is not used right now
+        #     goal_policy_q = np.empty((batch_size, self.num_goals, self.num_actions)) 
+
+        #     for g in range(self.num_goals):
+        #         goal_policy_q[:, g, :], goal_r[:, g, :], goal_gammas[:, g, :] = self.goal_learners[g].get_goal_outputs(xs)
+        #     pass
+        #     goal_gammas = np.clip(goal_gammas, 0, 1)
+        #     goal_values = goal_r + goal_gammas * goal_dest_values[None, :, None]
+
+        #     # Masking out invalid goals based on the initiation func
+        #     for i in range(batch_size):
+        #         x_goal_init = self.goal_initiation_func(xs[i])
+        #         invalid_goals = np.where(x_goal_init == False)[0]
+        #         goal_values[i, invalid_goals] = np.nan
+
+        #     print(np.nanmax(goal_values, axis=2).shape)
+        #     best_goals = np.nanargmax(np.nanmax(goal_values, axis=2), axis=1)
+        #     targets = goal_values[:, best_goals]
+
+
+        #     print(targets.shape)
+
+        #     ##### Mainly checking for errors
+        #     oracle_goal_values = np.array(self.behaviour_goal_value.get_action_values(xs))
+
+        #     # Masking out invalid goals based on the initiation func
+        #     for i in range(batch_size):
+        #         x_goal_init = self.goal_initiation_func(xs[i])
+        #         if np.all(~x_goal_init):
+        #             oracle_goal_values[i] = np.nan
+
+        #     print(oracle_goal_values.shape)
+        #     mse = np.nanmean(np.square(oracle_goal_values - targets))
+
+        #     globals.collector.collect('model_error', mse)
+
         run_if_should_log(log)
 
     def _get_best_goal_values(self, xs, action_values: bool = False):
@@ -375,36 +485,16 @@ class GSP_NN:
                 x_goal_init = self.goal_initiation_func(xs[i])
                 invalid_goals = np.where(x_goal_init == False)[0]
                 goal_values[i, invalid_goals] = np.nan
+
+                # Making it so it doesn't bootstrap to anything other than the final state if at terminal goal
+                x_goal_term = self.goal_termination_func(None, None, xs[i])
+                if x_goal_term[0]:
+                    goal_values[i, :] = np.nan
+
             targets = np.nanmax(goal_values, axis=1)
 
-            # print(f'target {targets}')
-            # print(np.where(np.isnan(targets)))
-
-            ##### Mainly checking for errors
-            oracle_goal_values = self._get_behaviour_goal_values(xs)
-
-            # print(f'oracle {oracle_goal_values}')
-            # print(np.where(np.isnan(oracle_goal_values)))
-            # print(np.nanmean(np.square(oracle_goal_values - targets)))
-            # print(np.nanmean(np.abs(oracle_goal_values - targets)))
-            # print(np.nanmax(np.abs(oracle_goal_values - targets)))
-            # print(np.nanmax(np.square(oracle_goal_values - targets)))
-
-            # worse_index = np.nanargmax(np.square(oracle_goal_values - targets))
-            # print(np.nanargmax(np.square(oracle_goal_values - targets)))
-
-            # print(f'x: {xs[worse_index]}')
-            # x_goal_init = self.goal_initiation_func(xs[worse_index])
-            # print(f'init: {x_goal_init}')
-
-            # print(f'goal_r {goal_r[worse_index]}')
-            # print(f'goal_gammas {goal_gammas[worse_index]}')
-            # print(f'dest_values {goal_dest_values}')
-            # print(f'values: {goal_values[worse_index]}')
-            # print(f'targets {targets[worse_index]}')
-
-            # print(f'oracle_goal_values {oracle_goal_values[worse_index]}')
-            
+            print(goal_values[0])
+            print(targets[0])
             return targets
 
 
@@ -546,7 +636,7 @@ class GSP_NN:
         # for g in range(self.num_goals):
         iter = self.learn_select_goal_models if self.learn_select_goal_models is not None else range(self.num_goals)
         for g in iter:
-            if self.goal_buffers[g].num_in_buffer >= self.min_buffer_size_before_update:
+            if self.goal_buffers[g].num_in_buffer >= self.goal_min_buffer_size_before_update:
                 batch_num = 1
                 for _ in range(batch_num):
                     data = self.goal_buffers[g].sample(self.batch_size, copy=False)
@@ -732,6 +822,8 @@ class GSP_NN:
         if self.save_buffer_name is not None:
              cloudpickle.dump(self.buffer, open(f'./src/environments/data/pinball/{self.save_buffer_name}_buffer.pkl', 'wb'))
 
+        self._log_model_error_heatmap()
+
         def get_goal_outputs(s, g):
             action_value, reward, gamma = self.goal_learners[g].get_goal_outputs(s)
             return np.vstack([action_value, reward, gamma])
@@ -741,7 +833,7 @@ class GSP_NN:
         last_reward_map = np.zeros((self.num_goals, RESOLUTION, RESOLUTION, self.num_actions))
         last_gamma_map = np.zeros((self.num_goals, RESOLUTION, RESOLUTION, self.num_actions))
         for g in range(self.num_goals):
-            goal_action_value = get_last_pinball_action_value_map(3, partial(get_goal_outputs, g=g))
+            goal_action_value = get_last_pinball_action_value_map(3, partial(get_goal_outputs, g=g), resolution=RESOLUTION)
             last_goal_q_map[g] = goal_action_value[0]
             last_reward_map[g] = goal_action_value[1]
             last_gamma_map[g] = goal_action_value[2]

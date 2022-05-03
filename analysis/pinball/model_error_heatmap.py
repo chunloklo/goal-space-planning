@@ -35,41 +35,24 @@ import matplotlib
 from datetime import datetime
 from src.problems.PinballProblem import PinballOracleProblem, PinballProblem
 
+from src.utils.log_utils import get_last_pinball_action_value_map
+
 from src.experiment import ExperimentModel
+import pickle
 
 
 ROWS = 40
 COLUMNS = ROWS
 NUM_GOALS = 16
 
-def generatePlots(param, data, key):
-    exp_params = {
-        'agent': param['agent'],
-        'problem': param['problem'],
-        'max_steps': 0,
-        'episodes': 0,
-        'metaParameters': param
-    }
+def generatePlots(data):
     # index will always be 0 since there's only 1 parameter there
     idx = 0
-
-    exp = ExperimentModel.load_from_params(exp_params)
-
-
-    problem = PinballOracleProblem(exp, 0, 0)
-
-    # Calculating the value at each state approximately
-    num_goals = problem.goals.num_goals
-    initiation_map = np.zeros((num_goals, ROWS, COLUMNS))
-    for r, y in enumerate(np.linspace(0, 1, ROWS)):
-        for c, x in enumerate(np.linspace(0, 1, ROWS)):
-            init = problem.goals.goal_initiation([x, y, 0, 0])
-            initiation_map[:, r, c] = init
 
     fig, axes = plt.subplots(1, figsize=(40, 40))
     # axes = axes.flatten()
 
-    save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
+    save_file = get_file_name('./plots/', f'model_error_heatmap', 'png', timestamp=True)
 
     ax = axes
 
@@ -121,8 +104,6 @@ def generatePlots(param, data, key):
                     # else:  
                     patches[r][c][a].set_facecolor(colormap(scaled_value))
 
-
-                
                     texts[r][c][a].set_text(round(state_data[a_map[a]], 2))
             except KeyError as e:
                 pass
@@ -135,12 +116,93 @@ if __name__ == "__main__":
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
-    key = 'model_error_heatmap'
-    data = load_data(config, key)
-    data = np.squeeze(data)
 
-    print(data.shape)
+    model_name = 'oracle_gsp_model_explore_4'
+    goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
-    generatePlots(config, data, key)
+    behaviour_goal_value = 'q_learn'
+    agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value}_agent.pkl', 'rb'))
+    behaviour_goal_value = agent.behaviour_learner
+
+    exp_params = {
+        'agent': config['agent'],
+        'problem': config['problem'],
+        'max_steps': 0,
+        'episodes': 0,
+        'metaParameters': config
+    }
+
+
+    exp = ExperimentModel.load_from_params(exp_params)
+    problem = PinballOracleProblem(exp, 0, 0)
+
+    def _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation_func):
+        batch_size = xs.shape[0]
+        targets = np.array(behaviour_goal_value.get_action_values(xs))
+
+        # Masking out invalid goals based on the initiation func
+        for i in range(batch_size):
+            x_goal_init = goal_initiation_func(xs[i])
+            if np.all(~x_goal_init):
+                targets[i] = np.nan
+
+        return np.max(targets, axis=1)
+
+    num_actions = problem.actions
+
+    def goal_initiation(xs):
+        init = problem.goals.goal_initiation(xs)
+        # init[0] = False
+        return init
+
+    def get_error(s):
+        batch_size = 1
+        xs = np.array([s])
+        num_goals = problem.goals.num_goals
+        num_actions = problem.actions
+        goal_states = np.hstack((problem.goals.goals, problem.goals.goal_speeds))
+        goal_dest_values = np.array(behaviour_goal_value.get_action_values(goal_states))
+        goal_dest_values = np.max(goal_dest_values, axis=1)
+
+        goal_r = np.empty((batch_size, num_goals, num_actions))
+        goal_gammas = np.empty((batch_size, num_goals, num_actions))
+        # The goal policy is not used right now
+        goal_policy_q = np.empty((batch_size, num_goals, num_actions)) 
+
+        for g in range(num_goals):
+            goal_policy_q[:, g, :], goal_r[:, g, :], goal_gammas[:, g, :] = goal_learner[g].get_goal_outputs(xs)
+        pass
+
+        # Getting one-hot policies for the goal policies
+        goal_policies = np.zeros((batch_size, num_goals, num_actions))
+        np.put_along_axis(goal_policies, np.expand_dims(np.argmax(goal_policy_q, axis=2), -1), 1, axis=2)
+
+        goal_r = np.sum(goal_r * goal_policies, axis=2)
+        goal_gammas = np.sum(goal_gammas * goal_policies, axis=2)
+
+        goal_gammas = np.clip(goal_gammas, 0, 1)
+        
+        goal_values = goal_r + goal_gammas * goal_dest_values
+
+        # Masking out invalid goals based on the initiation func
+        for i in range(batch_size):
+            x_goal_init = goal_initiation(xs[i])
+            invalid_goals = np.where(x_goal_init == False)[0]
+            goal_values[i, invalid_goals] = np.nan
+        targets = np.nanmax(goal_values, axis=1)
+
+        ##### Mainly checking for errors
+        oracle_goal_values = _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation)
+
+        return np.nanmean(np.square(oracle_goal_values - targets))
+
+    RESOLUTION = 40
+    last_goal_q_map = np.zeros((RESOLUTION, RESOLUTION, num_actions))
+    goal_action_value = get_last_pinball_action_value_map(1, get_error, resolution=RESOLUTION)
+    last_goal_q_map = goal_action_value[0]
+    data = last_goal_q_map
+    # print(data.shape)
+
+    generatePlots(data)
 
     exit()
