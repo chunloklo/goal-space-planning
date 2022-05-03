@@ -281,10 +281,33 @@ if __name__ == "__main__":
 
 
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/oracle_only_values_test.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/oracle_only_values_test.py')
+
+    # groups = group_configs(param_list, ignore_keys=['seed'])
+
+    # for group in groups:
+    #     # if group[0]['use_exploration_bonus'] == False:
+    #     #     plot_reward_rate_group(ax, group[1])
+
+    #     # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+    #     #     plot_reward_rate_group(ax, group[1])
+    #     # if group[0]['oci_beta'] == 0.25:
+    #     # print(group[0]['oci_beta'])
+
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+
+    #     if not (((beta == 1.0 or beta == 0.5) and step_size == 0.005) or (beta == 0.0 and step_size == 0.001)):
+    #         continue
+
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size}")
+
+    
+
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/oracle_q_test_pretrain_learn.py')
 
     groups = group_configs(param_list, ignore_keys=['seed'])
-
     for group in groups:
         # if group[0]['use_exploration_bonus'] == False:
         #     plot_reward_rate_group(ax, group[1])
@@ -297,10 +320,11 @@ if __name__ == "__main__":
         beta = group[0]['oci_beta']
         step_size = group[0]['step_size']
 
-        if not (((beta == 1.0 or beta == 0.5) and step_size == 0.005) or (beta == 0.0 and step_size == 0.001)):
+        if beta != 0.0:
             continue
 
         plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size}")
+
 
     plt.legend()
     # plt.title(alg_name)

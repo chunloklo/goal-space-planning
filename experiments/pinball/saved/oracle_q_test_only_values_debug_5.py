@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["30_sweep"],
+        "db_folder": ["test_sweep_3"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -73,7 +73,7 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'pretrained_model_name': ['oracle_gsp_model_1_goal'],
+        'pretrained_model_name': ['oracle_gsp_model_explore_4'],
         'learn_model_mode': ['fixed'],
         'goal_learner_step_size': [1e-4],
         # 'load_buffer_name': ['100k_standard'],

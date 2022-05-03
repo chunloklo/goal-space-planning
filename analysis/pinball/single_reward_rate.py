@@ -126,11 +126,12 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_single_goal_0.5.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_single_goal_1.0.py')
 
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug.py')
     plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug_2.py')
     plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug_3.py')
     plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug_4.py')
     plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug_5.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_pretrain_learn.py')
 
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values.py')
     

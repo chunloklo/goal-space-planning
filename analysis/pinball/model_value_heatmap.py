@@ -124,6 +124,11 @@ if __name__ == "__main__":
     agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value}_agent.pkl', 'rb'))
     behaviour_goal_value = agent.behaviour_learner
 
+    goal_value_name = 'oracle_goal_values'
+    goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
+    goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_value_learner.pkl', 'rb'))
+           
+
     exp_params = {
         'agent': config['agent'],
         'problem': config['problem'],
@@ -161,8 +166,10 @@ if __name__ == "__main__":
         num_goals = problem.goals.num_goals
         num_actions = problem.actions
         goal_states = np.hstack((problem.goals.goals, problem.goals.goal_speeds))
-        goal_dest_values = np.array(behaviour_goal_value.get_action_values(goal_states))
-        goal_dest_values = np.max(goal_dest_values, axis=1)
+        # goal_dest_values = np.array(behaviour_goal_value.get_action_values(goal_states))
+        # goal_dest_values = np.max(goal_dest_values, axis=1)
+
+        goal_dest_values = goal_value_learner.goal_values
 
         goal_r = np.empty((batch_size, num_goals, num_actions))
         goal_gammas = np.empty((batch_size, num_goals, num_actions))

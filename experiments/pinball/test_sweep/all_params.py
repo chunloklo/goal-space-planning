@@ -11,7 +11,7 @@ from src.utils.run_utils import experiment_completed
 def get_configuration_list():
     root = 'experiments/pinball/test_sweep/'
     files = [
-        'oracle_only_values_test.py',
+        'oracle_q_test_pretrain_learn.py',
         # 'GSP_learning.py',
     ]
     

@@ -470,14 +470,6 @@ class GSP_NN:
 
             goal_gammas = np.clip(goal_gammas, 0, 1)
 
-            # print(goal_r.shape)
-            # print(goal_gammas.shape)
-            # print(goal_dest_values.shape)
-
-            # print(f'goal_r {goal_r[0]}')
-            # print(f'goal_gammas {goal_gammas[0]}')
-            # print(f'dest_values {goal_dest_values}')
-            
             goal_values = goal_r + goal_gammas * goal_dest_values
 
             # Masking out invalid goals based on the initiation func
@@ -493,12 +485,7 @@ class GSP_NN:
 
             targets = np.nanmax(goal_values, axis=1)
 
-            print(goal_values[0])
-            print(targets[0])
             return targets
-
-
-            
 
         bonus = self._get_exploration_bonus()
         if self.use_goal_values:
@@ -533,6 +520,11 @@ class GSP_NN:
             x_goal_init = self.goal_initiation_func(xs[i])
             invalid_goals = np.where(x_goal_init == False)[0]
             targets[i, invalid_goals] = np.nan
+
+            # Making it so it doesn't bootstrap to anything other than the final state if at terminal goal
+            x_goal_term = self.goal_termination_func(None, None, xs[i])
+            if x_goal_term[0]:
+                targets[i, :] = np.nan
 
         max_goal = np.nanmax(targets, axis=1)
         return max_goal
@@ -595,7 +587,7 @@ class GSP_NN:
     def _pretrain_goal_values(self):
         # Updating goal estimates
         
-        iter = range(5000)
+        iter = range(1000)
         if globals.aux_config.get('show_progress'):
             iter = tqdm(iter)
         for _ in iter:
@@ -606,14 +598,29 @@ class GSP_NN:
         print(f'gamma: {self.goal_estimate_learner.gamma}')
         print(f'r: {self.goal_estimate_learner.r}')
         
-        self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 20000
+        # self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10082.015
+        self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10000
 
         for _ in range(1000):
             self._goal_value_update()
-        print(f'pretrained_goal_values: {self.goal_value_learner.goal_values}')
+            
+        self._check_goal_value_error()
  
         cloudpickle.dump(self.goal_estimate_learner, open(f'./src/environments/data/pinball/{self.save_pretrain_goal_values}_pretrain_goal_estimate_learner.pkl', 'wb'))
         cloudpickle.dump(self.goal_value_learner, open(f'./src/environments/data/pinball/{self.save_pretrain_goal_values}_pretrain_goal_value_learner.pkl', 'wb'))
+
+    def _check_goal_value_error(self):
+            goal_states = np.hstack((self.goals.goals, self.goals.goal_speeds))
+            true_goal_values = np.array(self.behaviour_goal_value.get_action_values(goal_states))
+            true_goal_values = np.max(true_goal_values, axis=1)
+
+            learned_goal_values = self.goal_value_learner.goal_values
+
+            print(f'true goal values: {true_goal_values}')
+            print(f'learned_goal_values: {learned_goal_values}')
+
+            squared_error = np.mean(np.square(true_goal_values - learned_goal_values))
+            print(f'squared_error: {squared_error}')
 
     def _oci_target_update(self):
         if self.buffer.num_in_buffer < self.min_buffer_size_before_update:
