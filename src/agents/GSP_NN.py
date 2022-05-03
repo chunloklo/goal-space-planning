@@ -598,7 +598,7 @@ class GSP_NN:
         print(f'gamma: {self.goal_estimate_learner.gamma}')
         print(f'r: {self.goal_estimate_learner.r}')
         
-        # self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10082.015
+        # self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10082.015 # optimal based on oracle q learner
         self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10000
 
         for _ in range(1000):
