@@ -58,7 +58,7 @@ class PinballOracleGoals(PinballGoals):
 
         self.termination_radius = 0.04
         self.initiation_radius = 0.4
-        self.speed_radius = 1.0
+        self.speed_radius = 2.0
         
         # Caching calculation for functions
         self.termination_radius_squared = np.square(self.termination_radius)
@@ -135,10 +135,10 @@ class PinballOracleGoals(PinballGoals):
         ]
         
         oracle_goals = [
-            trajectory[20],
-            trajectory[34],
-            # trajectory[41],
-            trajectory[51],
+            trajectory[12],
+            trajectory[28],
+            trajectory[44],
+            # trajectory[51],
         ]
 
         for goal in oracle_goals:
