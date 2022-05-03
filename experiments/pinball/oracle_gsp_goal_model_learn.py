@@ -16,7 +16,7 @@ def get_configuration_list():
         #Environment/Experiment
         "problem": ["PinballOracleProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
-        'explore_env': [False],
+        'explore_env': [True],
         "episodes": [0],
         'max_steps': [300000],
         'exploration_phase': [0],
@@ -24,7 +24,7 @@ def get_configuration_list():
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'model_error')],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'model_error', 'model_error_heatmap')],
         'step_logging_interval': [100],
 
         # Seed
@@ -71,7 +71,15 @@ def get_configuration_list():
         
         # Model training
         # 'save_state_to_goal_estimate_name': ['oracle_gsp_model_100k'],
-        'save_state_to_goal_estimate_name': ['oracle_gsp_model_100k_test'],
+        # 'save_state_to_goal_estimate_name': ['oracle_gsp_model_100k_test'], # just dest goal
+        # 'save_state_to_goal_estimate_name': ['oracle_gsp_model_1_goal'], # 1 goals
+        # 'save_state_to_goal_estimate_name': ['oracle_gsp_model_2_goals'], # 2 goals
+
+
+        # 'save_state_to_goal_estimate_name': ['oracle_gsp_model_debug'], # throwaway
+        # 'save_state_to_goal_estimate_name': ['oracle_gsp_model_explore'], # throwaway
+        # 'save_state_to_goal_estimate_name': ['oracle_gsp_model_explore_3'], # throwaway
+        'save_state_to_goal_estimate_name': ['oracle_gsp_model_explore_4'], # throwaway
         'goal_learner_step_size': [1e-3],
 
         'learn_model_mode': ['online'],
