@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["suboptimal_sweep"],
+        "db_folder": ["test_sweep_3"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -21,14 +21,14 @@ def get_configuration_list():
         'max_steps': [300000],
         'exploration_phase': [0],
         'gamma': [0.95],
-        'render': [False],
+        'render': [True],
 
         # Logging
-        'log_keys': [('reward_rate', 'num_steps_in_ep')],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss', 'num_steps_in_ep')],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": list(range(16)),
+        "seed": list(range(10)),
         
         # Agent
         "agent": ["GSP_NN"],
@@ -36,8 +36,8 @@ def get_configuration_list():
         
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
-        'polyak_stepsize': [0.2, 0.1, 0.05],
-        'step_size': [5e-3, 1e-3, 5e-4],
+        'polyak_stepsize': [0.1],
+        'step_size': [1e-3],
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
@@ -78,7 +78,7 @@ def get_configuration_list():
         'goal_learner_step_size': [1e-4],
         # 'load_buffer_name': ['100k_standard'],
 
-        # 'save_behaviour_name': ['q_learn_only_values'],
+        'load_behaviour_name': ['q_learn_only_values'],
         # 'learn_select_goal_models': [(15,)]
     }
 

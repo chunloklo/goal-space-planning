@@ -11,7 +11,9 @@ from src.utils.run_utils import experiment_completed
 def get_configuration_list():
     root = 'experiments/pinball/test_sweep/'
     files = [
-        'suboptimal_pretrain_learn.py',
+        'suboptimal_pretrain_learn_wide_0.0.py',
+        'suboptimal_pretrain_learn_wide_0.5.py',
+        'suboptimal_pretrain_learn_wide_1.0.py',
         # 'GSP_learning.py',
     ]
     
