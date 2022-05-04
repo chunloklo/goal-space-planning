@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["test_sweep_3"],
+        "db_folder": ["episodic_test"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -28,7 +28,8 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10000],
+        # "seed": [10000],
+        "seed": list(range(4)),
         
         # Agent
         "agent": ["GSP_NN"],
@@ -52,7 +53,7 @@ def get_configuration_list():
 
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [0.5],
+        'oci_beta': [0.0, 0.5],
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],
@@ -78,7 +79,7 @@ def get_configuration_list():
         'goal_learner_step_size': [1e-4],
         # 'load_buffer_name': ['100k_standard'],
 
-        'save_behaviour_name': ['q_learn_only_values'],
+        # 'save_behaviour_name': ['q_learn_only_values'],
         # 'learn_select_goal_models': [(15,)]
     }
 

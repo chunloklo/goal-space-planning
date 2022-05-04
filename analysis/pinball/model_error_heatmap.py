@@ -33,7 +33,7 @@ from src.utils import run_utils
 from analysis.common import load_data
 import matplotlib
 from datetime import datetime
-from src.problems.PinballProblem import PinballOracleProblem, PinballProblem
+from src.problems.PinballProblem import PinballOracleProblem, PinballProblem, PinballSuboptimalProblem
 
 from src.utils.log_utils import get_last_pinball_action_value_map
 
@@ -117,16 +117,16 @@ if __name__ == "__main__":
 
     config = parameter_list[0]
 
-    model_name = 'oracle_gsp_model_explore_4'
+    model_name = 'suboptimal_gsp_model_explore'
     goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
     behaviour_goal_value = 'q_learn'
     agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value}_agent.pkl', 'rb'))
     behaviour_goal_value = agent.behaviour_learner
 
-    goal_value_name = 'oracle_goal_values'
-    goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
-    goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_value_learner.pkl', 'rb'))
+    # goal_value_name = 'oracle_goal_values'
+    # goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
+    # goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_value_learner.pkl', 'rb'))
            
 
     exp_params = {
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
 
     exp = ExperimentModel.load_from_params(exp_params)
-    problem = PinballOracleProblem(exp, 0, 0)
+    problem = PinballSuboptimalProblem(exp, 0, 0)
 
     def _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation_func):
         batch_size = xs.shape[0]
@@ -166,10 +166,10 @@ if __name__ == "__main__":
         num_goals = problem.goals.num_goals
         num_actions = problem.actions
         goal_states = np.hstack((problem.goals.goals, problem.goals.goal_speeds))
-        # goal_dest_values = np.array(behaviour_goal_value.get_action_values(goal_states))
-        # goal_dest_values = np.max(goal_dest_values, axis=1)
+        goal_dest_values = np.array(behaviour_goal_value.get_action_values(goal_states))
+        goal_dest_values = np.max(goal_dest_values, axis=1)
 
-        goal_dest_values = goal_value_learner.goal_values
+        # goal_dest_values = goal_value_learner.goal_values
 
         goal_r = np.empty((batch_size, num_goals, num_actions))
         goal_gammas = np.empty((batch_size, num_goals, num_actions))

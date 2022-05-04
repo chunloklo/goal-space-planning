@@ -605,6 +605,8 @@ class GSP_NN:
             self._goal_value_update()
             
         self._check_goal_value_error()
+
+        # sdfsdf
  
         cloudpickle.dump(self.goal_estimate_learner, open(f'./src/environments/data/pinball/{self.save_pretrain_goal_values}_pretrain_goal_estimate_learner.pkl', 'wb'))
         cloudpickle.dump(self.goal_value_learner, open(f'./src/environments/data/pinball/{self.save_pretrain_goal_values}_pretrain_goal_value_learner.pkl', 'wb'))
@@ -719,6 +721,9 @@ class GSP_NN:
     def update(self, s: Any, a, sp: Any, r, gamma, info=None, terminal: bool = False):
         self.num_updates += 1
         self.num_steps_in_ep += 1
+
+        if info is not None and info.get('terminal', False):
+            gamma = 0
 
         goal_init = self.goal_initiation_func(s)
         goal_terms = self.goal_termination_func(s, a, sp)

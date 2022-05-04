@@ -497,7 +497,7 @@ class PinballEnvironment(BaseEnvironment):
         if self._check_termination(current_state):
             next_state = self.start()
             reward = self.pinball.END_EPISODE
-            return (reward, next_state, not self.continuing), {'reset': False}
+            return (reward, next_state, not self.continuing), {'reset': False, 'terminal': True}
 
         reward = self.pinball.take_action(action)
         next_state = self.pinball.get_state()

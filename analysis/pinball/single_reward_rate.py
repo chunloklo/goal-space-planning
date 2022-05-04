@@ -132,6 +132,7 @@ if __name__ == "__main__":
     plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug_4.py')
     plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug_5.py')
     plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_pretrain_learn.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_pretrain_learn.py')
 
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values.py')
     

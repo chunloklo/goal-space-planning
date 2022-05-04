@@ -1,4 +1,4 @@
-from ..environments.PinballGoals import PinballGoals, PinballOracleGoals
+from ..environments.PinballGoals import PinballGoals, PinballOracleGoals, PinballSuboptimalGoals
 from src.problems.BaseProblem import BaseProblem
 from src.environments.pinball import PinballEnvironment
 import numpy as np
@@ -35,3 +35,8 @@ class PinballOracleProblem(PinballProblem):
     def __init__(self, exp, idx, seed: int):
         super().__init__(exp, idx, seed)
         self._init_with_goals(PinballOracleGoals(), terminal_goal_index=0)
+
+class PinballSuboptimalProblem(PinballProblem):
+    def __init__(self, exp, idx, seed: int):
+        super().__init__(exp, idx, seed)
+        self._init_with_goals(PinballSuboptimalGoals(), terminal_goal_index=0)

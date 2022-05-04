@@ -24,7 +24,7 @@ def get_configuration_list():
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss', 'num_steps_in_ep')],
+        'log_keys': [('reward_rate', 'num_steps_in_ep')],
         'step_logging_interval': [100],
 
         # Seed
@@ -38,6 +38,7 @@ def get_configuration_list():
         'behaviour_alg': ['DQN'],
         'polyak_stepsize': [0.1],
         'step_size': [1e-2, 5e-3, 1e-3, 5e-4, 1e-4],
+        # 'step_size': [1e-3],
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
@@ -53,6 +54,8 @@ def get_configuration_list():
         # oci configs
         'use_oci_target_update': [True],
         'oci_beta': [0.0, 0.5, 1.0],
+        # 'oci_beta': [0.5],
+
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],

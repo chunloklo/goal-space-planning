@@ -22,6 +22,7 @@ from  experiment_utils.analysis_common.process_line import get_mean_std, get_mea
 from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate, plot_mean_ribbon
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
+from experiment_utils.analysis_common.colors import TOL_BRIGHT
 
 STEP_SIZE = 50
 
@@ -209,23 +210,78 @@ if __name__ == "__main__":
 
     # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/qrc_display.py', color='#EE6677')
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/30_sweep/gsp_pretrain_sweep.py')
-    groups = group_configs(param_list, ignore_keys=['seed'])
-    for group in groups:
-        # if group[0]['use_exploration_bonus'] == False:
-                # 'oci_batch_num': [2, 4, 8, 16],
-        # 'oci_batch_size': [16, 32],
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/30_sweep/gsp_pretrain_sweep.py')
+    # groups = group_configs(param_list, ignore_keys=['seed'])
+    # for group in groups:
+    #     # if group[0]['use_exploration_bonus'] == False:
+    #             # 'oci_batch_num': [2, 4, 8, 16],
+    #     # 'oci_batch_size': [16, 32],
 
-        # Exploration
-        # 'use_exploration_bonus': [True, False],
-        if group[0]['oci_beta'] != 0.0 and group[0]['oci_beta'] != 0.4:
-            continue
-        label = f"oci_beta: {group[0]['oci_beta']}"
-        if group[0]['oci_beta'] == 0.0:
-            color='#CCBB44'
-        else:
-            color = '#4477AA'
-        plot_reward_rate_group(ax, group[1], label=label, color=color)
+    #     # Exploration
+    #     # 'use_exploration_bonus': [True, False],
+    #     if group[0]['oci_beta'] != 0.0 and group[0]['oci_beta'] != 0.4:
+    #         continue
+    #     label = f"oci_beta: {group[0]['oci_beta']}"
+    #     if group[0]['oci_beta'] == 0.0:
+    #         color='#CCBB44'
+    #     else:
+    #         color = '#4477AA'
+    #     plot_reward_rate_group(ax, group[1], label=label, color=color)
+
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/oracle_q_test_pretrain_learn_new.py')
+
+    # groups = group_configs(param_list, ignore_keys=['seed'])
+    # for group in groups:
+    #     # if group[0]['use_exploration_bonus'] == False:
+    #     #     plot_reward_rate_group(ax, group[1])
+
+    #     # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+    #     #     plot_reward_rate_group(ax, group[1])
+    #     # if group[0]['oci_beta'] == 0.25:
+    #     # print(group[0]['oci_beta'])
+
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+
+    #     def plot_me(beta, step_size):
+    #         # if beta == 0.0: return True
+    #         if beta == 1.0 and step_size == 0.001: return True
+    #         # if beta == 0.5 and step_size == 0.001: return True
+    #         # if beta == 0.0 and step_size == 0.001: return True
+    #         return False
+
+    #     if not plot_me(beta, step_size): continue
+
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size}")
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/suboptimal/suboptimal_pretrain_learn.py')
+    groups = group_configs(param_list, ignore_keys=['seed'])
+    colors = ['#4477AA', '#EE6677']
+    for i, group in enumerate(groups):
+        # if group[0]['use_exploration_bonus'] == False:
+        #     plot_reward_rate_group(ax, group[1])
+
+        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+        #     plot_reward_rate_group(ax, group[1])
+        # if group[0]['oci_beta'] == 0.25:
+        # print(group[0]['oci_beta'])
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+
+        # def plot_me(beta, step_size):
+        #     # if beta == 0.0: return True
+        #     if beta == 1.0 and step_size == 0.005: return True
+        #     if beta == 0.5 and step_size == 0.001: return True
+        #     if beta == 0.0 and step_size == 0.001: return True
+        #     return False
+
+        # if not plot_me(beta, step_size): continue
+
+        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size}", color=list(TOL_BRIGHT.values())[i])
+    
+
+    # param_list = get_confi
 
 
     plt.legend()

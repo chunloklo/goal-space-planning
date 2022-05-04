@@ -78,7 +78,7 @@ def get_configuration_list():
         'goal_learner_step_size': [1e-4],
         # 'load_buffer_name': ['100k_standard'],
 
-        'save_behaviour_name': ['q_learn_only_values'],
+        # 'save_behaviour_name': ['q_learn_only_values'],
         # 'learn_select_goal_models': [(15,)]
     }
 

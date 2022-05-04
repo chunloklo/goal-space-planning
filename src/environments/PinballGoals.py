@@ -154,7 +154,7 @@ class PinballSuboptimalGoals(PinballGoals):
         super().__init__()
 
         self.termination_radius = 0.04
-        self.initiation_radius = 0.4
+        self.initiation_radius = 0.48
         self.speed_radius = 2.0
         
         # Caching calculation for functions
@@ -162,7 +162,7 @@ class PinballSuboptimalGoals(PinballGoals):
         self.initiation_radius_squared = np.square(self.initiation_radius)
         self.speed_radius_squared = np.square(self.speed_radius)
 
-        self.goals = self.goals[3, 5, 6, 9, 10]
-        self.goal_speeds = self.goal_speeds[3, 5, 6, 9, 10]
+        self.goals = self.goals[[3, 5, 6, 9, 10]]
+        self.goal_speeds = self.goal_speeds[[3, 5, 6, 9, 10]]
         self.num_goals = self.goals.shape[0]
 
