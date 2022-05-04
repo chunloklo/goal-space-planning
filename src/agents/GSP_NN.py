@@ -137,17 +137,32 @@ class GSP_NN:
             self.behaviour_learner = QLearner_NN((4,), 5, self.step_size, self.polyak_stepsize, self.oci_beta)
         
         if self.use_pretrained_goal_values_optimization:
-            self.buffer = Buffer(self.buffer_size, {
-                'x': self.obs_shape, 
-                'a': (), 
-                'xp': self.obs_shape, 
-                'r': (), 
-                'gamma': (), 
-                'goal_inits': (self.num_goals, ), 
-                'goal_terms': (self.num_goals, ), 
-                'target': ()},
-            self.random.randint(0,2**31), 
-            type_map={'a': np.int64})
+
+            if self.use_goal_values:
+                self.buffer = Buffer(self.buffer_size, {
+                    'x': self.obs_shape, 
+                    'a': (), 
+                    'xp': self.obs_shape, 
+                    'r': (), 
+                    'gamma': (), 
+                    'goal_inits': (self.num_goals, ), 
+                    'goal_terms': (self.num_goals, ), 
+                    'target': ()},
+                self.random.randint(0,2**31), 
+                type_map={'a': np.int64})
+            else:
+                self.buffer = Buffer(self.buffer_size, {
+                    'x': self.obs_shape, 
+                    'a': (), 
+                    'xp': self.obs_shape, 
+                    'r': (), 
+                    'gamma': (), 
+                    'goal_inits': (self.num_goals, ), 
+                    'goal_terms': (self.num_goals, ), 
+                    'goal_gammas': (self.num_goals, ),
+                    'goal_rewards': (self.num_goals, )},
+                self.random.randint(0,2**31), 
+                type_map={'a': np.int64})
 
             # batching buffer add such that we can batch together goal model calls
             self.batch_buffer_add_size = parse_param(params, 'batch_buffer_add_size', lambda p : isinstance(p, int) and p > 0)
@@ -223,6 +238,10 @@ class GSP_NN:
             self.goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{self.load_pretrain_goal_values}_pretrain_goal_estimate_learner.pkl', 'rb'))
             self.goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{self.load_pretrain_goal_values}_pretrain_goal_value_learner.pkl', 'rb'))
             print(f'pretrained goal values: {self.goal_value_learner.goal_values}')
+
+            # if not self.use_goal_values:
+            #     # self.goal_estimate_learner.goal_baseline[:] = 0
+            #     print('resetting goal baseline to 0')
 
         if self.load_behaviour_as_goal_values is not None:
             agent = pickle.load(open(f'src/environments/data/pinball/{self.load_behaviour_as_goal_values}_agent.pkl', 'rb'))
@@ -384,58 +403,6 @@ class GSP_NN:
 
             globals.collector.collect('model_error', mse)
 
-        # def log():
-        #     batch_size = 1024
-        #     if batch_size > self.buffer.num_in_buffer:
-        #         globals.collector.collect('model_error', 0)
-        #         return
-
-        #     data = self.buffer.sample(batch_size)
-        #     xs = data['xp']
-
-        #     batch_size = xs.shape[0]
-        #     goal_states = np.hstack((self.goals.goals, self.goals.goal_speeds))
-        #     goal_dest_values = np.array(self.behaviour_goal_value.get_action_values(goal_states))
-        #     goal_dest_values = np.max(goal_dest_values, axis=1)
-
-        #     goal_r = np.empty((batch_size, self.num_goals, self.num_actions))
-        #     goal_gammas = np.empty((batch_size, self.num_goals, self.num_actions))
-        #     # The goal policy is not used right now
-        #     goal_policy_q = np.empty((batch_size, self.num_goals, self.num_actions)) 
-
-        #     for g in range(self.num_goals):
-        #         goal_policy_q[:, g, :], goal_r[:, g, :], goal_gammas[:, g, :] = self.goal_learners[g].get_goal_outputs(xs)
-        #     pass
-        #     goal_gammas = np.clip(goal_gammas, 0, 1)
-        #     goal_values = goal_r + goal_gammas * goal_dest_values[None, :, None]
-
-        #     # Masking out invalid goals based on the initiation func
-        #     for i in range(batch_size):
-        #         x_goal_init = self.goal_initiation_func(xs[i])
-        #         invalid_goals = np.where(x_goal_init == False)[0]
-        #         goal_values[i, invalid_goals] = np.nan
-
-        #     print(np.nanmax(goal_values, axis=2).shape)
-        #     best_goals = np.nanargmax(np.nanmax(goal_values, axis=2), axis=1)
-        #     targets = goal_values[:, best_goals]
-
-
-        #     print(targets.shape)
-
-        #     ##### Mainly checking for errors
-        #     oracle_goal_values = np.array(self.behaviour_goal_value.get_action_values(xs))
-
-        #     # Masking out invalid goals based on the initiation func
-        #     for i in range(batch_size):
-        #         x_goal_init = self.goal_initiation_func(xs[i])
-        #         if np.all(~x_goal_init):
-        #             oracle_goal_values[i] = np.nan
-
-        #     print(oracle_goal_values.shape)
-        #     mse = np.nanmean(np.square(oracle_goal_values - targets))
-
-        #     globals.collector.collect('model_error', mse)
-
         run_if_should_log(log)
 
     def _get_best_goal_values(self, xs, action_values: bool = False):
@@ -480,7 +447,7 @@ class GSP_NN:
 
                 # Making it so it doesn't bootstrap to anything other than the final state if at terminal goal
                 x_goal_term = self.goal_termination_func(None, None, xs[i])
-                if x_goal_term[0]:
+                if x_goal_term[self.problem.terminal_goal_index]:
                     goal_values[i, :] = np.nan
 
             targets = np.nanmax(goal_values, axis=1)
@@ -492,6 +459,7 @@ class GSP_NN:
             goal_value_with_bonus = np.copy(self.goal_value_learner.goal_values) + bonus
         else:
             goal_value_with_bonus = np.copy(self.goal_estimate_learner.goal_baseline) + bonus
+            # print(self.goal_estimate_learner.goal_baseline)
 
         goal_r = np.empty((batch_size, self.num_goals, self.num_actions))
         goal_gammas = np.empty((batch_size, self.num_goals, self.num_actions))
@@ -523,7 +491,7 @@ class GSP_NN:
 
             # Making it so it doesn't bootstrap to anything other than the final state if at terminal goal
             x_goal_term = self.goal_termination_func(None, None, xs[i])
-            if x_goal_term[0]:
+            if x_goal_term[self.problem.terminal_goal_index]:
                 targets[i, :] = np.nan
 
         max_goal = np.nanmax(targets, axis=1)
@@ -543,10 +511,48 @@ class GSP_NN:
                     _gamma = self.intermediate_buffer.buffer['gamma']
                     _goal_inits = self.intermediate_buffer.buffer['goal_inits']
                     _goal_terms = self.intermediate_buffer.buffer['goal_terms']
-                    _targets = self._get_best_goal_values(_xp)
 
-                    for i in range(self.batch_buffer_add_size):
-                        self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'target': _targets[i]})
+                    if self.use_goal_values:
+                        if self.oci_beta > 0.0:
+                            _targets = self._get_best_goal_values(_xp)
+                        else:
+                            _targets = np.full((self.batch_buffer_add_size, ), np.nan)
+                        
+                        for i in range(self.batch_buffer_add_size):
+                            self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'target': _targets[i]})
+                    else:
+                        goal_r = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions))
+                        goal_gammas = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions))
+                        # The goal policy is not used right now
+                        goal_policy_q = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions)) 
+
+                        for g in range(self.num_goals):
+                            goal_policy_q[:, g, :], goal_r[:, g, :], goal_gammas[:, g, :] = self.goal_learners[g].get_goal_outputs(_xp)
+                        pass
+
+                        # Getting one-hot policies for the goal policies
+                        goal_policies = np.zeros((self.batch_buffer_add_size, self.num_goals, self.num_actions))
+                        np.put_along_axis(goal_policies, np.expand_dims(np.argmax(goal_policy_q, axis=2), -1), 1, axis=2)
+
+                        goal_r = np.sum(goal_r * goal_policies, axis=2)
+                        goal_gammas = np.sum(goal_gammas * goal_policies, axis=2)
+                        goal_gammas = np.clip(goal_gammas, 0, 1)
+
+
+                        # nan-ing the reward here so that these nans propagate to the next stage when its retrieved to avoid needing to do it online
+                        for i in range(self.batch_buffer_add_size):
+                            x_goal_init = self.goal_initiation_func(_xp[i])
+                            invalid_goals = np.where(x_goal_init == False)[0]
+                            goal_r[i, invalid_goals] = np.nan
+
+                            # Making it so it doesn't bootstrap to anything other than the final state if at terminal goal
+                            x_goal_term = self.goal_termination_func(None, None, _xp[i])
+                            if x_goal_term[self.problem.terminal_goal_index]:
+                                goal_r[i, :] = np.nan
+
+                        for i in range(self.batch_buffer_add_size):
+                            self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'goal_gammas': goal_gammas[i], 'goal_rewards': goal_r[i]})
+                    
             else:
                 self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_inits': goal_inits, 'goal_terms': goal_terms})
 
@@ -634,7 +640,16 @@ class GSP_NN:
             data = self.buffer.sample(self.batch_size)
 
             if self.use_pretrained_goal_values_optimization:
-                self.behaviour_learner.oci_target_update(data)
+                if self.use_goal_values:
+                    self.behaviour_learner.oci_target_update(data)
+                else:
+                    bonus = self._get_exploration_bonus()
+                    goal_value_with_bonus = np.copy(self.goal_estimate_learner.goal_baseline) + bonus
+
+                    # No need to filter initiation func since its already done in the buffer
+                    data['target'] = np.nanmax(data['goal_rewards'] + data['goal_gammas'] * goal_value_with_bonus, axis=1)
+                    self.behaviour_learner.oci_target_update(data)
+                
                 # Just do this and ignore the rest
                 continue
 
@@ -762,10 +777,11 @@ class GSP_NN:
                 
                 if self.learn_model_mode == 'online':
                     self._state_to_goal_estimate_update()
-                
-                # self._state_to_goal_estimate_update()
-                if not self.load_pretrain_goal_values:
+
+                if not self.use_goal_values or self.load_pretrain_goal_values is None:
                     self._goal_estimate_update()
+
+                if self.load_pretrain_goal_values is None:
                     self._goal_value_update() 
                     
                 if self.use_oci_target_update:

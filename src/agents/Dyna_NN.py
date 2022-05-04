@@ -111,6 +111,9 @@ class Dyna_NN:
 
     def update(self, s: Any, a, sp: Any, r, gamma, info, terminal: bool = False):
 
+        if info is not None and info.get('terminal', False):
+            gamma = 0
+
         self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma})
         self.num_steps_in_ep += 1
         
