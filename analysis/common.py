@@ -66,7 +66,7 @@ def get_best_grouped_param(grouped_params: list[Tuple[Any, List]]) -> Tuple[Tupl
 
     return grouped_params[rank[0]], best_index, best_perf, perfs, rank
 
-def plot_mean_ribbon(ax, mean, std, x_range, color=None, label=None):
-    line = ax.plot(x_range, mean, label=label, color=color)
+def plot_mean_ribbon(ax, mean, std, x_range, color=None, label=None, linestyle='solid'):
+    line = ax.plot(x_range, mean, label=label, color=color, linestyle=linestyle)
     ax.fill_between(x_range, mean + std, mean - std, alpha=0.25, color=line[0].get_color())
 

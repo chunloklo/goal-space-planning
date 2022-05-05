@@ -32,7 +32,6 @@ def get_configuration_list():
         
         # Agent
         "agent": ["GSP_NN"],
-        'epsilon': [0.1],
         
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
@@ -41,6 +40,10 @@ def get_configuration_list():
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
+        'epsilon': [0.1],
+
+        'load_buffer_name': ['explore_processed'],
+        'preprocess_buffer': [True],
 
         # Goal Estimate Configs
         'goal_estimate_batch_size': [32],
@@ -78,7 +81,8 @@ def get_configuration_list():
         'goal_learner_step_size': [1e-4],
         # 'load_buffer_name': ['100k_standard'],
 
-        'save_behaviour_name': ['q_learn_only_values'],
+
+        # 'save_behaviour_name': ['q_learn_only_values'],
         # 'learn_select_goal_models': [(15,)]
     }
 

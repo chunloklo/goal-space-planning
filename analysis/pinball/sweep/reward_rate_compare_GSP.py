@@ -1,6 +1,7 @@
 
 import os
 import sys
+
 sys.path.append(os.getcwd())
 
 from typing import Any, Callable, Dict, List, Tuple
@@ -22,6 +23,8 @@ from  experiment_utils.analysis_common.process_line import get_mean_std, get_mea
 from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate, plot_mean_ribbon
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
+from experiment_utils.analysis_common.colors import TOL_BRIGHT
+
 
 STEP_SIZE = 200
 
@@ -83,7 +86,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
     #     ax.plot(x_range, run_data, label=i)
 
 
-def plot_reward_rate_group(ax, group, color=None, postfix='', label=None):
+def plot_reward_rate_group(ax, group, color=None, postfix='', label=None, linestyle='solid'):
     all_data = []
     for param in group:
         ############ STANDARD
@@ -110,7 +113,7 @@ def plot_reward_rate_group(ax, group, color=None, postfix='', label=None):
 
     # label = f"OCI_{group[0]['OCI_update_interval']}_bonus_{group[0]['use_exploration_bonus']}_polyak_{group[0]['polyak_stepsize']} {postfix}"
 
-    plot_mean_ribbon(ax, mean, std, x_range, label=label, color=color)
+    plot_mean_ribbon(ax, mean, std, x_range, label=label, color=color, linestyle=linestyle)
 
     ####### Individual skip probability weights
     # data = load_data(parameter_list[index], 'skip_probability_weights')
@@ -265,19 +268,19 @@ if __name__ == "__main__":
     #     label = f"oci_beta: {group[0]['oci_beta']}"
     #     plot_reward_rate_group(ax, group[1], label=label)
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/oracle_q_test.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/oracle_q_test.py')
 
-    groups = group_configs(param_list, ignore_keys=['seed'])
+    # groups = group_configs(param_list, ignore_keys=['seed'])
 
-    for group in groups:
-        # if group[0]['use_exploration_bonus'] == False:
-        #     plot_reward_rate_group(ax, group[1])
+    # for group in groups:
+    #     # if group[0]['use_exploration_bonus'] == False:
+    #     #     plot_reward_rate_group(ax, group[1])
 
-        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
-        #     plot_reward_rate_group(ax, group[1])
-        # if group[0]['oci_beta'] == 0.25:
-        # print(group[0]['oci_beta'])
-        plot_reward_rate_group(ax, group[1], label=f"q_test {group[0]['oci_beta']}")
+    #     # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+    #     #     plot_reward_rate_group(ax, group[1])
+    #     # if group[0]['oci_beta'] == 0.25:
+    #     # print(group[0]['oci_beta'])
+    #     plot_reward_rate_group(ax, group[1], label=f"q_test {group[0]['oci_beta']}")
 
 
 
@@ -305,7 +308,102 @@ if __name__ == "__main__":
     
 
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_pretrain_learn.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_pretrain_learn.py')
+
+    # groups = group_configs(param_list, ignore_keys=['seed'])
+
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
+    #     # if group[0]['use_exploration_bonus'] == False:
+    #     #     plot_reward_rate_group(ax, group[1])
+
+    #     # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+    #     #     plot_reward_rate_group(ax, group[1])
+    #     # if group[0]['oci_beta'] == 0.25:
+    #     # print(group[0]['oci_beta'])
+
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
+
+    #     def plot_me(beta, step_size):
+    #         # if beta == 0.0: return True
+    #         if beta == 0.5 and step_size == 0.005 and polyak == 0.05: return True
+    #         # if beta == 0.5 and step_size == 0.005 and polyak == 0.05: return True
+    #         # if beta == 0.5 and step_size == 0.001 and polyak == 0.1: return True
+
+    #         if beta == 1.0 and step_size == 0.005 and polyak == 0.2: return True
+    #         # if beta == 1.0 and step_size == 0.005 and polyak == 0.2: return True
+    #         # if beta == 1.0 and step_size == 0.001 and polyak == 0.1: return True
+
+    #         if beta == 0.0 and step_size == 0.001 and polyak == 0.2: return True
+    #         # if beta == 0.0 and step_size == 0.0005 and polyak == 0.2: return True
+    #         # if beta == 0.0 and step_size == 0.005 and polyak == 0.2: return True
+    #         return False
+
+
+    #     #     if beta == 1.0 and step_size == 0.005: return True
+    #     #     if beta == 0.5 and step_size == 0.001: return True
+    #     #     if beta == 0.0 and step_size == 0.001: return True
+    #     #     return False
+
+    #     if not plot_me(beta, step_size): continue
+
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}")
+
+
+
+
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_pretrain_learn_wide_0.0.py')
+
+    # groups = group_configs(param_list, ignore_keys=['seed'])
+
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
+    #     # if group[0]['use_exploration_bonus'] == False:
+    #     #     plot_reward_rate_group(ax, group[1])
+
+    #     # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+    #     #     plot_reward_rate_group(ax, group[1])
+    #     # if group[0]['oci_beta'] == 0.25:
+    #     # print(group[0]['oci_beta'])
+
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
+
+    #     def plot_me(beta, step_size):
+    #         # return True
+    #         # if beta == 0.0: return True
+    #         # if beta == 0.5 and step_size == 0.005 and polyak == 0.05: return True
+    #         # if beta == 0.5 and step_size == 0.005 and polyak == 0.05: return True
+    #         # if beta == 0.5 and step_size == 0.001 and polyak == 0.1: return True
+
+    #         # if beta == 1.0 and step_size == 0.005 and polyak == 0.2: return True
+    #         # if beta == 1.0 and step_size == 0.005 and polyak == 0.2: return True
+    #         # if beta == 1.0 and step_size == 0.001 and polyak == 0.1: return True
+
+    #         if beta == 0.0 and step_size == 0.001 and polyak == 0.8: return True
+    #         if beta == 0.0 and step_size == 0.001 and polyak == 1.0: return True
+    #         if beta == 0.0 and step_size == 0.001 and polyak == 0.4: return True
+    #         # if beta == 0.0 and step_size == 0.0005 and polyak == 0.2: return True
+    #         # if beta == 0.0 and step_size == 0.005 and polyak == 0.2: return True
+    #         return False
+
+
+    #     #     if beta == 1.0 and step_size == 0.005: return True
+    #     #     if beta == 0.5 and step_size == 0.001: return True
+    #     #     if beta == 0.0 and step_size == 0.001: return True
+    #     #     return False
+
+    #     if not plot_me(beta, step_size): continue
+
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}")
+
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_pretrain_learn_best_0.0.py')
 
     groups = group_configs(param_list, ignore_keys=['seed'])
 
@@ -325,33 +423,77 @@ if __name__ == "__main__":
         polyak = group[0]['polyak_stepsize']
 
         def plot_me(beta, step_size):
-            # if beta == 0.0: return True
-            if beta == 0.5 and step_size == 0.005 and polyak == 0.05: return True
-            # if beta == 0.5 and step_size == 0.005 and polyak == 0.05: return True
-            # if beta == 0.5 and step_size == 0.001 and polyak == 0.1: return True
-
-            if beta == 1.0 and step_size == 0.005 and polyak == 0.2: return True
-            # if beta == 1.0 and step_size == 0.005 and polyak == 0.2: return True
-            # if beta == 1.0 and step_size == 0.001 and polyak == 0.1: return True
-
-            if beta == 0.0 and step_size == 0.001 and polyak == 0.2: return True
-            # if beta == 0.0 and step_size == 0.0005 and polyak == 0.2: return True
-            # if beta == 0.0 and step_size == 0.005 and polyak == 0.2: return True
+            return True
             return False
-
-
-        #     if beta == 1.0 and step_size == 0.005: return True
-        #     if beta == 0.5 and step_size == 0.001: return True
-        #     if beta == 0.0 and step_size == 0.001: return True
-        #     return False
 
         if not plot_me(beta, step_size): continue
 
-        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}")
+        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}", color=list(TOL_BRIGHT.values())[3])
 
-    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/oracle_q_test_pretrain_learn.py')
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_pretrain_learn_best_0.5.py')
+
+    groups = group_configs(param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+        # if group[0]['use_exploration_bonus'] == False:
+        #     plot_reward_rate_group(ax, group[1])
+
+        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+        #     plot_reward_rate_group(ax, group[1])
+        # if group[0]['oci_beta'] == 0.25:
+        # print(group[0]['oci_beta'])
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            return True
+            return False
+
+        if not plot_me(beta, step_size): continue
+
+        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}", color=list(TOL_BRIGHT.values())[4])
+
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_pretrain_learn_best_1.0.py')
+
+    groups = group_configs(param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+        # if group[0]['use_exploration_bonus'] == False:
+        #     plot_reward_rate_group(ax, group[1])
+
+        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+        #     plot_reward_rate_group(ax, group[1])
+        # if group[0]['oci_beta'] == 0.25:
+        # print(group[0]['oci_beta'])
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            return True
+            return False
+
+        if not plot_me(beta, step_size): continue
+
+        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}", color=list(TOL_BRIGHT.values())[5])
+
+
+
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_random_prefill_learn.py')
 
     # groups = group_configs(param_list, ignore_keys=['seed'])
+
+    # filtered_groups = []
+    # perfs = []
+    # i = 0
     # for group in groups:
     #     # if group[0]['use_exploration_bonus'] == False:
     #     #     plot_reward_rate_group(ax, group[1])
@@ -363,11 +505,107 @@ if __name__ == "__main__":
 
     #     beta = group[0]['oci_beta']
     #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
+    #     preprocess = group[0]['preprocess_buffer']
 
-    #     if beta != 0.5:
-    #         continue
+    #     def plot_me(beta, step_size):
+    #         if beta == 0.5 and step_size == 0.005 and polyak == 0.05: return True
+    #         if beta == 1.0 and step_size == 0.005 and polyak == 0.2: return True
+    #         if beta == 0.0 and step_size == 0.001 and polyak == 0.1: return True
+    #         #  beta: 0.5, step_size: 0.005, polyak 0.05
+    #         #  beta: 1.0, step_size: 0.005, polyak 0.2
+    #         #  beta: 0.0, step_size: 0.001, polyak 0.1
+    #         # return True
+    #         return False
 
-    #     plot_reward_rate_group(ax, group[1], label=f"new oci_beta: {beta} step_size: {step_size}")
+    #     if not plot_me(beta, step_size): continue
+
+    #     plot_reward_rate_group(ax, group[1], label=f"prefill oci_beta: {beta} step_size: {step_size} polyak: {polyak}", linestyle='dashed')
+    #     # i += 1
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_random_prefill_learn_0.0.py')
+
+    groups = group_configs(param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+        # if group[0]['use_exploration_bonus'] == False:
+        #     plot_reward_rate_group(ax, group[1])
+
+        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+        #     plot_reward_rate_group(ax, group[1])
+        # if group[0]['oci_beta'] == 0.25:
+        # print(group[0]['oci_beta'])
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            return True
+            return False
+
+        if not plot_me(beta, step_size): continue
+
+        plot_reward_rate_group(ax, group[1], label=f"prefill oci_beta: {beta} step_size: {step_size} polyak: {polyak}", color=list(TOL_BRIGHT.values())[0])
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_random_prefill_learn_0.5.py')
+
+    groups = group_configs(param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+        # if group[0]['use_exploration_bonus'] == False:
+        #     plot_reward_rate_group(ax, group[1])
+
+        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+        #     plot_reward_rate_group(ax, group[1])
+        # if group[0]['oci_beta'] == 0.25:
+        # print(group[0]['oci_beta'])
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            return True
+            return False
+
+        if not plot_me(beta, step_size): continue
+
+        plot_reward_rate_group(ax, group[1], label=f"prefill oci_beta: {beta} step_size: {step_size} polyak: {polyak}", color=list(TOL_BRIGHT.values())[1])
+
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/test_sweep/suboptimal_random_prefill_learn_1.0.py')
+
+    groups = group_configs(param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+        # if group[0]['use_exploration_bonus'] == False:
+        #     plot_reward_rate_group(ax, group[1])
+
+        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
+        #     plot_reward_rate_group(ax, group[1])
+        # if group[0]['oci_beta'] == 0.25:
+        # print(group[0]['oci_beta'])
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            return True
+            return False
+
+        if not plot_me(beta, step_size): continue
+
+        plot_reward_rate_group(ax, group[1], label=f"prefill oci_beta: {beta} step_size: {step_size} polyak: {polyak}", color=list(TOL_BRIGHT.values())[2])
+
+
 
 
 

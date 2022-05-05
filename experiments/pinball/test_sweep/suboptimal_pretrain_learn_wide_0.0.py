@@ -36,7 +36,7 @@ def get_configuration_list():
         
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
-        'polyak_stepsize': [0.4, 0.2, 0.1, 0.05],
+        'polyak_stepsize': [1.0, 0.8, 0.4, 0.2, 0.1, 0.05],
         'step_size': [5e-3, 1e-3, 5e-4],
         'adam_eps': [1e-8],
         'batch_num': [4],

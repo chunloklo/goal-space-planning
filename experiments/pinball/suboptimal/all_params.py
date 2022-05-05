@@ -9,12 +9,11 @@ from src.utils.run_utils import experiment_completed
 
 # get_configuration_list function is required for 
 def get_configuration_list():
-    root = 'experiments/pinball/test_sweep/'
+    root = 'experiments/pinball/suboptimal/'
     files = [
-        'suboptimal_random_prefill_learn_0.0.py',
-        'suboptimal_random_prefill_learn_0.5.py',
-        'suboptimal_random_prefill_learn_1.0.py',
-        # 'GSP_learning.py',
+        # 'dqn.py',
+        # 'gsp_learn.py',
+        'suboptimal_random_prefill_debug.py'
     ]
     
     parameter_list = [param  for file in files for param in get_configuration_list_from_file_path(root + file)]

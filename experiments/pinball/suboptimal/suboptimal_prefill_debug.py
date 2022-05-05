@@ -18,7 +18,7 @@ def get_configuration_list():
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
-        'max_steps': [300000],
+        'max_steps': [200000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [False],
@@ -28,19 +28,22 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [10000],
+        "seed": list(range(16)),
         
         # Agent
         "agent": ["GSP_NN"],
-        'epsilon': [0.1],
         
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
         'polyak_stepsize': [0.1],
-        'step_size': [1e-3],
+        'step_size': [5e-3],
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
+        'epsilon': [0.1],
+
+        'load_buffer_name': ['explore_processed'],
+        'preprocess_buffer': [True, False],
 
         # Goal Estimate Configs
         'goal_estimate_batch_size': [32],
@@ -78,7 +81,8 @@ def get_configuration_list():
         'goal_learner_step_size': [1e-4],
         # 'load_buffer_name': ['100k_standard'],
 
-        'save_behaviour_name': ['q_learn_only_values'],
+
+        # 'save_behaviour_name': ['q_learn_only_values'],
         # 'learn_select_goal_models': [(15,)]
     }
 

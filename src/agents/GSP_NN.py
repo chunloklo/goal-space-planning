@@ -197,6 +197,9 @@ class GSP_NN:
         self.save_buffer_name = parse_param(params, 'save_buffer_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
         self.load_buffer_name = parse_param(params, 'load_buffer_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
         
+        if self.load_buffer_name is not None:
+            self.preprocess_buffer = parse_param(params, 'preprocess_buffer', lambda p : isinstance(p, bool))
+
         self.goal_estimate_learner = GoalEstimates(self.num_goals)
         # self.goal_learners = [GoalLearner_EQRC_NN(self.obs_shape, self.num_actions, self.goal_learner_step_size, 0.1, beta=1.0) for _ in range(self.num_goals)]
         # self.goal_learners = [GoalLearner_QRC_NN(self.obs_shape, self.num_actions, self.goal_learner_step_size, beta=1.0) for _ in range(self.num_goals)]
@@ -248,8 +251,40 @@ class GSP_NN:
             self.behaviour_goal_value = agent.behaviour_learner
 
         if self.load_buffer_name is not None:
-            self.buffer = pickle.load(open(f'./src/environments/data/pinball/{self.load_buffer_name}_buffer.pkl', 'rb'))
-            print(f'loaded buffer with size: {self.buffer.num_in_buffer}')
+
+            if not self.preprocess_buffer:
+                self.buffer = pickle.load(open(f'./src/environments/data/pinball/{self.load_buffer_name}_buffer.pkl', 'rb'))
+                self.buffer.random = np.random.RandomState(self.random.randint(1e4))
+                print(f'loaded buffer with size: {self.buffer.num_in_buffer}')
+            else:
+                loaded_buffer = pickle.load(open(f'./src/environments/data/pinball/{self.load_buffer_name}_buffer.pkl', 'rb'))
+                assert self.use_goal_values
+
+                print(f'preprocessing {loaded_buffer.num_in_buffer} samples to add to buffer')
+
+                batch_size = loaded_buffer.num_in_buffer
+
+                # Adding loaded buffer to actual buffer
+                _x = loaded_buffer.buffer['x'][:batch_size]
+                _a = loaded_buffer.buffer['a'][:batch_size]
+                _xp = loaded_buffer.buffer['xp'][:batch_size]
+                _r = loaded_buffer.buffer['r'][:batch_size]
+                _gamma = loaded_buffer.buffer['gamma'][:batch_size]
+                _goal_inits = loaded_buffer.buffer['goal_inits'][:batch_size]
+                _goal_terms = loaded_buffer.buffer['goal_terms'][:batch_size]
+                old_targets = loaded_buffer.buffer['target'][:batch_size]
+
+                if self.oci_beta > 0.0:
+                    _targets = self._get_best_goal_values(_xp)
+                else:
+                    _targets = np.full((batch_size, ), np.nan)
+
+                print(np.nanmean(np.square(old_targets - _targets)))
+
+                for i in range(batch_size):
+                    self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'target': _targets[i]})               
+
+
 
         self.cumulative_reward = 0
         self.num_term = 0

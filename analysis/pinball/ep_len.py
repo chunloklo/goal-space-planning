@@ -114,9 +114,9 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning_baseline.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/GSP_learning.py')
     
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_learn.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values.py')
 
     plt.legend()
     # plt.title(alg_name)
