@@ -45,6 +45,11 @@ name = MPI.Get_processor_name()
 if rank == 0:
     # Getting configuration list from parameter_path
     configuration_list = get_configuration_list_from_file_path(configuration_path)
+
+    # Printing out debug information so if a job script failed, you can tell what to rerun
+    print(f'Run path: {run_path}')
+    print(f'Configuration path: {configuration_path}')
+    print(f'Auxiliary config path: {aux_config_path}')
 else:
     configuration_list = None
 configuration_list = comm.bcast(configuration_list, root=0)
