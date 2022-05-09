@@ -166,3 +166,77 @@ class PinballSuboptimalGoals(PinballGoals):
         self.goal_speeds = self.goal_speeds[[3, 5, 6, 9, 10]]
         self.num_goals = self.goals.shape[0]
 
+
+class PinballHardGoals(PinballGoals):
+    def __init__(self):
+        super().__init__()
+        self.termination_radius = 0.035
+        # self.termination_radius = 0.015 # Debug goal to vis ball position
+        self.initiation_radius = 0.38
+        self.speed_radius = 2.0
+
+        # Caching calculation for functions
+        self.termination_radius_squared = np.square(self.termination_radius)
+        self.initiation_radius_squared = np.square(self.initiation_radius)
+        self.speed_radius_squared = np.square(self.speed_radius)
+
+        self.goals = []
+        self.goal_speeds = []
+        
+        goal_states = [
+            [0.5, 0.06, 0.0, 0.0],
+            [0.82, 0.06, 0.0, 0.0],
+            # [0.975, 0.36, 0.0, 0.0], # DEBUG GOAL JUST TO SEE WHERE IT IS
+            # [0.975, 0.38, 0.0, 0.0], # DEBUG GOAL JUST TO SEE WHERE IT IS
+            [0.64, 0.24, 0.0, 0.0],
+            # [0.53, 0.27, 0.0, 0.0], # Removed for simplicity
+            [0.31, 0.28, 0.0, 0.0],
+            [0.19, 0.58, 0.0, 0.0],
+            [0.38, 0.70, 0.0, 0.0],
+        ]
+
+        for goal in goal_states:
+            self.goals.append(goal[:2])
+            self.goal_speeds.append(goal[2:])
+
+        self.goals = np.array(self.goals)
+        self.goal_speeds = np.array(self.goal_speeds)
+        self.num_goals = self.goals.shape[0]
+
+class PinballHardDebugGoals(PinballGoals):
+    # Same as pinball hard, but with less goals for testing
+    def __init__(self):
+        super().__init__()
+        self.termination_radius = 0.035
+        # self.termination_radius = 0.015 # Debug goal to vis ball position
+        self.initiation_radius = 0.38
+        self.speed_radius = 2.0
+
+        # Caching calculation for functions
+        self.termination_radius_squared = np.square(self.termination_radius)
+        self.initiation_radius_squared = np.square(self.initiation_radius)
+        self.speed_radius_squared = np.square(self.speed_radius)
+
+        self.goals = []
+        self.goal_speeds = []
+        
+        goal_states = [
+            [0.5, 0.06, 0.0, 0.0],
+            # [0.82, 0.06, 0.0, 0.0],
+            # [0.975, 0.36, 0.0, 0.0], # DEBUG GOAL JUST TO SEE WHERE IT IS
+            # [0.975, 0.38, 0.0, 0.0], # DEBUG GOAL JUST TO SEE WHERE IT IS
+            # [0.64, 0.24, 0.0, 0.0],
+            # [0.53, 0.27, 0.0, 0.0], # Removed for simplicity
+            # [0.31, 0.28, 0.0, 0.0],
+            # [0.19, 0.58, 0.0, 0.0],
+            # [0.38, 0.70, 0.0, 0.0],
+            [0.53, 0.27, 0.0, 0.0]
+        ]
+
+        for goal in goal_states:
+            self.goals.append(goal[:2])
+            self.goal_speeds.append(goal[2:])
+
+        self.goals = np.array(self.goals)
+        self.goal_speeds = np.array(self.goal_speeds)
+        self.num_goals = self.goals.shape[0]

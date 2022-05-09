@@ -120,9 +120,7 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/pinball/gsp_pretrain_test.py')
 
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_learn.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
+
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_single_goal_0.5.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_single_goal_1.0.py')
 
@@ -132,14 +130,19 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug_4.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values_debug_5.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_pretrain_learn.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_pretrain_learn.py')
-    # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_prefill_baseline.py')
-    # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_pretrain_no_values.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_prefill_learn.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_prefill_debug.py')
 
 
+    # For pinball
+    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_pretrain_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_prefill_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_prefill_debug.py')
 
+    # For hard pinball
+    plot_single_reward_rate(ax, 'experiments/pinball_hard/baseline.py')
+    plot_single_reward_rate(ax, 'experiments/pinball_hard/oracle_gsp_learn.py')
 
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values.py')
     
@@ -168,7 +171,7 @@ if __name__ == "__main__":
     # plt.title(alg_name)
 
     # ax.set_xlim([600, 1200])
-    ax.set_ylim(-10, 160)
+    # ax.set_ylim(-10, 160)
 
     # Getting file name
     save_file = get_file_name('./plots/', f'single_reward_rate', 'png', timestamp=True)

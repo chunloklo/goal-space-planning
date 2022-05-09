@@ -11,13 +11,23 @@ from functools import partial
 
 
 class QLearner_NN():
-    def __init__(self, state_shape, num_actions: int, learning_rate: float, polyak_stepsize: float, beta, num_options: int = 0):
+    def __init__(self, state_shape, num_actions: int, learning_rate: float, polyak_stepsize: float, beta, arch_flag, num_options: int = 0):
         self.num_actions = num_actions
         self.num_options = num_options
         self.polyak_stepsize = polyak_stepsize
         self.beta = beta
 
-        def q_function(states):
+        assert arch_flag in [
+            'pinball_simple',
+            'pinball_hard'
+        ]
+
+        # Initializing jax functions
+        init = hk.initializers.VarianceScaling(np.sqrt(2), 'fan_avg', 'uniform')
+        b_init = hk.initializers.Constant(0.001)
+
+        if arch_flag == 'pinball_simple':
+            def q_function(states):
                 mlp = hk.Sequential([
                     hk.Linear(128), jax.nn.relu,
                     hk.Linear(128), jax.nn.relu,
@@ -26,6 +36,21 @@ class QLearner_NN():
                     hk.Linear(self.num_actions + self.num_options),
                 ])
                 return mlp(states) 
+        elif arch_flag == 'pinball_hard':
+            def q_function(states):
+                mlp = hk.Sequential([
+                    hk.Linear(256, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(256, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(self.num_actions + self.num_options),
+                ])
+                return mlp(states) 
+        else:
+            raise NotImplementedError()
+
         self.network = hk.without_apply_rng(hk.transform(q_function))
         self.opt = optax.adam(learning_rate)
 

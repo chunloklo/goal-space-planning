@@ -10,34 +10,74 @@ import copy
 from src.utils import globals
 
 class GoalLearner_DQN_NN():
-    def __init__(self, state_shape, num_actions: int, step_size: float, epsilon: float, polyak_stepsize, adam_eps):
+    def __init__(self, state_shape, num_actions: int, step_size: float, epsilon: float, polyak_stepsize, adam_eps, arch_flag: str):
         self.num_actions: int = num_actions
         self.epsilon = epsilon
         self.adam_eps = adam_eps
 
+
+        assert arch_flag in [
+            'pinball_simple',
+            'pinball_hard',
+        ]
+
         # Initializing jax functions
-        def q_function(states):
-            q_mlp = hk.Sequential([
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(self.num_actions),
-            ])
+        init = hk.initializers.VarianceScaling(np.sqrt(2), 'fan_avg', 'uniform')
+        b_init = hk.initializers.Constant(0.001)
 
-            v_mlp = hk.Sequential([
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(128), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(64), jax.nn.relu,
-                hk.Linear(self.num_actions),
-            ])
+        
+        if arch_flag == 'pinball_simple':
+            # Initializing jax functions
+            def q_function(states):
+                q_mlp = hk.Sequential([
+                    hk.Linear(128), jax.nn.relu,
+                    hk.Linear(128), jax.nn.relu,
+                    hk.Linear(128), jax.nn.relu,
+                    hk.Linear(128), jax.nn.relu,
+                    hk.Linear(64), jax.nn.relu,
+                    hk.Linear(64), jax.nn.relu,
+                    hk.Linear(self.num_actions),
+                ])
 
-            return q_mlp(states), v_mlp(states)
+                v_mlp = hk.Sequential([
+                    hk.Linear(128), jax.nn.relu,
+                    hk.Linear(128), jax.nn.relu,
+                    hk.Linear(128), jax.nn.relu,
+                    hk.Linear(128), jax.nn.relu,
+                    hk.Linear(64), jax.nn.relu,
+                    hk.Linear(64), jax.nn.relu,
+                    hk.Linear(self.num_actions),
+                ])
+
+                return q_mlp(states), v_mlp(states)
+        elif arch_flag == 'pinball_hard':
+            def q_function(states):
+                q_mlp = hk.Sequential([
+                    hk.Linear(256, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(256, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(32, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(32, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(self.num_actions),
+                ])
+                v_mlp = hk.Sequential([
+                    hk.Linear(256, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(256, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(32, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(32, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(self.num_actions),
+                ])
+                return q_mlp(states), v_mlp(states) 
+                
+        else:
+            raise NotImplementedError()
 
         self.f_qfunc = hk.without_apply_rng(hk.transform(q_function))
 
@@ -104,7 +144,8 @@ class GoalLearner_DQN_NN():
         self.target_params = copy.deepcopy(self.params)
 
     def get_goal_outputs(self, x: npt.ArrayLike) -> np.ndarray:
-        return self.f_get_goal_output(self.params, x)
+        policy_output, v_output, gamma_output = self.f_get_goal_output(self.params, x)
+        return policy_output, v_output, gamma_output
 
     def update(self, data, polyak_stepsize:float=0.005):
         self.params, self.opt_state, (policy_loss, reward_loss) = self.f_update(self.params, self.target_params, self.opt_state, data)

@@ -132,3 +132,39 @@ def get_incomplete_configuration_list(configuration_list: list, folder: str = DB
         incomplete_configs_per_db.append(incomplete_parameter_list)
     
     return [config for incomplete_configs in incomplete_configs_per_db for config in incomplete_configs]
+
+# TODO [chunlok 2022-05-08] We probably want to refactor this with get_incomplete_configuration_list
+# since most of this is just copied from that function.
+def get_complete_configuration_list(configuration_list: list, folder: str = DB_FOLDER):
+    """Returns the list of complete configurations after querying the database
+
+    Args:
+        configuration_list (list): list of configurations
+        folder (str, optional): Default parent location of the database. Defaults to DB_FOLDER.
+
+    Returns:
+        list: List of incomplete configurations
+    """
+
+    db_configs = {}
+    for config in configuration_list:
+        db_folder = get_folder_name(config, DB_FOLDER)
+        if db_folder not in db_configs:
+            db_configs[db_folder] = []
+        
+        db_configs[db_folder].append(config)
+
+    incomplete_configs_per_db = []
+    for db_folder, config_list_in_db in db_configs.items():
+        def incomplete_filter(config):
+            return check_config_completed(config)
+
+        if not db_exists(db_folder):
+            incomplete_parameter_list = config_list_in_db
+        else: 
+            with BatchDBAccess(db_folder): # Batch check all configs in the same DB
+                incomplete_parameter_list = list(filter(incomplete_filter, config_list_in_db))
+
+        incomplete_configs_per_db.append(incomplete_parameter_list)
+    
+    return [config for incomplete_configs in incomplete_configs_per_db for config in incomplete_configs]

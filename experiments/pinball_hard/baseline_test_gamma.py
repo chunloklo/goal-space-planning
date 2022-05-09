@@ -10,21 +10,21 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinabll_suboptimal_test"],
+        "db_folder": ["pinball_hard_debug"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
-        "problem": ["PinballSuboptimalProblem"],
-        'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
-        'explore_env': [True],
+        "problem": ["PinballHardProblem"],
+        'pinball_configuration_file': ['src/environments/data/pinball/pinball_hard_single_modified.cfg.txt'],
+        'explore_env': [False],
         "episodes": [0],
         'max_steps': [300000],
         'exploration_phase': [0],
-        'gamma': [0.95],
+        'gamma': [0.98],
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'model_error', 'model_error_heatmap')],
+        'log_keys': [('reward_rate', 'num_steps_in_ep')],
         'step_logging_interval': [100],
 
         # Seed
@@ -36,15 +36,19 @@ def get_configuration_list():
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
         'polyak_stepsize': [0.1],
-        'step_size': [1e-3],
+        'step_size': [5e-4],
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
         'epsilon': [0.1],
 
         # Sanity Check Steps
-        'load_behaviour_as_goal_values': ['q_learn'],
-        'behaviour_goal_value_mode': ['direct'],
+        # 'load_behaviour_as_goal_values': ['q_learn'],
+        # 'behaviour_goal_value_mode': ['direct'],
+
+        # Arch flags
+        'behaviour_arch_flag': ['pinball_hard'],
+        'model_arch_flag': ['pinball_hard'],
 
         # Goal Estimate Configs
         'goal_estimate_batch_size': [256],
@@ -70,12 +74,13 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'save_state_to_goal_estimate_name': ['suboptimal_gsp_model_explore'], # throwaway
         'goal_learner_step_size': [1e-3],
+        'goal_learner_batch_num': [2],
 
-        'learn_model_mode': ['online'],
+        'learn_model_mode': ['fixed'],
 
         # 'learn_select_goal_models': [(2,)]
+        'save_behaviour_name': ['pinballhard_baseline'],
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

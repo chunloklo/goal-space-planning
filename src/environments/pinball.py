@@ -435,6 +435,7 @@ class PinballEnvironment(BaseEnvironment):
             while colliding:
                 start_state = [np.random.uniform(0, 1), np.random.uniform(0, 1)]
                 self.pinball.ball.position = np.copy(start_state)
+                self.pinball._check_bounds()
 
                 colliding = False
                 for obs in self.pinball.obstacles:

@@ -20,7 +20,7 @@ def get_sorted_configuration_list_from_dict(configuration_collection_dict: Dict[
     # sort dict keys, values, and populate lengths
     for k in sorted(configuration_collection_dict.keys()):
         k_list = configuration_collection_dict[k]
-        assert isinstance(k_list, list), f'Parameter dict needs to have each value be a list'
+        assert isinstance(k_list, list), f'Parameter dict needs to have each value be a list. Key {k} is not a list'
 
         assert len(set(k_list)) == len(k_list), f'There are duplicates in the param list for {k}, list: {sorted(k_list)}'
 
