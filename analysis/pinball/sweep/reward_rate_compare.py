@@ -135,9 +135,11 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.005.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/baseline_sweep/impl_test_batch2_display_0.001.py')
 
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_1_explore_true.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_2_explore_true.py')
-    plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_4_explore_true.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_1_explore_true.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_2_explore_true.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/display/GSP_learning_values_OCI_4_explore_true.py')
+
+    plot_single_reward_rate(ax, 'experiments/pinball/refactor/dyno_learn.py')
 
     plt.legend()
     # plt.title(alg_name)

@@ -11,10 +11,9 @@ from src.utils import globals
 
 class GoalLearner_DQN_NN():
     def __init__(self, state_shape, num_actions: int, step_size: float, epsilon: float, polyak_stepsize, adam_eps, arch_flag: str):
-        self.num_actions: int = num_actions
+        self.num_actions: int = num_actions #
         self.epsilon = epsilon
         self.adam_eps = adam_eps
-
 
         assert arch_flag in [
             'pinball_simple',
@@ -24,7 +23,6 @@ class GoalLearner_DQN_NN():
         # Initializing jax functions
         init = hk.initializers.VarianceScaling(np.sqrt(2), 'fan_avg', 'uniform')
         b_init = hk.initializers.Constant(0.001)
-
         
         if arch_flag == 'pinball_simple':
             # Initializing jax functions

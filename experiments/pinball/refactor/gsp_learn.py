@@ -78,7 +78,7 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'load_model_name': ['suboptimal_gsp_model_explore'],
+        'load_model_name': ['suboptimal_gsp_model_explore_eps'],
         'goal_learner_step_size': [1e-3],
         'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],

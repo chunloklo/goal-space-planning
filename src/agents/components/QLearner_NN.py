@@ -9,11 +9,11 @@ import numpy as np
 from src.utils import globals
 from functools import partial
 
-
 class QLearner_NN():
     def __init__(self, state_shape, num_actions: int, learning_rate: float, polyak_stepsize: float, beta, arch_flag, num_options: int = 0):
         self.num_actions = num_actions
         self.num_options = num_options
+
         self.polyak_stepsize = polyak_stepsize
         self.beta = beta
 
@@ -179,13 +179,9 @@ class QLearner_NN():
 
         updates, opt_state = self.opt.update(grad, opt_state)
         params = optax.apply_updates(params, updates)
-
         target_params = optax.incremental_update(params, target_params, polyak_stepsize)
-
         return params, target_params, opt_state, jnp.sqrt(delta)
-    
+
     def option_value_update(self, data):
         self.params, self.target_params, self.opt_state, delta = self._option_value_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, self.beta, data)
         return delta
-    
-

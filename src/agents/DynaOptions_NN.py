@@ -36,12 +36,22 @@ class DynaOptions_NN:
         self.num_actions = problem.actions
         self.params = problem.params
         self.random = np.random.RandomState(problem.seed)
+        # self.problem = problem #in GSP_NN
+
 
         # Initializing goal information
         self.goals = problem.goals
         self.num_goals = self.goals.num_goals
         self.goal_termination_func = self.goals.goal_termination
         self.goal_initiation_func = self.goals.goal_initiation
+
+        # def modified_goal_init(xs):  # in GSP_NN
+        #     init =  self.goals.goal_initiation(xs)
+        #     return init
+        
+        # self.goal_initiation_func = modified_goal_init
+
+
 
         params = self.params
         
@@ -54,6 +64,17 @@ class DynaOptions_NN:
         self.step_size = param_utils.parse_param(params, 'step_size', lambda p : isinstance(p, float) and p >= 0.0) 
         # Epsilon for epsilon-greedy policy
         self.epsilon = param_utils.parse_param(params, 'epsilon', lambda p : isinstance(p, float) and p >= 0.0)
+
+        # next 5 lines in GSP_NN
+        # self.behaviour_arch_flag = parse_param(params, 'behaviour_arch_flag', lambda p: p in ['pinball_simple', 'pinball_hard'])
+        # self.model_arch_flag = parse_param(params, 'model_arch_flag')
+
+        # # Goal learner params
+        # self.goal_learner_step_size = parse_param(params, 'goal_learner_step_size', lambda p : isinstance(p, float) and p >= 0.0) 
+        # self.goal_learner_batch_num = parse_param(params, 'goal_learner_batch_num', lambda p : isinstance(p, int) and p > 0)
+        # self.goal_learner_batch_size = parse_param(params, 'goal_learner_batch_size', lambda p : isinstance(p, int) and p > 0)
+
+
 
         # GOAL ESTIMATE PARAMS
         self.goal_estimate_batch_size = param_utils.parse_param(params, 'goal_estimate_batch_size', lambda p : isinstance(p, int) and p > 0)
@@ -80,6 +101,7 @@ class DynaOptions_NN:
         self.use_exploration_bonus = param_utils.parse_param(params, 'use_exploration_bonus', lambda p : isinstance(p, bool), optional=True, default=False)
 
         # Pretrain goal values
+        # pretty different in GSP_NN from here
         self.pretrain_goal_values = param_utils.parse_param(params, 'pretrain_goal_values', lambda p : isinstance(p, bool), optional=True, default=False) 
         self.use_pretrained_goal_values = param_utils.parse_param(params, 'use_pretrained_goal_values', lambda p : isinstance(p, bool), optional=True, default=False) 
         self.use_pretrained_goal_values_optimization = param_utils.parse_param(params, 'use_pretrained_goal_values_optimization', lambda p : isinstance(p, bool), optional=True, default=False) 
@@ -110,6 +132,8 @@ class DynaOptions_NN:
         # Hard coding this for the environment for now
         self.obs_shape = (4, )
         
+        # UNTIL HERE
+
         self.goal_value_learner = GoalValueLearner(self.num_goals)
         if self.behaviour_alg == 'QRC':
             self.beta = param_utils.parse_param(params, 'beta', lambda p : isinstance(p, float), optional=True, default=1.0)
@@ -169,6 +193,10 @@ class DynaOptions_NN:
         # self.goal_learners = [GoalLearner_EQRC_NN(self.obs_shape, self.num_actions, self.step_size, 0.1, beta=1.0) for _ in range(self.num_goals)]
         self.goal_learners = [GoalLearner_QRC_NN(self.obs_shape, self.num_actions, self.step_size, beta=1.0) for _ in range(self.num_goals)]
         # self.goal_learners = [GoalLearner_DQN_NN(self.obs_shape, self.num_actions, self.step_size, 0.1, self.polyak_stepsize, self.adam_eps) for _ in range(self.num_goals)]
+        # GABOR: the above is DQN not QRC in GSP_NN 
+
+
+        # GABOR: from here, kind of different in GSP_NN, but not too much
 
         if self.pretrained_behavior_name:
             agent = pickle.load(open('src/environments/data/pinball/gsp_agent.pkl', 'rb'))
@@ -211,6 +239,9 @@ class DynaOptions_NN:
             self.buffer = pickle.load(open(f'./src/environments/data/pinball/{self.load_buffer_name}_buffer.pkl', 'rb'))
             print(f'loaded buffer with size: {self.buffer.num_in_buffer}')
 
+        # GABOR: until here, kind of different, but not too much
+
+
         self.cumulative_reward = 0
         self.num_term = 0
         self.num_updates = 0
@@ -233,8 +264,8 @@ class DynaOptions_NN:
         if self.epsilon == 1.0:
             return np.full(self.num_actions, 1.0 / self.num_actions)
         
-        action_values = np.array(self.behaviour_learner.get_action_values(s))
-        
+        action_values = np.array(self.behaviour_learner.get_action_values(s)) #GSP_NN doesnt convert it to np.array
+        #GSP_NN doesnt have the following two lines
         valid_goals = self.goal_initiation_func(s)
         action_values[self.num_actions:][valid_goals == False] = np.NINF
         # epsilon greedy
@@ -251,7 +282,8 @@ class DynaOptions_NN:
         a = self.random.choice(self.num_actions, p = self.get_policy(s))
         return a
 
-    def _get_goal_values(self, xs, action_values: bool = False):
+    def _get_goal_values(self, xs, action_values: bool = False): 
+        # this is get_behaviour_goal_values and it is much simpler there
         batch_size = xs.shape[0]
         bonus = self._get_exploration_bonus()
         if self.use_goal_values:
@@ -284,6 +316,7 @@ class DynaOptions_NN:
         return targets
 
     def _get_best_goal_values(self, xs, action_values: bool = False):
+        #very different in GSP_NN
         targets = self._get_goal_values(xs, action_values=action_values)
         # Masking out invalid goals based on the initiation func
         for i in range(self.batch_buffer_add_size):
@@ -298,7 +331,7 @@ class DynaOptions_NN:
 
     
     def _add_to_buffer(self, s, a, sp, r, gamma, terminal, goal_inits, goal_terms):
-
+        # different from GSP_NN from here
         if self.use_pretrained_goal_values_optimization:
             self.intermediate_buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_inits': goal_inits, 'goal_terms': goal_terms})
 
@@ -311,6 +344,8 @@ class DynaOptions_NN:
                 _goal_inits = self.intermediate_buffer.buffer['goal_inits']
                 _goal_terms = self.intermediate_buffer.buffer['goal_terms']
                 _targets = self._get_best_goal_values(_xp)
+
+                # quite a bit off difference until here
 
                 for i in range(self.batch_buffer_add_size):
                     self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'target': _targets[i]})
@@ -386,6 +421,8 @@ class DynaOptions_NN:
             self._goal_estimate_update()
         
         self.goal_estimate_learner.goal_baseline[3] = 10000
+        # self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10000 # in GSP_NN
+
 
         for _ in range(1000):
             self._goal_value_update()
@@ -394,8 +431,20 @@ class DynaOptions_NN:
         cloudpickle.dump(self.goal_estimate_learner, open(f'./src/environments/data/pinball/pretrain_goal_estimate_learner.pkl', 'wb'))
         cloudpickle.dump(self.goal_value_learner, open(f'./src/environments/data/pinball/pretrain_goal_value_learner.pkl', 'wb'))
 
+    # def _check_goal_value_error(self): # this is in GSP_NN
+    #         goal_states = np.hstack((self.goals.goals, self.goals.goal_speeds))
+    #         true_goal_values = np.array(self.behaviour_goal_value.get_action_values(goal_states))
+    #         true_goal_values = np.max(true_goal_values, axis=1)
 
-    def _oci_target_update(self):
+    #         learned_goal_values = self.goal_value_learner.goal_values
+
+    #         print(f'true goal values: {true_goal_values}')
+    #         print(f'learned_goal_values: {learned_goal_values}')
+
+    #         squared_error = np.mean(np.square(true_goal_values - learned_goal_values))
+    #         print(f'squared_error: {squared_error}')
+
+    def _oci_target_update(self): # this is different too
         if self.buffer.num_in_buffer < self.min_buffer_size_before_update:
             # Not enough samples in buffer to update yet
             return 
@@ -493,6 +542,9 @@ class DynaOptions_NN:
         self.num_updates += 1
         self.num_steps_in_ep += 1
 
+        # if info is not None and info.get('terminal', False):
+        #     gamma = 0   <-- this is missing from GSP_NN
+
         goal_init = self.goal_initiation_func(s)
         goal_terms = self.goal_termination_func(s, a, sp)
 
@@ -516,6 +568,7 @@ class DynaOptions_NN:
         else:
             self._add_to_buffer(s, a, sp, r, gamma, terminal, goal_init, goal_terms)
 
+        # from here
         if self.num_updates > self.prefill_buffer_time:
             if self.learn_model_only:
                 self._state_to_goal_estimate_update()
@@ -528,7 +581,7 @@ class DynaOptions_NN:
                     self._goal_estimate_update()
                     self._goal_value_update() 
 
-                self._option_value_behaviour_combined_update()
+                self._option_value_behaviour_combined_update() # until here different than in GSP_NN
     
         # Logging
         self.cumulative_reward += r

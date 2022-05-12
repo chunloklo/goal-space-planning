@@ -9,6 +9,7 @@ from src.agents.DynaOptions_NN import DynaOptions_NN
 from src.agents.GSP_Tab import GSP_Tab
 from src.agents.Dyna_NN import Dyna_NN
 from src.agents.Dreamer import Dreamer
+from src.agents.DynO_FromGSP_NN import DynO_FromGSP_NN
 
 def getAgent(name):
     if name == 'DynaOptions_Tab':
@@ -31,5 +32,7 @@ def getAgent(name):
         return GSP_NN
     elif name == 'Dreamer':
         return Dreamer
+    elif name == 'DynO_FromGSP_NN':
+        return DynO_FromGSP_NN
     else:
         raise NotImplementedError()
