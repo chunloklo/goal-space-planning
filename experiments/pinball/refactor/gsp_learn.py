@@ -73,12 +73,12 @@ def get_configuration_list():
         # Pretrain goal values:
         # 'pretrain_goal_values': [True],
         # 'save_pretrain_goal_values': ['oracle_goal_values'],
-        'load_pretrain_goal_values': ['suboptimal_goal_values'],
+        'load_pretrain_goal_values': ['pinball_refactor_eps'],
         'use_pretrained_goal_values_optimization': [True],
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'load_model_name': ['suboptimal_gsp_model_explore'],
+        'load_model_name': ['pinball_refactor_eps'],
         'goal_learner_step_size': [1e-3],
         'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],

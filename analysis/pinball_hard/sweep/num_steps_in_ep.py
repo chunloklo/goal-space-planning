@@ -176,20 +176,13 @@ if __name__ == "__main__":
     ax.set_xlabel('number of steps x100')
     ax.set_ylabel('reward rate')
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/baseline.py')
+    param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/gsp_learn.py')
 
     groups = group_configs(param_list, ignore_keys=['seed'])
 
     filtered_groups = []
     perfs = []
     for group in groups:
-        # if group[0]['use_exploration_bonus'] == False:
-        #     plot_reward_rate_group(ax, group[1])
-
-        # if group[0]['OCI_update_interval'] == 2 and  group[0]['use_exploration_bonus'] == True and group[0]['polyak_stepsize'] == 0.05:
-        #     plot_reward_rate_group(ax, group[1])
-        # if group[0]['oci_beta'] == 0.25:
-        # print(group[0]['oci_beta'])
 
         beta = group[0]['oci_beta']
         step_size = group[0]['step_size']

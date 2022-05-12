@@ -15,22 +15,22 @@ def get_configuration_list():
         
         #Environment/Experiment
         "problem": ["PinballHardProblem"],
-        'pinball_configuration_file': ['src/environments/data/pinball/pinball_hard_single_modified.cfg.txt'],
+        'pinball_configuration_file': ['src/environments/data/pinball/pinball_hard_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
-        'max_steps': [300000],
+        'max_steps': [0],
         'exploration_phase': [0],
         'gamma': [0.99],
-        'render': [True],
+        'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate',)],
-        'step_logging_interval': [500],
+        'log_keys': [('reward_rate', 'goal_q_map', 'goal_r_map', 'goal_gamma_map', 'reward_loss', 'policy_loss', 'num_steps_in_ep')],
+        'step_logging_interval': [100],
 
         # Seed
-        "seed": [2093482],
+        "seed": [100000],
         
-         # Agent
+        # Agent
         "agent": ["GSP_NN"],
         
         # Behaviour agent specific configs
@@ -43,46 +43,51 @@ def get_configuration_list():
         'epsilon': [0.1],
         'min_buffer_size_before_update': [1000],
 
-        # Sanity Check Steps
-        # 'load_behaviour_as_goal_values': ['pinballhard_baseline'],
-        # 'behaviour_goal_value_mode': ['only_values'],
-
-        # Arch flag
+        # Arch flag:
         'behaviour_arch_flag': ['pinball_hard'],
         'model_arch_flag': ['pinball_hard'],
 
         # Goal Estimate Configs
-        'goal_estimate_batch_size': [256],
-        'goal_estimate_update_interval': [256],
+        'goal_estimate_batch_size': [32],
+        'goal_estimate_update_interval': [32],
         'goal_estimate_step_size': [0.005],
 
         # Goal space planning configs
         'use_goal_values': [True],
-        'goal_value_init_gamma_threshold': [0.0],
+        'goal_value_init_gamma_threshold': [0.6],
 
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [0.1],
+        'oci_beta': [0.5],
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],
 
+        # Sanity Check Steps
+        # 'load_behaviour_as_goal_values': ['q_learn_terminal'],
+        # 'behaviour_goal_value_mode': ['only_values'],
+
         # Exploration
         'use_exploration_bonus': [False],
+        # 'exploration_bonus_amount': [5000.0],   
 
         # Pretrain goal values:
-        # 'use_pretrained_goal_values': [True],
-        'load_pretrain_goal_values': ['pinball_hard_refactor'],
+        # 'pretrain_goal_values': [True],
+        'save_pretrain_goal_values': ['pinball_hard_ddqn_value_policy_8_goals'],
+        # 'load_pretrain_goal_values': ['oracle_goal_values'],
         'use_pretrained_goal_values_optimization': [True],
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'load_model_name': ['pinball_hard_refactor'],
-        'goal_learner_step_size': [5e-4],
-        'goal_learner_batch_num': [1],
+        'load_model_name': ['pinball_hard_ddqn_value_policy_8_goals'],
+        'learn_model_mode': ['fixed'],
+        'goal_learner_step_size': [1e-4],
+        'goal_learner_batch_num': [2],
         'goal_learner_batch_size': [16],
         'goal_min_buffer_size_before_update': [10000],
-        'learn_model_mode': ['fixed'],
+
+        # 'save_behaviour_name': ['q_learn_only_values'],
+        # 'learn_select_goal_models': [(15,)]
     }
 
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)

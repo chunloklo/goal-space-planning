@@ -267,7 +267,7 @@ class PinballModel:
             :type configuration: str
     """
 
-    def __init__(self, configuration, use_config_termination: bool = True):
+    def __init__(self, configuration, use_config_termination: bool = True, step_penalty_rewards: bool = False):
         """ead a configuration file for Pinball and draw the domain to screen
 
         Args:
@@ -282,6 +282,12 @@ class PinballModel:
         # such that the wrapper can implement its own termination. 
         # TODO test self.use_config_termination = True
         self.use_config_termination = use_config_termination
+
+        if step_penalty_rewards:
+            self.END_EPISODE = 0
+            self.STEP_PENALTY = -1
+            self.THRUST_PENALTY = -1
+
         random.seed()
 
         # Set up the environment according to the configuration
@@ -387,7 +393,7 @@ class PinballModel:
             self.ball.position[1] = 0.05
 
 class PinballEnvironment(BaseEnvironment):
-    def __init__(self, configuration_file, goals: PinballGoals, render=False, explore_env=False, continuing=True, terminal_goal_index = 3):
+    def __init__(self, configuration_file, goals: PinballGoals, render=False, explore_env=False, continuing=True, terminal_goal_index = 3, step_penalty_rewards=False):
         self.configuration_file = configuration_file
         self.pinball = None
         self.render = render
@@ -409,7 +415,7 @@ class PinballEnvironment(BaseEnvironment):
             # Fixing height to be 800
             self.screen = pygame.display.set_mode([800, 800])
 
-        self.pinball = PinballModel(self.configuration_file, use_config_termination=False)
+        self.pinball = PinballModel(self.configuration_file, use_config_termination=False, step_penalty_rewards=step_penalty_rewards)
 
         self.terminal_goal_index = terminal_goal_index # Defaults to 3 (the terminal goal for the original)
 

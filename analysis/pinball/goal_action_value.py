@@ -1,4 +1,6 @@
+from functools import partial
 import os
+import pickle
 import sys
 sys.path.append(os.getcwd())
 
@@ -33,15 +35,16 @@ from src.utils import run_utils
 from analysis.common import load_data
 import matplotlib
 from datetime import datetime
-from src.problems.PinballProblem import PinballOracleProblem, PinballProblem
+from src.problems.PinballProblem import PinballHardProblem, PinballOracleProblem, PinballProblem
 from src.problems.registry import getProblem
+
+from src.utils.log_utils import get_last_pinball_action_value_map
 
 from src.experiment import ExperimentModel
 
 
 ROWS = 40
 COLUMNS = ROWS
-NUM_GOALS = 4
 
 def generatePlots(param, data, key):
     time_str = datetime.now().strftime("%m-%d-%Y--%H-%M-%S")
@@ -77,7 +80,7 @@ def generatePlots(param, data, key):
     save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
 
     
-    for g in tqdm(range(NUM_GOALS)):
+    for g in tqdm(range(num_goals)):
         # print("backend", plt.rcParams["backend"])
         # For now, we can't use the default MacOSX backend since it will give me terrible corruptions
         # matplotlib.use("TkAgg")
@@ -124,14 +127,54 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/oracle_gsp_goal_model_learn.py'
+    parameter_path = 'experiments/pinball/refactor/goal_model_learn.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
-    key = 'goal_gamma_map'
-    data = load_data(config, key)
-    data = np.squeeze(data)
 
+    model_name = config['save_model_name']
+    goal_learners = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
+
+    print(model_name)
+    print(f'num goal learners: {len(goal_learners)}')
+
+
+    # sdfsd
+    exp_params = {
+        'agent': config['agent'],
+        'problem': config['problem'],
+        'max_steps': 0,
+        'episodes': 0,
+        'metaParameters': config
+    }
+
+
+    exp = ExperimentModel.load_from_params(exp_params)
+    problem = getProblem(config['problem'])(exp, 0, 0)
+    print(problem.goals.num_goals)
+
+    def get_goal_outputs(s, g):
+            action_value, reward, gamma = goal_learners[g].get_goal_outputs(s)
+            return np.vstack([action_value, reward, gamma])
+
+    RESOLUTION = ROWS
+    last_goal_q_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
+    last_reward_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
+    last_gamma_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
+    
+    for g in range(problem.goals.num_goals):
+        goal_action_value = get_last_pinball_action_value_map(3, partial(get_goal_outputs, g=g), resolution=RESOLUTION)
+        last_goal_q_map[g] = goal_action_value[0]
+        last_reward_map[g] = goal_action_value[1]
+        last_gamma_map[g] = goal_action_value[2]
+
+    all_data = {
+        'goal_r_map': last_reward_map,
+        'goal_gamma_map': last_gamma_map,
+    }
+
+    key  = 'goal_r_map'
+    data = all_data[key]
     print(f'data_shape: {data.shape}')
     # sdfsd
     generatePlots(config, data, key)

@@ -13,10 +13,10 @@ class PinballProblem(BaseProblem):
         super().__init__(exp, idx, seed)
         self._init_with_goals(PinballGoals())
 
-    def _init_with_goals(self, goals: PinballGoals, terminal_goal_index=3):
+    def _init_with_goals(self, goals: PinballGoals, terminal_goal_index=3, step_penalty_rewards: bool = False):
         self.goals = goals
         # [chunlok 2022-04-15] TODO There's a lot of duplicated code here for essentially just replacing the goals. Perhaps there's a better way to do this?
-        self.env = PinballEnvironment(self.params['pinball_configuration_file'], self.goals, self.params['render'], self.params['explore_env'], continuing=True, terminal_goal_index=terminal_goal_index)
+        self.env = PinballEnvironment(self.params['pinball_configuration_file'], self.goals, self.params['render'], self.params['explore_env'], continuing=True, terminal_goal_index=terminal_goal_index, step_penalty_rewards=step_penalty_rewards)
         self.actions = 5
         self.gamma = self.params['gamma']
         self.terminal_goal_index = terminal_goal_index
@@ -40,6 +40,11 @@ class PinballSuboptimalProblem(PinballProblem):
     def __init__(self, exp, idx, seed: int):
         super().__init__(exp, idx, seed)
         self._init_with_goals(PinballSuboptimalGoals(), terminal_goal_index=0)
+
+class PinballSuboptimalPenaltyProblem(PinballProblem):
+    def __init__(self, exp, idx, seed: int):
+        super().__init__(exp, idx, seed)
+        self._init_with_goals(PinballSuboptimalGoals(), terminal_goal_index=0, step_penalty_rewards=True)
 
 class PinballHardProblem(PinballProblem):
     def __init__(self, exp, idx, seed: int):

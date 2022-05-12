@@ -122,7 +122,7 @@ def run(param: dict, aux_config={}):
         if exp.episodes > 0:
             episode_iter = range(exp.episodes)
             if show_progress:
-                episode_iter = tqdm.tqdm(episode_iter)
+                episode_iter = tqdm.tqdm(episode_iter, ncols=0)
             for episode in episode_iter:
                 glue.total_reward = 0
                 glue.runEpisode(max_steps)

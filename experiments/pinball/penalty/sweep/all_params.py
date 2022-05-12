@@ -9,10 +9,10 @@ from src.utils.run_utils import experiment_completed
 
 # get_configuration_list function is required for 
 def get_configuration_list():
-    root = 'experiments/pinball_hard/sweep/'
+    root = 'experiments/pinball/penalty/sweep/'
     files = [
         # 'baseline.py'
-        'gsp_learn_beta_ddqn_value_model.py',
+        'baseline.py',
     ]
     
     parameter_list = [param  for file in files for param in get_configuration_list_from_file_path(root + file)]

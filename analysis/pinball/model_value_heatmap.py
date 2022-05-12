@@ -34,6 +34,7 @@ from analysis.common import load_data
 import matplotlib
 from datetime import datetime
 from src.problems.PinballProblem import PinballOracleProblem, PinballProblem
+from src.problems.registry import getProblem
 
 from src.utils.log_utils import get_last_pinball_action_value_map
 
@@ -112,22 +113,21 @@ def generatePlots(data):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/oracle_gsp_goal_model_learn.py'
+    parameter_path = 'experiments/pinball/refactor/goal_model_learn.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
 
-    model_name = 'oracle_gsp_model_explore_4'
+    model_name = 'pinball_refactor_eps'
     goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
     behaviour_goal_value = 'q_learn'
     agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value}_agent.pkl', 'rb'))
     behaviour_goal_value = agent.behaviour_learner
 
-    goal_value_name = 'oracle_goal_values'
+    goal_value_name = 'pinball_refactor_eps'
     goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
     goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_value_learner.pkl', 'rb'))
-           
 
     exp_params = {
         'agent': config['agent'],
@@ -137,9 +137,8 @@ if __name__ == "__main__":
         'metaParameters': config
     }
 
-
     exp = ExperimentModel.load_from_params(exp_params)
-    problem = PinballOracleProblem(exp, 0, 0)
+    problem = getProblem(config['problem'])(exp, 0, 0)
 
     def _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation_func):
         batch_size = xs.shape[0]

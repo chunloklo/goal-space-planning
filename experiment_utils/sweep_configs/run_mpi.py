@@ -12,6 +12,7 @@ import numpy as np
 import sys
 from tqdm import tqdm
 import gc
+import datetime
 
 from common import get_configuration_list_from_file_path, get_run_function_from_file_path, add_common_args, get_aux_config_from_file_path, run_with_optional_aux_config
 
@@ -50,6 +51,7 @@ if rank == 0:
     print(f'Run path: {run_path}')
     print(f'Configuration path: {configuration_path}')
     print(f'Auxiliary config path: {aux_config_path}')
+    print(f'Start time: {datetime.date.today()} {datetime.datetime.now().strftime("%H:%M:%S")}')
 else:
     configuration_list = None
 configuration_list = comm.bcast(configuration_list, root=0)
@@ -116,5 +118,10 @@ while result <= max_param_index:
     gc.collect()
 
 win.Free()
+if rank == 0:
+    pbar.close()
+    print(f'End time: {datetime.date.today()} {datetime.datetime.now().strftime("%H:%M:%S")}')
+
+MPI.Finalize()
 sys.exit(0)
 

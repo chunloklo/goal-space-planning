@@ -10,11 +10,12 @@ import copy
 from src.utils import globals
 
 class GoalLearner_DQN_NN():
-    def __init__(self, state_shape, num_actions: int, step_size: float, epsilon: float, polyak_stepsize, adam_eps, arch_flag: str):
+    def __init__(self, state_shape, num_actions: int, step_size: float, epsilon: float, polyak_stepsize, adam_eps, arch_flag: str, use_reward_for_policy: bool = False, double_dqn: bool = False):
         self.num_actions: int = num_actions
         self.epsilon = epsilon
         self.adam_eps = adam_eps
-
+        self.use_reward_for_policy = use_reward_for_policy
+        self.double_dqn = double_dqn
 
         assert arch_flag in [
             'pinball_simple',
@@ -102,27 +103,27 @@ class GoalLearner_DQN_NN():
             gamma_pred = _take_action_index(gamma_pred, a)
             
             xp_policy_pred, xp_reward_pred, xp_gamma_pred = jax.lax.stop_gradient(self.f_get_goal_output(target_params, xp))
+            
+            if self.double_dqn:
+                xp_policy_pred, _ , _ = jax.lax.stop_gradient(self.f_get_goal_output(params, xp))
             xp_ap = jnp.argmax(xp_policy_pred, axis=1)
 
-            # ESarsa version rather than Q version
-            # policy = jax.nn.one_hot(xp_ap, self.num_actions) * (1 - self.epsilon) + (self.epsilon / self.num_actions)
-            # policy_target = goal_policy_cumulant + goal_discount * jnp.average(xp_policy_pred, axis=1, weights=policy)
-            # reward_target = r + goal_discount * jnp.average(xp_reward_pred, axis=1, weights=policy)
-
-            policy_target = goal_policy_cumulant + goal_discount * _take_action_index(xp_policy_pred, xp_ap)
+            gamma_target = goal_policy_cumulant + goal_discount * _take_action_index(xp_gamma_pred, xp_ap)
             reward_target = r + goal_discount * _take_action_index(xp_reward_pred, xp_ap)
 
-            policy_loss = jnp.mean(jnp.square(policy_target - policy_pred))
+            gamma_loss = jnp.mean(jnp.square(gamma_target - gamma_pred))
             reward_loss = jnp.mean(jnp.square(reward_target - reward_pred))
 
-            # return policy_loss, (jax.lax.stop_gradient(policy_loss), jax.lax.stop_gradient(reward_loss))
-
-            return policy_loss + reward_loss, (jax.lax.stop_gradient(policy_loss), jax.lax.stop_gradient(reward_loss))
+            return gamma_loss + reward_loss, (jax.lax.stop_gradient(gamma_loss), jax.lax.stop_gradient(reward_loss))
 
         def _get_goal_output(params: hk.Params, x: Any):
-            policy_output, v_output = self.f_qfunc.apply(params, x)
+            gamma_output, v_output = self.f_qfunc.apply(params, x)
             # Since the problem is shortest path and we're trying to maximize the reward anyways, the signals are essentially identical.
-            gamma_output = policy_output
+            
+            if self.use_reward_for_policy:
+                policy_output = v_output
+            else:
+                policy_output = gamma_output
             return policy_output, v_output, gamma_output
 
         def _update(params: hk.Params, target_params: hk.Params, opt_state, data):

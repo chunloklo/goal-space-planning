@@ -24,7 +24,7 @@ def get_configuration_list():
         'render': [True],
 
         # Logging
-        'log_keys': [('reward_rate',)],
+        'log_keys': [('reward_rate', 'num_steps_in_ep')],
         'step_logging_interval': [500],
 
         # Seed

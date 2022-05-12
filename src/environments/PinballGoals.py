@@ -189,10 +189,12 @@ class PinballHardGoals(PinballGoals):
             # [0.975, 0.36, 0.0, 0.0], # DEBUG GOAL JUST TO SEE WHERE IT IS
             # [0.975, 0.38, 0.0, 0.0], # DEBUG GOAL JUST TO SEE WHERE IT IS
             [0.64, 0.24, 0.0, 0.0],
-            # [0.53, 0.27, 0.0, 0.0], # Removed for simplicity
+            [0.53, 0.27, 0.0, 0.0], # Removed for simplicity. This adds a goal between the left and right side (it's a little hard to learn the middle.)
             [0.31, 0.28, 0.0, 0.0],
             [0.19, 0.58, 0.0, 0.0],
             [0.38, 0.70, 0.0, 0.0],
+            [0.65, 0.465, 0.0, 0.0],  # Adding this goal for testing far places
+            [0.76, 0.64, 0.0, 0.0],  # Adding this goal for testing far places
         ]
 
         for goal in goal_states:

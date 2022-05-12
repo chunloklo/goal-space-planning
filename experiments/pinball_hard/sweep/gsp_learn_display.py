@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_hard_debug"],
+        "db_folder": ["pinball_refactor_test"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -21,14 +21,14 @@ def get_configuration_list():
         'max_steps': [300000],
         'exploration_phase': [0],
         'gamma': [0.99],
-        'render': [True],
+        'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate',)],
-        'step_logging_interval': [500],
+        'log_keys': [('reward_rate', 'num_steps_in_ep')],
+        'step_logging_interval': [100],
 
         # Seed
-        "seed": [2093482],
+        "seed": list(range(2)),
         
          # Agent
         "agent": ["GSP_NN"],
@@ -62,10 +62,8 @@ def get_configuration_list():
 
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [0.1],
-        # 'oci_update_interval': [16],
-        # 'oci_batch_num': [4],
-        # 'oci_batch_size': [32],
+        'oci_beta': [0.1 * 2**x for x in range(-19, 1, 1)],
+        # 'oci_beta': [0.1 * 2**x for x in [-15, -11, -7, 0]] + [0.2],
 
         # Exploration
         'use_exploration_bonus': [False],

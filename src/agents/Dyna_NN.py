@@ -49,13 +49,14 @@ class Dyna_NN:
         self.epsilon = param_utils.parse_param(params, 'step_size', lambda p : isinstance(p, float) and p >= 0)
         self.batch_num = param_utils.parse_param(params, 'batch_num', lambda p : isinstance(p, int) and p > 0, optional=True, default=1)
         self.behaviour_alg = param_utils.parse_param(params, 'behaviour_alg', lambda p : p in ['DQN', 'QRC'])
+        self.arch_flag = param_utils.parse_param(params, 'arch_flag')
 
         if self.behaviour_alg == 'QRC':
             self.beta = param_utils.parse_param(params, 'beta', lambda p : isinstance(p, float), optional=True, default=1.0)
             self.behaviour_learner = EQRC_NN((4,), self.num_actions, self.step_size, self.epsilon, beta=self.beta)
         elif self.behaviour_alg == 'DQN':
             self.polyak_stepsize = param_utils.parse_param(params, 'polyak_stepsize', lambda p : isinstance(p, float) and p >= 0)
-            self.behaviour_learner = QLearner_NN((4,), 5, self.step_size, self.polyak_stepsize, 0.0)
+            self.behaviour_learner = QLearner_NN((4,), 5, self.step_size, self.polyak_stepsize, 0.0, self.arch_flag)
         
         self.goals = problem.goals
         self.num_goals = self.goals.num_goals
@@ -77,7 +78,7 @@ class Dyna_NN:
 
         self.cumulative_reward = 0
         self.num_term = 0
-
+        self.num_updates = 0
     def FA(self):
         return "Neural Network"
 
@@ -110,6 +111,7 @@ class Dyna_NN:
             self.behaviour_learner.update(data)
 
     def update(self, s: Any, a, sp: Any, r, gamma, info, terminal: bool = False):
+        self.num_updates += 1
 
         if info is not None and info.get('terminal', False):
             gamma = 0
@@ -117,7 +119,7 @@ class Dyna_NN:
         self.buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma})
         self.num_steps_in_ep += 1
         
-        if r == 10000:
+        if gamma == 0:
             self.num_term += 1
             if globals.aux_config.get('show_progress'):
                 print(f'terminated! term_number: {self.num_term} {self.num_steps_in_ep}')
@@ -129,7 +131,10 @@ class Dyna_NN:
         # # Logging
         self.cumulative_reward += r
         def log():
-            globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
+            if self.num_updates == 1:
+                globals.collector.collect('reward_rate', np.copy(self.cumulative_reward))
+            else:
+                globals.collector.collect('reward_rate', np.copy(self.cumulative_reward) / globals.blackboard['step_logging_interval'])
             self.cumulative_reward = 0
         run_if_should_log(log)
 

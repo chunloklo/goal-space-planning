@@ -127,12 +127,13 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball_hard/goal_model_learn_debug.py'
+    parameter_path = 'experiments/pinball_hard/refactor/goal_model_learn_ddqn_value_policy_add_debug.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
 
     model_name = config['save_model_name']
+    # model_name = 'pinball_hard_ddqn_value_policy_8_goals'
     goal_learners = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
     print(model_name)

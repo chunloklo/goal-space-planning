@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_hard_gsp"],
+        "db_folder": ["pinball_refactor_test"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -24,11 +24,11 @@ def get_configuration_list():
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate',)],
+        'log_keys': [('reward_rate', 'num_steps_in_ep')],
         'step_logging_interval': [100],
 
         # Seed
-        "seed": list(range(4)),
+        "seed": list(range(2)),
         
          # Agent
         "agent": ["GSP_NN"],
@@ -41,6 +41,7 @@ def get_configuration_list():
         'batch_num': [4],
         'batch_size': [16],
         'epsilon': [0.1],
+        'min_buffer_size_before_update': [1000],
 
         # Sanity Check Steps
         # 'load_behaviour_as_goal_values': ['pinballhard_baseline'],
@@ -48,7 +49,7 @@ def get_configuration_list():
 
         # Arch flag
         'behaviour_arch_flag': ['pinball_hard'],
-        'model_arch_flag': ['pinball_hard_experimental'],
+        'model_arch_flag': ['pinball_hard'],
 
         # Goal Estimate Configs
         'goal_estimate_batch_size': [256],
@@ -61,7 +62,7 @@ def get_configuration_list():
 
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        'oci_beta': [0.1 * 2**x for x in range(-19, 1, 4)],
         # 'oci_update_interval': [16],
         # 'oci_batch_num': [4],
         # 'oci_batch_size': [32],
@@ -71,16 +72,16 @@ def get_configuration_list():
 
         # Pretrain goal values:
         # 'use_pretrained_goal_values': [True],
-        'load_pretrain_goal_values': ['pinball_hard_debug_all'],
+        'load_pretrain_goal_values': ['pinball_hard_refactor'],
         'use_pretrained_goal_values_optimization': [True],
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'load_model_name': ['pinball_hard_debug_all'],
+        'load_model_name': ['pinball_hard_refactor'],
         'goal_learner_step_size': [5e-4],
         'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],
-
+        'goal_min_buffer_size_before_update': [10000],
         'learn_model_mode': ['fixed'],
     }
 

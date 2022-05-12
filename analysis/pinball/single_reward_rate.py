@@ -137,12 +137,19 @@ if __name__ == "__main__":
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_pretrain_learn.py')
-    # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_prefill_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/subopti/mal_prefill_learn.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_prefill_debug.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn_0.1.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn_0.1_online.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn_use_baseline.py')
+
+    # Penalty env
+    plot_single_reward_rate(ax, 'experiments/pinball/penalty/dqn.py')
 
     # For hard pinball
-    plot_single_reward_rate(ax, 'experiments/pinball_hard/baseline.py')
-    plot_single_reward_rate(ax, 'experiments/pinball_hard/oracle_gsp_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball_hard/baseline.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball_hard/oracle_gsp_learn.py')
 
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test_only_values.py')
     
