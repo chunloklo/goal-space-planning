@@ -33,9 +33,8 @@ from src.utils import run_utils
 from analysis.common import load_data
 import matplotlib
 from datetime import datetime
-from src.problems.PinballProblem import PinballOracleProblem, PinballProblem
+from src.problems.PinballProblem import PinballHardProblem, PinballOracleProblem, PinballProblem, PinballSuboptimalProblem
 from src.problems.registry import getProblem
-
 from src.utils.log_utils import get_last_pinball_action_value_map
 
 from src.experiment import ExperimentModel
@@ -46,14 +45,14 @@ ROWS = 80
 COLUMNS = ROWS
 NUM_GOALS = 16
 
-def generatePlots(data):
+def generatePlots(data, label):
     # index will always be 0 since there's only 1 parameter there
     idx = 0
 
     fig, axes = plt.subplots(1, figsize=(40, 40))
     # axes = axes.flatten()
 
-    save_file = get_file_name('./plots/', f'model_value_heatmap', 'png', timestamp=True)
+    save_file = get_file_name('./plots/', f'{label}_model_value_heatmap', 'png', timestamp=True)
 
     ax = axes
 
@@ -94,7 +93,7 @@ def generatePlots(data):
                 for a in range(4):
                     # scaled_value = scale_value(state_data[a_map[a]], min_val, max_val, post_process_func=lambda x: x)
 
-                    scaled_value = scale_value(state_data[a_map[a]], min_val, max_val, lambda x: np.sqrt(x))
+                    scaled_value = scale_value(state_data[a_map[a]], min_val, max_val)
 
 
                     # if focus:
@@ -113,22 +112,41 @@ def generatePlots(data):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/refactor/goal_model_learn.py'
+    parameter_path = 'experiments/pinball/refactor/goal_model_learn_long.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
 
-    model_name = 'pinball_refactor_eps'
+    # model_name = 'pinball_hard_debug_all'
+    # goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
+
+    model_name = config['save_model_name']
+    # model_name = 'pinball_hard_ddqn_value_policy_8_goals'
     goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
+
+
+    print(f'num goal learner {len(goal_learner)}')
 
     behaviour_goal_value = 'q_learn'
     agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value}_agent.pkl', 'rb'))
     behaviour_goal_value = agent.behaviour_learner
 
-    goal_value_name = 'pinball_refactor_eps'
+    goal_value_name = 'pinball_refactor_more_learning'
     goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
     goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_value_learner.pkl', 'rb'))
 
+
+    gamma_threshold = 0.1
+
+    # plot_value = 'oracle'
+    plot_value = 'value'
+    # plot_value = 'gamma'
+    # plot_value = 'r'
+    # plot_value = 'error'
+
+    print(goal_value_learner.goal_values)
+
+    # sdfsd
     exp_params = {
         'agent': config['agent'],
         'problem': config['problem'],
@@ -136,6 +154,7 @@ if __name__ == "__main__":
         'episodes': 0,
         'metaParameters': config
     }
+
 
     exp = ExperimentModel.load_from_params(exp_params)
     problem = getProblem(config['problem'])(exp, 0, 0)
@@ -155,20 +174,37 @@ if __name__ == "__main__":
     num_actions = problem.actions
 
     def goal_initiation(xs):
-        init = problem.goals.goal_initiation(xs)
-        # init[1] = False
+        init_func = problem.goals.goal_initiation
+        init = init_func(xs)
+        # init[[0]] = False
+        # init[:] = True
         return init
 
     def get_error(s):
-        batch_size = 1
         xs = np.array([s])
+        if plot_value == 'oracle':
+            oracle_goal_values = _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation)
+
+            # Not plotting walls to see how it corresponds with terrain
+            problem.env.pinball.ball.position = s[:2]
+            colliding = False
+            for obs in problem.env.pinball.obstacles:
+                if obs.collision(problem.env.pinball.ball):
+                    colliding = True
+                    break
+
+            if colliding: oracle_goal_values[:] = np.nan
+            return oracle_goal_values
+
+        batch_size = 1
         num_goals = problem.goals.num_goals
         num_actions = problem.actions
-        goal_states = np.hstack((problem.goals.goals, problem.goals.goal_speeds))
+        # goal_states = np.hstack((problem.goals.goals, problem.goals.goal_speeds))
         # goal_dest_values = np.array(behaviour_goal_value.get_action_values(goal_states))
         # goal_dest_values = np.max(goal_dest_values, axis=1)
 
         goal_dest_values = goal_value_learner.goal_values
+        # goal_dest_values = 0
 
         goal_r = np.empty((batch_size, num_goals, num_actions))
         goal_gammas = np.empty((batch_size, num_goals, num_actions))
@@ -188,19 +224,45 @@ if __name__ == "__main__":
 
         goal_gammas = np.clip(goal_gammas, 0, 1)
         
-        goal_values = goal_r + goal_gammas * goal_dest_values
+        if plot_value == 'value' or plot_value == 'error':
+            goal_values = goal_r + goal_gammas * goal_dest_values
+        elif plot_value == 'gamma':
+            goal_values = goal_gammas
+        elif plot_value == 'r':
+            goal_values = goal_r
 
         # Masking out invalid goals based on the initiation func
         for i in range(batch_size):
             x_goal_init = goal_initiation(xs[i])
             invalid_goals = np.where(x_goal_init == False)[0]
             goal_values[i, invalid_goals] = np.nan
+
+        # goal_values[:, [0, 1, 2, 3, 5]] = np.nan
+
+        goal_values[np.where(goal_gammas < gamma_threshold)] = np.nan
+
+        # Not plotting walls to see how it corresponds with terrain
+        problem.env.pinball.ball.position = s[:2]
+        colliding = False
+        for obs in problem.env.pinball.obstacles:
+            if obs.collision(problem.env.pinball.ball):
+                colliding = True
+                break
+
+        if colliding: goal_values[:] = np.nan
+
         targets = np.nanmax(goal_values, axis=1)
 
-        ##### Mainly checking for errors
-        oracle_goal_values = _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation)
-
-        return targets
+    
+        # return oracle_goal_values
+        if plot_value != 'error':
+            return np.nanmax(targets)
+        else:
+             ##### Mainly checking for errors
+            oracle_goal_values = _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation)
+        # print(targets.shape)
+        # print(oracle_goal_values.shape)
+            return np.square(np.nanmax(targets) - oracle_goal_values)
 
     RESOLUTION = ROWS
     last_goal_q_map = np.zeros((RESOLUTION, RESOLUTION, num_actions))
@@ -209,6 +271,6 @@ if __name__ == "__main__":
     data = last_goal_q_map
     # print(data.shape)
 
-    generatePlots(data)
+    generatePlots(data, plot_value)
 
     exit()

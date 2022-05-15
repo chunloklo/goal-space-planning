@@ -21,7 +21,7 @@ def get_configuration_list():
         'max_steps': [300000],
         'exploration_phase': [0],
         'gamma': [0.99],
-        'render': [False],
+        'render': [True],
 
         # Logging
         'log_keys': [('reward_rate', 'num_steps_in_ep')],
@@ -69,12 +69,12 @@ def get_configuration_list():
 
         # Pretrain goal values:
         # 'use_pretrained_goal_values': [True],
-        'load_pretrain_goal_values': ['pinball_hard_ddqn_value_policy_test'],
+        'load_pretrain_goal_values': ['pinball_hard_ddqn_value_policy_8_goals'],
         'use_pretrained_goal_values_optimization': [True],
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'load_model_name': ['pinball_hard_ddqn_value_policy_test'],
+        'load_model_name': ['pinball_hard_ddqn_value_policy_8_goals'],
         'goal_learner_step_size': [5e-4],
         'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],

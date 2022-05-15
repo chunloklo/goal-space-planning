@@ -19,6 +19,7 @@ class GoalLearner_DQN_NN():
 
         assert arch_flag in [
             'pinball_simple',
+            'pinball_simple_experimental',
             'pinball_hard',
         ]
 
@@ -31,25 +32,45 @@ class GoalLearner_DQN_NN():
             # Initializing jax functions
             def q_function(states):
                 q_mlp = hk.Sequential([
-                    hk.Linear(128), jax.nn.relu,
-                    hk.Linear(128), jax.nn.relu,
-                    hk.Linear(128), jax.nn.relu,
-                    hk.Linear(128), jax.nn.relu,
-                    hk.Linear(64), jax.nn.relu,
-                    hk.Linear(64), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
                     hk.Linear(self.num_actions),
                 ])
 
                 v_mlp = hk.Sequential([
-                    hk.Linear(128), jax.nn.relu,
-                    hk.Linear(128), jax.nn.relu,
-                    hk.Linear(128), jax.nn.relu,
-                    hk.Linear(128), jax.nn.relu,
-                    hk.Linear(64), jax.nn.relu,
-                    hk.Linear(64), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(self.num_actions),
+                ])
+                return q_mlp(states), v_mlp(states)
+        elif arch_flag == 'pinball_simple_experimental':
+            # Initializing jax functions
+            def q_function(states):
+                q_mlp = hk.Sequential([
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
                     hk.Linear(self.num_actions),
                 ])
 
+                v_mlp = hk.Sequential([
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(self.num_actions),
+                ])
                 return q_mlp(states), v_mlp(states)
         elif arch_flag == 'pinball_hard':
             def q_function(states):

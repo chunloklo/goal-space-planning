@@ -74,7 +74,7 @@ def generatePlots(param, data, key):
             init = problem.goals.goal_initiation([x, y, 0, 0])
             initiation_map[:, r, c] = init
 
-    fig, axes = plt.subplots(4, 4, figsize=(90, 90))
+    fig, axes = plt.subplots(3, 3, figsize=(90, 90))
     axes = axes.flatten()
 
     save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
@@ -132,7 +132,8 @@ if __name__ == "__main__":
 
     config = parameter_list[0]
 
-    model_name = config['save_model_name']
+    # model_name = config['save_model_name']
+    model_name = 'pinball_scratch_model'
     goal_learners = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
     print(model_name)

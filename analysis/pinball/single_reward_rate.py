@@ -22,12 +22,13 @@ from  experiment_utils.analysis_common.process_line import get_mean_std, mean_ch
 from analysis.common import get_best_grouped_param, load_data, load_reward_rate, load_max_reward_rate
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
+from experiment_utils.analysis_common.colors import TOL_BRIGHT
 
 STEP_SIZE = 100
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
-def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
+def plot_single_reward_rate(ax, param_file_name: str, label: str=None, color=None):
     if label is None:
         label = Path(param_file_name).stem
 
@@ -38,6 +39,9 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
 
     ############ STANDARD
     data = load_data(parameter_list[index], 'reward_rate')
+
+    if param_file_name == 'experiments/pinball/scratch/scratch_gsp_learn.py':
+        data = data[1000:]
 
     print(data.shape)
     run_data = mean_chunk_data(data, STEP_SIZE, 0)
@@ -50,7 +54,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
     x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
 
     # # print(len(list(x_range)))
-    ax.plot(x_range, run_data, label=label)
+    ax.plot(x_range, run_data, label=label, color=color)
 
     ####### Individual skip probability weights
     # data = load_data(parameter_list[index], 'skip_probability_weights')
@@ -133,19 +137,48 @@ if __name__ == "__main__":
 
 
     # For pinball
-    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_learn.py')
-    # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
+    plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_learn.py', label='ddqn baseline')
     # plot_single_reward_rate(ax, 'experiments/pinball/oracle_q_test.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_pretrain_learn.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/subopti/mal_prefill_learn.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/suboptimal/suboptimal_prefill_debug.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn_long.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn_long_debug.py', label='gsp baseline')
+    plot_single_reward_rate(ax, 'experiments/pinball/scratch/scratch_gsp_learn.py', label = 'gsp online (shifted 100k steps back)')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/scratch_model_gsp_learn_100k.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/scratch_model_gsp_learn_200k.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/scratch_model_gsp_learn_300k.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/scratch_model_gsp_learn_final.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/scratch_model_gsp_learn_init.py')
+
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/scratch_gsp_learn_short.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/short_scratch_model_gsp_learn_10k.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/short_scratch_model_gsp_learn_25k.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/short_scratch_model_gsp_learn_50k.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/short_scratch_model_gsp_learn_75k.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/short_scratch_model_gsp_learn_final.py')
+
+
+    list(TOL_BRIGHT.values())[0]
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_10k.py', label='gsp 10k model', color=list(TOL_BRIGHT.values())[1])
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_25k.py', label='gsp 25k model', color=list(TOL_BRIGHT.values())[1])
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_50k.py', label='gsp 50k model', color=list(TOL_BRIGHT.values())[2])
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_75k.py', label='gsp 75k model', color=list(TOL_BRIGHT.values())[3])
+    plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_100k.py', label='gsp 100k model', color=list(TOL_BRIGHT.values())[4])
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_125k.py', label='gsp 125k model')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_150k.py', label='gsp 150k model')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_175k.py', label='gsp 175k model')
+    # plot_single_reward_rate(ax, 'experiments/pinball/scratch/behaviour/short_scratch_model_gsp_learn_final.py', label='gsp 200k model')
+
+
+
     # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn_0.1.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn_0.1_online.py')
     # plot_single_reward_rate(ax, 'experiments/pinball/refactor/gsp_learn_use_baseline.py')
 
     # Penalty env
-    plot_single_reward_rate(ax, 'experiments/pinball/penalty/dqn.py')
+    # plot_single_reward_rate(ax, 'experiments/pinball/penalty/dqn.py')
 
     # For hard pinball
     # plot_single_reward_rate(ax, 'experiments/pinball_hard/baseline.py')

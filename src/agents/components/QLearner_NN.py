@@ -19,6 +19,7 @@ class QLearner_NN():
 
         assert arch_flag in [
             'pinball_simple',
+            'pinball_simple_experimental',
             'pinball_hard'
         ]
 
@@ -33,6 +34,15 @@ class QLearner_NN():
                     hk.Linear(128), jax.nn.relu,
                     hk.Linear(64), jax.nn.relu,
                     hk.Linear(64), jax.nn.relu,
+                    hk.Linear(self.num_actions + self.num_options),
+                ])
+                return mlp(states) 
+        elif arch_flag == 'pinball_simple_experimental':
+            def q_function(states):
+                mlp = hk.Sequential([
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(128, w_init = init, b_init = b_init), jax.nn.relu,
+                    hk.Linear(64, w_init = init, b_init = b_init), jax.nn.relu,
                     hk.Linear(self.num_actions + self.num_options),
                 ])
                 return mlp(states) 

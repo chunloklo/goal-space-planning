@@ -36,7 +36,7 @@ def get_configuration_list():
         'batch_size':[16],
         'polyak_stepsize': [0.05],
         'step_size': [1e-3],
-        'arch_flag': ['pinball_simple'],
+        'arch_flag': ['pinball_simple_experimental'],
 
     }
 

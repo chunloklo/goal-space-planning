@@ -1,3 +1,4 @@
+from functools import partial
 import os
 import sys
 sys.path.append(os.getcwd())
@@ -33,26 +34,26 @@ from src.utils import run_utils
 from analysis.common import load_data
 import matplotlib
 from datetime import datetime
-from src.problems.PinballProblem import PinballOracleProblem, PinballProblem, PinballSuboptimalProblem
-
+from src.problems.PinballProblem import PinballHardProblem, PinballOracleProblem, PinballProblem, PinballSuboptimalProblem
+from src.problems.registry import getProblem
 from src.utils.log_utils import get_last_pinball_action_value_map
 
 from src.experiment import ExperimentModel
 import pickle
 
 
-ROWS = 40
+ROWS = 80
 COLUMNS = ROWS
 NUM_GOALS = 16
 
-def generatePlots(data):
+def generatePlots(data, label):
     # index will always be 0 since there's only 1 parameter there
     idx = 0
 
     fig, axes = plt.subplots(1, figsize=(40, 40))
     # axes = axes.flatten()
 
-    save_file = get_file_name('./plots/', f'model_error_heatmap', 'png', timestamp=True)
+    save_file = get_file_name('./plots/', f'{label}_model_error_heatmap', 'png', timestamp=True)
 
     ax = axes
 
@@ -71,17 +72,19 @@ def generatePlots(data):
     #     max_val = np.max(data[g])
     min_val = np.nanmin(data)
     max_val = np.nanmax(data)
+
+    # min_val = 0
+    # max_val = 0.3
     
     # min_val = -50
     # max_val = 0
-    print(min_val, max_val)
+    # print(min_val, max_val)
     # print(initiation_map[g].shape)
     
     for r in range(ROWS):
         for c in range(COLUMNS):
             try:
                 state_data = data[r, c]
-                # print(state_data.shape)
 
                 a_map = {
                     0: 1,
@@ -111,24 +114,21 @@ def generatePlots(data):
     plt.savefig(save_file)
     plt.close()
 
+
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/oracle_gsp_goal_model_learn.py'
+    parameter_path = 'experiments/pinball/refactor/goal_model_learn_long.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
+    # Modifying configs
+    config['explore_env'] = False
 
-    model_name = 'suboptimal_gsp_model_explore'
+    model_name = config['save_model_name']
+    # model_name = 'pinball_refactor_eps'
+    print(f'model name: {model_name}')
     goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
-    behaviour_goal_value = 'q_learn'
-    agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value}_agent.pkl', 'rb'))
-    behaviour_goal_value = agent.behaviour_learner
-
-    # goal_value_name = 'oracle_goal_values'
-    # goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
-    # goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_value_learner.pkl', 'rb'))
-           
-
+    # sdfsd
     exp_params = {
         'agent': config['agent'],
         'problem': config['problem'],
@@ -137,79 +137,98 @@ if __name__ == "__main__":
         'metaParameters': config
     }
 
+    num_actions = 5
 
     exp = ExperimentModel.load_from_params(exp_params)
-    problem = PinballSuboptimalProblem(exp, 0, 0)
+    problem = getProblem(config['problem'])(exp, 0, 0)
+    gamma = config['gamma']
 
-    def _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation_func):
-        batch_size = xs.shape[0]
-        targets = np.array(behaviour_goal_value.get_action_values(xs))
+    env = problem.env
+    env.start()
 
-        # Masking out invalid goals based on the initiation func
-        for i in range(batch_size):
-            x_goal_init = goal_initiation_func(xs[i])
-            if np.all(~x_goal_init):
-                targets[i] = np.nan
+    init_func = problem.goals.goal_initiation
+    term_func = problem.goals.goal_termination
 
-        return np.max(targets, axis=1)
+    def get_error(s, g):
+        if not init_func(s)[g]:
+            return np.nan
 
-    num_actions = problem.actions
+        # xs = np.array([s])
+        goal_policy , goal_r, goal_gammas = goal_learner[g].get_goal_outputs(np.array([s]))
 
-    def goal_initiation(xs):
-        init = problem.goals.goal_initiation(xs)
-        # init[0] = False
-        return init
+        goal_action = np.argmax(goal_policy)
 
-    def get_error(s):
-        batch_size = 1
-        xs = np.array([s])
-        num_goals = problem.goals.num_goals
-        num_actions = problem.actions
-        goal_states = np.hstack((problem.goals.goals, problem.goals.goal_speeds))
-        goal_dest_values = np.array(behaviour_goal_value.get_action_values(goal_states))
-        goal_dest_values = np.max(goal_dest_values, axis=1)
 
-        # goal_dest_values = goal_value_learner.goal_values
+        r_s = goal_r[0][goal_action]
+        gamma_s = goal_gammas[0][goal_action]
 
-        goal_r = np.empty((batch_size, num_goals, num_actions))
-        goal_gammas = np.empty((batch_size, num_goals, num_actions))
-        # The goal policy is not used right now
-        goal_policy_q = np.empty((batch_size, num_goals, num_actions)) 
+        return gamma_s
 
-        for g in range(num_goals):
-            goal_policy_q[:, g, :], goal_r[:, g, :], goal_gammas[:, g, :] = goal_learner[g].get_goal_outputs(xs)
-        pass
+        # Rolling out in the env
+        env.pinball.ball.position = np.copy(s[:2])
+        env.pinball.ball.xdot = 0.0
+        env.pinball.ball.ydot = 0.0
 
-        # Getting one-hot policies for the goal policies
-        goal_policies = np.zeros((batch_size, num_goals, num_actions))
-        np.put_along_axis(goal_policies, np.expand_dims(np.argmax(goal_policy_q, axis=2), -1), 1, axis=2)
-
-        goal_r = np.sum(goal_r * goal_policies, axis=2)
-        goal_gammas = np.sum(goal_gammas * goal_policies, axis=2)
-
-        goal_gammas = np.clip(goal_gammas, 0, 1)
+        colliding = False
+        for obs in problem.env.pinball.obstacles:
+            if obs.collision(problem.env.pinball.ball):
+                colliding = True
+                break
         
-        goal_values = goal_r + goal_gammas * goal_dest_values
+        if colliding:
+            return np.nan
 
-        # Masking out invalid goals based on the initiation func
-        for i in range(batch_size):
-            x_goal_init = goal_initiation(xs[i])
-            invalid_goals = np.where(x_goal_init == False)[0]
-            goal_values[i, invalid_goals] = np.nan
-        targets = np.nanmax(goal_values, axis=1)
+        # Starting
+        roll_s = env.pinball.get_state()
+        # print(roll_s)
+        discount = 1
+        discounted_reward = 0
 
-        ##### Mainly checking for errors
-        oracle_goal_values = _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation)
+        goal_terminated = True
+        for _ in range(60):
+            goal_policy, _, _ = goal_learner[g].get_goal_outputs(np.array([roll_s]))
+            roll_a = int(np.argmax(goal_policy))
+            # print(roll_a)
+            # print(f'{goal_policy} {roll_a}')
 
-        return np.nanmean(np.square(oracle_goal_values - targets))
 
-    RESOLUTION = 40
+            (reward, next_state, termination), info = env.step(roll_a)
+            discounted_reward += discount * reward
+            discount *= gamma
+
+            # If you go outside the area, then its nan
+            # print(next_state)
+            next_state = np.array(next_state)
+
+            if term_func(roll_s, roll_a, next_state)[g]:
+                # goal_terminated = True
+                break
+
+            if not init_func(next_state)[g]:
+                return np.nan
+
+            roll_s = next_state
+
+        if not goal_terminated:
+            # print('did not terminate from rollout')
+            return np.nan
+        # print(f's:{s}')
+        # print(f'gamma: {gamma_s} discount {discount}, error {np.square(gamma_s - discount)}')
+
+        return np.abs(gamma_s - discount)
+
+    RESOLUTION = ROWS
     last_goal_q_map = np.zeros((RESOLUTION, RESOLUTION, num_actions))
-    goal_action_value = get_last_pinball_action_value_map(1, get_error, resolution=RESOLUTION)
+    g = 0
+    goal_action_value = get_last_pinball_action_value_map(1, partial(get_error, g=g), resolution=RESOLUTION, show_progress=True)
     last_goal_q_map = goal_action_value[0]
     data = last_goal_q_map
-    # print(data.shape)
 
-    generatePlots(data)
+    # print(data.shape)
+    # print(data[10, 30, :])
+    # sdfsd
+
+    print('Data generated')
+    generatePlots(data, g)
 
     exit()

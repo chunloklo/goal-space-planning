@@ -63,7 +63,7 @@ class GSP_NN:
         # Epsilon for epsilon-greedy policy
         self.epsilon = parse_param(params, 'epsilon', lambda p : isinstance(p, float) and p >= 0.0)
 
-        self.behaviour_arch_flag = parse_param(params, 'behaviour_arch_flag', lambda p: p in ['pinball_simple', 'pinball_hard'])
+        self.behaviour_arch_flag = parse_param(params, 'behaviour_arch_flag')
         self.model_arch_flag = parse_param(params, 'model_arch_flag')
 
         # Goal learner params
@@ -105,8 +105,9 @@ class GSP_NN:
         self.use_exploration_bonus = parse_param(params, 'use_exploration_bonus', lambda p : isinstance(p, bool), optional=True, default=False)
 
         # Pretrain goal values
-        self.save_pretrain_goal_values = parse_param(params, 'save_pretrain_goal_values', lambda p : isinstance(p, str) or p is None, optional=True, default=None) 
-        self.load_pretrain_goal_values = parse_param(params, 'load_pretrain_goal_values', lambda p : isinstance(p, str) or p is None, optional=True, default=None) 
+        self.pretrain_goal_values = parse_param(params, 'save_goal_values', lambda p : isinstance(p, bool), optional=True, default=False) 
+        self.save_goal_values_name = parse_param(params, 'save_goal_values_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None) 
+        self.load_goal_values_name = parse_param(params, 'load_goal_values_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None) 
         self.use_pretrained_goal_values_optimization = parse_param(params, 'use_pretrained_goal_values_optimization', lambda p : isinstance(p, bool), optional=True, default=False) 
         self.load_behaviour_as_goal_values = parse_param(params, 'load_behaviour_as_goal_values', lambda p : isinstance(p, str) or p is None, optional=True, default=None) 
         self.behaviour_goal_value_mode = parse_param(params, 'behaviour_goal_value_mode', lambda p : p in ['direct', 'only_values'] or p is None, optional=True, default=None) 
@@ -132,6 +133,10 @@ class GSP_NN:
         # Name for the pre-trained model
         self.load_model_name = parse_param(params, 'load_model_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
         self.save_model_name = parse_param(self.params, 'save_model_name', lambda p: isinstance(p, str) or p is None, optional=True, default=None)
+        self.save_interim_model = parse_param(self.params, 'save_interim_model', lambda p: isinstance(p, bool), optional=True, default=False)
+        self.save_interim_behaviour = parse_param(self.params, 'save_interim_behaviour', lambda p: isinstance(p, bool), optional=True, default=False)
+        
+
 
         # Name for the pre-filled buffer
         self.prefill_goal_buffer = parse_param(params, 'prefill_buffer_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
@@ -162,6 +167,10 @@ class GSP_NN:
             self.polyak_stepsize = parse_param(params, 'polyak_stepsize', lambda p : isinstance(p, float) and p >= 0)
             self.behaviour_learner = QLearner_NN((4,), 5, self.step_size, self.polyak_stepsize, self.oci_beta, self.behaviour_arch_flag)
         
+        # Defaults to polyak stepsize
+        self.goal_learner_polyak_stepsize = parse_param(params, 'goal_learner_polyak_stepsize', lambda p : isinstance(p, float) and p >= 0.0, optional=True, default=self.polyak_stepsize) 
+
+
         if self.use_pretrained_goal_values_optimization:
 
             if self.use_goal_values:
@@ -223,7 +232,7 @@ class GSP_NN:
         self.save_buffer_name = parse_param(params, 'save_buffer_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
         self.load_buffer_name = parse_param(params, 'load_buffer_name', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
         
-        if self.load_buffer_name is not None:
+        if self.load_buffer_name is not None or self.load_behaviour_name is not None:
             self.preprocess_buffer = parse_param(params, 'preprocess_buffer', lambda p : isinstance(p, bool))
 
         self.goal_estimate_learner = GoalEstimates(self.num_goals, self.problem.terminal_goal_index)
@@ -243,6 +252,8 @@ class GSP_NN:
             agent = pickle.load(open(f'src/environments/data/pinball/{self.load_behaviour_name}_agent.pkl', 'rb'))
             self.behaviour_learner = agent.behaviour_learner
             # self.buffer = agent.buffer
+
+            print('LOADED BEHAVIOUR')
             # self.goal_learners = agent.goal_learners
             # self.goal_estimate_learner = agent.goal_estimate_learner
             # self.goal_buffers = agent.goal_buffers
@@ -253,11 +264,13 @@ class GSP_NN:
             self.goal_learners = pickle.load(open(f'./src/environments/data/pinball/{self.load_model_name}_goal_learner.pkl', 'rb'))
             self.goal_buffers = pickle.load(open(f'./src/environments/data/pinball/{self.load_model_name}_goal_buffer.pkl', 'rb'))
             self.goal_estimate_buffer = pickle.load(open(f'./src/environments/data/pinball/{self.load_model_name}_goal_estimate_buffer.pkl', 'rb'))
-            print_str = 'Num in goal buffers: '
-            for g in range(self.num_goals):
-                print_str += f'{self.goal_buffers[g].num_in_buffer}, '
-            print(print_str)
-            print(f'Num in goal estimate buffer: {self.goal_estimate_buffer.num_in_buffer}')
+            
+            if globals.aux_config.get('show_progress', False):
+                print_str = 'Num in goal buffers: '
+                for g in range(self.num_goals):
+                    print_str += f'{self.goal_buffers[g].num_in_buffer}, '
+                print(print_str)
+                print(f'Num in goal estimate buffer: {self.goal_estimate_buffer.num_in_buffer}')
 
         self.prefill_goal_buffer = parse_param(params, 'use_prefill_goal_buffer', lambda p : isinstance(p, str) or p is None, optional=True, default=None)
         if self.prefill_goal_buffer is not None:
@@ -269,12 +282,14 @@ class GSP_NN:
                 #     possible.append(True)
                 # else:
                 #     possible.append(False)
-            print(f'Size of each goal buffer: {possible}')
+            if globals.aux_config.get('show_progress', False):
+                print(f'Size of each goal buffer: {possible}')
         
-        if self.load_pretrain_goal_values is not None:
-            self.goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{self.load_pretrain_goal_values}_pretrain_goal_estimate_learner.pkl', 'rb'))
-            self.goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{self.load_pretrain_goal_values}_pretrain_goal_value_learner.pkl', 'rb'))
-            print(f'pretrained goal values: {self.goal_value_learner.goal_values}')
+        if self.load_goal_values_name is not None:
+            self.goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{self.load_goal_values_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
+            self.goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{self.load_goal_values_name}_pretrain_goal_value_learner.pkl', 'rb'))
+            if globals.aux_config.get('show_progress', False):
+                print(f'pretrained goal values: {self.goal_value_learner.goal_values}')
 
             # if not self.use_goal_values:
             #     # self.goal_estimate_learner.goal_baseline[:] = 0
@@ -289,12 +304,18 @@ class GSP_NN:
             if not self.preprocess_buffer:
                 self.buffer = pickle.load(open(f'./src/environments/data/pinball/{self.load_buffer_name}_buffer.pkl', 'rb'))
                 self.buffer.random = np.random.RandomState(self.random.randint(1e4))
-                print(f'loaded buffer with size: {self.buffer.num_in_buffer}')
+                if globals.aux_config.get('show_progress', False):
+                    print(f'loaded buffer with size: {self.buffer.num_in_buffer}')
             else:
-                loaded_buffer = pickle.load(open(f'./src/environments/data/pinball/{self.load_buffer_name}_buffer.pkl', 'rb'))
+                if self.load_buffer_name is None:
+                    agent = pickle.load(open(f'src/environments/data/pinball/{self.load_buffer_name}_agent.pkl', 'rb'))
+                    loaded_buffer = agent.buffer
+                else:
+                    loaded_buffer = pickle.load(open(f'./src/environments/data/pinball/{self.load_buffer_name}_buffer.pkl', 'rb'))
                 assert self.use_goal_values
 
-                print(f'preprocessing {loaded_buffer.num_in_buffer} samples to add to buffer')
+                if globals.aux_config.get('show_progress', False):
+                    print(f'preprocessing {loaded_buffer.num_in_buffer} samples to add to buffer')
 
                 batch_size = loaded_buffer.num_in_buffer
 
@@ -306,11 +327,11 @@ class GSP_NN:
                 _gamma = loaded_buffer.buffer['gamma'][:batch_size]
                 _goal_inits = loaded_buffer.buffer['goal_inits'][:batch_size]
                 _goal_terms = loaded_buffer.buffer['goal_terms'][:batch_size]
-                old_targets = loaded_buffer.buffer['target'][:batch_size]
+                # old_targets = loaded_buffer.buffer['target'][:batch_size]
 
                 _targets = self._get_best_goal_values(_xp)
 
-                print(np.nanmean(np.square(old_targets - _targets)))
+                # print(np.nanmean(np.square(old_targets - _targets)))
 
                 for i in range(batch_size):
                     self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'target': _targets[i]})               
@@ -324,7 +345,7 @@ class GSP_NN:
 
         self.tau = np.full(self.num_goals, 1)
 
-        if self.save_pretrain_goal_values is not None:  
+        if self.pretrain_goal_values:  
             self._pretrain_goal_values()
 
     def FA(self):
@@ -684,7 +705,12 @@ class GSP_NN:
         print(f'r: {self.goal_estimate_learner.r}')
         
         # self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10082.015 # optimal based on oracle q learner
-        self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10000
+        if 'Penalty' in self.params['problem']:
+            print('Penalty Env')
+            terminal_reward = 0
+        else:
+            terminal_reward = 10000
+        self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = terminal_reward
 
         for _ in range(1000):
             self._goal_value_update()
@@ -694,8 +720,8 @@ class GSP_NN:
 
         # sdfsdf
  
-        cloudpickle.dump(self.goal_estimate_learner, open(f'./src/environments/data/pinball/{self.save_pretrain_goal_values}_pretrain_goal_estimate_learner.pkl', 'wb'))
-        cloudpickle.dump(self.goal_value_learner, open(f'./src/environments/data/pinball/{self.save_pretrain_goal_values}_pretrain_goal_value_learner.pkl', 'wb'))
+        cloudpickle.dump(self.goal_estimate_learner, open(f'./src/environments/data/pinball/{self.save_goal_values_name}_pretrain_goal_estimate_learner.pkl', 'wb'))
+        cloudpickle.dump(self.goal_value_learner, open(f'./src/environments/data/pinball/{self.save_goal_values_name}_pretrain_goal_value_learner.pkl', 'wb'))
 
     def _check_goal_value_error(self):
             goal_states = np.hstack((self.goals.goals, self.goals.goal_speeds))
@@ -817,6 +843,17 @@ class GSP_NN:
         self.num_updates += 1
         self.num_steps_in_ep += 1
 
+
+        if self.num_updates in [10000, 25000, 50000, 75000, 100000, 125000, 150000, 175000]:
+            if self.save_interim_model:
+                cloudpickle.dump(self.goal_learners, open(f'./src/environments/data/pinball/{self.save_model_name}_{self.num_updates}_goal_learner.pkl', 'wb'))
+                cloudpickle.dump(self.goal_buffers, open(f'./src/environments/data/pinball/{self.save_model_name}_{self.num_updates}_goal_buffer.pkl', 'wb'))
+                cloudpickle.dump(self.goal_estimate_buffer, open(f'./src/environments/data/pinball/{self.save_model_name}_{self.num_updates}_goal_estimate_buffer.pkl', 'wb'))
+                cloudpickle.dump(self.goal_estimate_learner, open(f'./src/environments/data/pinball/{self.save_goal_values_name}_{self.num_updates}_pretrain_goal_estimate_learner.pkl', 'wb'))
+                cloudpickle.dump(self.goal_value_learner, open(f'./src/environments/data/pinball/{self.save_goal_values_name}_{self.num_updates}_pretrain_goal_value_learner.pkl', 'wb'))
+            if self.save_interim_behaviour:
+                cloudpickle.dump(self, open(f'./src/environments/data/pinball/{self.save_behaviour_name}_{self.num_updates}_agent.pkl', 'wb'))
+
         if info is not None and info.get('terminal', False):
             gamma = 0
 
@@ -826,11 +863,9 @@ class GSP_NN:
         self._log_model_error()
         if gamma == 0:
             self.num_term += 1
-            if globals.aux_config.get('show_progress'):
+            if globals.aux_config.get('show_progress', False):
                 print(f'terminated! num_term: {self.num_term} num_steps: {self.num_steps_in_ep}')
                 print(f'goal_baseline: {self.goal_estimate_learner.goal_baseline}')
-                # print(f'tau: {self.tau}')
-
                 print(f'goal buffer sizes: {[buffer.num_in_buffer for buffer in self.goal_buffers]}')
                 print(f'Num in goal estimate buffer: {self.goal_estimate_buffer.num_in_buffer}')
                 pass
@@ -857,10 +892,10 @@ class GSP_NN:
                 if self.learn_model_mode == 'online' or self.learn_model_mode == 'combined_behaviour':
                     self._state_to_goal_estimate_update()
 
-                if (not self.use_goal_values or self.load_pretrain_goal_values is None) and self.learn_model_mode == 'online':
+                if (not self.use_goal_values or self.load_goal_values_name is None) and self.learn_model_mode == 'online':
                     self._goal_estimate_update()
 
-                if self.load_pretrain_goal_values is None and self.learn_model_mode == 'online':
+                if self.load_goal_values_name is None and self.learn_model_mode == 'online':
                     self._goal_value_update() 
                     
                 if self.use_oci_target_update:
@@ -922,6 +957,10 @@ class GSP_NN:
             cloudpickle.dump(self.goal_learners, open(f'./src/environments/data/pinball/{self.save_model_name}_goal_learner.pkl', 'wb'))
             cloudpickle.dump(self.goal_buffers, open(f'./src/environments/data/pinball/{self.save_model_name}_goal_buffer.pkl', 'wb'))
             cloudpickle.dump(self.goal_estimate_buffer, open(f'./src/environments/data/pinball/{self.save_model_name}_goal_estimate_buffer.pkl', 'wb'))
+        
+        if self.save_goal_values_name is not None:
+            cloudpickle.dump(self.goal_estimate_learner, open(f'./src/environments/data/pinball/{self.save_goal_values_name}_pretrain_goal_estimate_learner.pkl', 'wb'))
+            cloudpickle.dump(self.goal_value_learner, open(f'./src/environments/data/pinball/{self.save_goal_values_name}_pretrain_goal_value_learner.pkl', 'wb'))
 
         if self.save_behaviour_name:
             cloudpickle.dump(self, open(f'./src/environments/data/pinball/{self.save_behaviour_name}_agent.pkl', 'wb'))

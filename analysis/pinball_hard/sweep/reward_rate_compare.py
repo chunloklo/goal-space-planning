@@ -61,6 +61,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None):
 
     all_data = mean_chunk_data(all_data, STEP_SIZE)
     mean, std = get_mean_stderr(all_data)
+    
     print(std[0:10])
     
 
@@ -161,24 +162,24 @@ if __name__ == "__main__":
     ax.set_xlabel('number of steps x100')
     ax.set_ylabel('reward rate')
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/baseline.py')
-    complete_param_list = get_complete_configuration_list(param_list)
-    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+    # param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/baseline.py')
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
-    filtered_groups = []
-    perfs = []
-    for group in groups:
-        beta = group[0]['oci_beta']
-        step_size = group[0]['step_size']
-        polyak = group[0]['polyak_stepsize']
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
 
-        def plot_me(beta, step_size):
-            if step_size == 0.0005 and polyak == 0.025: return True
-            # return False
-            return False
-        if not plot_me(beta, step_size): continue
-        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta}")
-        # plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}")
+    #     def plot_me(beta, step_size):
+    #         if step_size == 0.0005 and polyak == 0.025: return True
+    #         # return False
+    #         return False
+    #     if not plot_me(beta, step_size): continue
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta}")
+    #     # plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}")
 
     # colormap = cm.get_cmap('viridis')
 
@@ -225,7 +226,10 @@ if __name__ == "__main__":
     #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}")
 
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball_hard/refactor/gsp_learn_ddqn_value_policy_model.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/gsp_learn_beta_ddqn_value_model.py')
+    
+    
+    param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_scratch_model_30.py')
     complete_param_list = get_complete_configuration_list(param_list)
     groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
@@ -238,11 +242,58 @@ if __name__ == "__main__":
         polyak = group[0]['polyak_stepsize']
 
         def plot_me(beta, step_size):
-            return True
+            if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+            # return True
+            return False
 
         if not plot_me(beta, step_size): continue
         # print(scale_value(polyak, 0, 0.1))
         plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}")
+    
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_long_sweep.py')
+
+    # groups = group_configs(param_list, ignore_keys=['seed'])
+
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
+
+    #     def plot_me(beta, step_size):
+    #         if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01: return True
+    #         if beta == 0.0: return True
+    #         # return True
+    #         return False
+
+    #     if not plot_me(beta, step_size): continue
+
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}")
+
+
+
+
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_long_sweep.py')
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
+
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
+
+    #     def plot_me(beta, step_size):
+    #         if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.001: return True
+    #         return False
+    #         return True
+
+    #     if not plot_me(beta, step_size): continue
+    #     # print(scale_value(polyak, 0, 0.1))
+    #     plot_reward_rate_group(ax, group[1], label=f"old oci_beta: {'{:0.3e}'.format(beta)}")
 
         
 

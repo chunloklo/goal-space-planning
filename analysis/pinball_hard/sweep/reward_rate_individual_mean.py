@@ -267,26 +267,26 @@ if __name__ == "__main__":
     #     i += 1
 
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/baseline.py')
-    complete_param_list = get_complete_configuration_list(param_list)
-    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+    # param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/baseline.py')
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
-    filtered_groups = []
-    perfs = []
-    for group in groups:
-        beta = group[0]['oci_beta']
-        step_size = group[0]['step_size']
-        polyak = group[0]['polyak_stepsize']
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
 
-        def plot_me(beta, step_size):
-            if step_size == 0.0005 and polyak == 0.025: return True
-            # return False
-            return False
-        if not plot_me(beta, step_size): continue
-        color=list(TOL_BRIGHT.values())[i]
-        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta}", color=color)
-        # plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}")
-        i += 1
+    #     def plot_me(beta, step_size):
+    #         if step_size == 0.0005 and polyak == 0.025: return True
+    #         # return False
+    #         return False
+    #     if not plot_me(beta, step_size): continue
+    #     color=list(TOL_BRIGHT.values())[i]
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta}", color=color)
+    #     # plot_reward_rate_group(ax, group[1], label=f"oci_beta: {beta} step_size: {step_size} polyak: {polyak}")
+    #     i += 1
     
 
     
@@ -314,7 +314,9 @@ if __name__ == "__main__":
     #     i += 1
 
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball_hard/refactor/gsp_learn_ddqn_value_policy_model_more.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/gsp_learn_beta_ddqn_value_model.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_long_sweep.py')
+    param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_scratch_model.py')
     complete_param_list = get_complete_configuration_list(param_list)
     groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
@@ -327,8 +329,8 @@ if __name__ == "__main__":
         polyak = group[0]['polyak_stepsize']
 
         def plot_me(beta, step_size):
-            # if beta == 1e-7: return True
-            return True
+            if beta == 0.1 or beta == 0.05 or beta == 0.01: return True
+            # return True
             # return True
 
         if not plot_me(beta, step_size): continue

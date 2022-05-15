@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     #     print(f'perf: {perfs[rank[i]]} beta: {beta}, step_size: {step_size}, polyak {polyak}')
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/penalty/sweep/baseline.py')
+    param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_long_sweep_3.py')
     groups = group_configs(param_list, ignore_keys=['seed'])
 
     best_group, best_index, best_perf, perfs, rank = get_best_grouped_param(groups)

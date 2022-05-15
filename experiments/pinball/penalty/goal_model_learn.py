@@ -18,13 +18,13 @@ def get_configuration_list():
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [True],
         "episodes": [0],
-        'max_steps': [200000],
+        'max_steps': [300000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate')],
+        'log_keys': [('reward_rate',)],
         'step_logging_interval': [100],
 
         # Seed
@@ -35,17 +35,17 @@ def get_configuration_list():
         
         # Behaviour agent specific configs
         'behaviour_alg': ['DQN'],
-        'polyak_stepsize': [0.05],
+        'polyak_stepsize': [0.1],
         'step_size': [1e-3],
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
-        'epsilon': [0.1],
+        'epsilon': [1.0],
         'min_buffer_size_before_update': [10000],
 
         # Arch flags
-        'behaviour_arch_flag': ['pinball_simple'],
-        'model_arch_flag': ['pinball_simple'],
+        'behaviour_arch_flag': ['pinball_simple_experimental'],
+        'model_arch_flag': ['pinball_simple_experimental'],
 
         # Sanity Check Steps
         # 'load_behaviour_as_goal_values': ['q_learn'],
@@ -76,17 +76,17 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'save_model_name': ['pinball_penalty_debug'], # throwaway
+        'save_model_name': ['pinball_penalty_debug_exp'], # throwaway
         'goal_learner_step_size': [1e-3],
         'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],
-        'goal_min_buffer_size_before_update': [1000],
-        'learn_model_mode': ['combined_behaviour'],
+        'goal_min_buffer_size_before_update': [10000],
+        'learn_model_mode': ['only'],
         'goal_learner_alg': ['DDQN'],
         'use_reward_for_model_policy': [True],
         'leave_init_value': [-20.0],
 
-        'learn_select_goal_models': [(2,)]
+        # 'learn_select_goal_models': [(1, )]
     }
     parameter_list = get_sorted_configuration_list_from_dict(parameter_dict)
     return parameter_list

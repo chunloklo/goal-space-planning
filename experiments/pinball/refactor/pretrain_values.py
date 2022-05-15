@@ -72,13 +72,14 @@ def get_configuration_list():
         'use_exploration_bonus': [False],
 
         # Pretrain goal values:
-        'save_pretrain_goal_values': ['pinball_refactor_eps'],
+        'save_pretrain_goal_values': ['pinball_refactor_more_learning'],
         # 'load_pretrain_goal_values': ['oracle_goal_values'],
         'use_pretrained_goal_values_optimization': [True],
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'load_model_name': ['pinball_refactor_eps'], # throwaway
+        'load_model_name': ['pinball_refactor_more_learning'], # throwaway
+        'goal_learner_polyak_stepsize': [0.1],
         'goal_learner_step_size': [1e-3],
         'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],

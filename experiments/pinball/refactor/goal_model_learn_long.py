@@ -18,13 +18,13 @@ def get_configuration_list():
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [True],
         "episodes": [0],
-        'max_steps': [300000],
+        'max_steps': [600000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [False],
 
         # Logging
-        'log_keys': [('reward_rate',)],
+        'log_keys': [('reward_rate,')],
         'step_logging_interval': [100],
 
         # Seed
@@ -76,12 +76,12 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'save_model_name': ['pinball_refactor_retry_eps1.0'], # throwaway
+        'save_model_name': ['pinball_refactor_more_learning'], # throwaway
+        'goal_learner_polyak_stepsize': [0.1],
         'goal_learner_step_size': [1e-3],
         'goal_learner_batch_num': [1],
-        'goal_learner_polyak_stepsize': [0.1],
         'goal_learner_batch_size': [16],
-        'goal_min_buffer_size_before_update': [1000],
+        'goal_min_buffer_size_before_update': [10000],
         'learn_model_mode': ['only'],
 
         # 'learn_select_goal_models': [(2,)]
