@@ -124,7 +124,9 @@ def generatePlots(param, data, key):
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/oracle_gsp_goal_model_learn.py'
+    
+    #parameter_path = 'experiments/pinball/oracle_gsp_goal_model_learn.py'
+    parameter_path = 'experiments/pinball/refactor/dyno_learn_only.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]

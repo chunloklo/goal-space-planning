@@ -116,7 +116,8 @@ if __name__ == "__main__":
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    # ax.set_ylim([0, 10000])
+    ax.set_xlim([0,3000])
+    ax.set_ylim([-10, 160])
     ax.set_xlabel('number of steps x100')
     ax.set_ylabel('reward rate')
     # plot_single_reward_rate(ax, 'experiments/pinball/test_sweep/GSP_learning_display.py')

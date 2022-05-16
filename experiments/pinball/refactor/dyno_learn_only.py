@@ -16,7 +16,7 @@ def get_configuration_list():
         #Environment/Experiment
         "problem": ["PinballSuboptimalProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
-        'explore_env': [False],
+        'explore_env': [True],
         "episodes": [0],
         'max_steps': [300000],
         'exploration_phase': [0],
@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [0,1,2,3,4,5,6,7],
+        "seed": [0],
         
         # Agent
         "agent": ["DynO_FromGSP_NN"],
@@ -40,7 +40,7 @@ def get_configuration_list():
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
-        'epsilon': [0.1],
+        'epsilon': [1.0],
         'min_buffer_size_before_update': [10000],
 
         # Arch flag
@@ -79,14 +79,14 @@ def get_configuration_list():
         'batch_buffer_add_size': [1024],
         
         # Model training
-        #'save_model_name': ['dyno_pinball_easy'], # when learning model only
-        'load_model_name': ['dyno_pinball_easy5'], 
+        'save_model_name': ['dyno_pinball_easy5'], # when learning model only
+        #'load_model_name': ['dyno_pinball_easy'], 
         'goal_learner_step_size': [1e-3],
         'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],
         'goal_min_buffer_size_before_update': [1000],
-        'learn_model_mode': ['fixed'], # fixed: when model is loaded
-        #'learn_model_mode': ['only'], # only: learn model only
+        #'learn_model_mode': ['fixed'], # fixed: when model is loaded
+        'learn_model_mode': ['only'], # only: learn model only
         # 'learn_select_goal_models': [(15,)]
     }
 

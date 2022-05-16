@@ -87,22 +87,26 @@ class OptionOneStepWrapper(OneStepWrapper):
     def start(self, s):
         self.s = s
         self.o, self.a = self.agent.selectAction(self.s)
-        self.a, self.o = self.random_action_if_exploring((self.a, self.o), use_option_action_pair = True)
-
+        #print("rlglue, o, a", self.o, self.a )
+        #self.a, self.o = self.random_action_if_exploring((self.a, self.o), use_option_action_pair = True)
+        print(type(self.a), type(self.o))
         return self.a
 
     def step(self, r, sp, info=None, t=False):
         r = self.no_reward_if_exploring(r)
         op, ap = self.agent.update(self.s, self.o, self.a, sp, r, self.gamma, info=info)
-
-        op, ap = self.random_action_if_exploring((op, ap), use_option_action_pair = True)
-
+        #print("rlglue2step: op ap",op, ap)
+        #op, ap = self.random_action_if_exploring((op, ap), use_option_action_pair = True)
+        #print("rlglue3step: op ap", op,ap)
         self.s = sp
         self.o = op
         self.a = ap
+        #print("rlglue4step: op ap", op,ap)
 
+        #print(type(ap))
         self._increment_num_steps()
         return ap
+
     def end(self, r, info=None):
         r = self.no_reward_if_exploring(r)
         gamma = 0

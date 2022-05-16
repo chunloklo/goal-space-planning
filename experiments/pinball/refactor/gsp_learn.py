@@ -16,7 +16,8 @@ def get_configuration_list():
         #Environment/Experiment
         "problem": ["PinballSuboptimalProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
-        'explore_env': [False],
+        'explore_env': [True],
+        #'explore_env': [False],
         "episodes": [0],
         'max_steps': [300000],
         'exploration_phase': [0],
@@ -40,7 +41,8 @@ def get_configuration_list():
         'adam_eps': [1e-8],
         'batch_num': [4],
         'batch_size': [16],
-        'epsilon': [0.1],
+        'epsilon': [1.0],
+        #'epsilon': [0.1],
         'min_buffer_size_before_update': [10000],
 
         # Arch flag
@@ -71,20 +73,21 @@ def get_configuration_list():
         'use_exploration_bonus': [False],
 
         # Pretrain goal values:
-        # 'pretrain_goal_values': [True],
-        # 'save_pretrain_goal_values': ['oracle_goal_values'],
-        'load_pretrain_goal_values': ['suboptimal_goal_values'],
+        'pretrain_goal_values': [True],
+        'save_pretrain_goal_values': ['oracle_goal_values'],
+        #'load_pretrain_goal_values': ['suboptimal_goal_values'],
         'use_pretrained_goal_values_optimization': [True],
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'load_model_name': ['suboptimal_gsp_model_explore_eps'],
+        #'load_model_name': ['suboptimal_gsp_model_explore_eps1'],
+        'save_model_name': ['suboptimal_gsp_model_explore_eps1'],
         'goal_learner_step_size': [1e-3],
         'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],
         'goal_min_buffer_size_before_update': [1000],
-        'learn_model_mode': ['fixed'],
-
+        #'learn_model_mode': ['fixed'],
+        'learn_model_mode': ['only'],
         # 'learn_select_goal_models': [(15,)]
     }
 

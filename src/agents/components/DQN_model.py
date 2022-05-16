@@ -87,6 +87,7 @@ class GoalLearner_DQN_NN():
         def _loss(params: hk.Params, target_params: hk.Params, data):
             r = data['r']
             x = data['x']
+            #o = data['o']
             a = data['a']
             xp = data['xp']
             # gamma = data['gamma']

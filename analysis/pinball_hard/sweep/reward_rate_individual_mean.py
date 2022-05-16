@@ -172,7 +172,7 @@ if __name__ == "__main__":
     ax.set_xlabel('steps x100')
     ax.set_ylabel('reward rate')
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball_hard/sweep/gsp_learn_more.py')
+    param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/dyno_learn.py')
 
     complete_param_list = get_complete_configuration_list(param_list)
 
@@ -198,8 +198,8 @@ if __name__ == "__main__":
             # if step_size == 1e-4: return True
             # if beta == 0.1 or beta == 0.0: return True
             # if beta == 0.1: return True
-            if beta == 0.2: return True
-            # return True
+            #if beta == 0.2: return True
+            return True
             # return False
 
         if not plot_me(beta, step_size): continue

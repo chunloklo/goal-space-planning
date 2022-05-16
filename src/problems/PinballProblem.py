@@ -18,6 +18,7 @@ class PinballProblem(BaseProblem):
         # [chunlok 2022-04-15] TODO There's a lot of duplicated code here for essentially just replacing the goals. Perhaps there's a better way to do this?
         self.env = PinballEnvironment(self.params['pinball_configuration_file'], self.goals, self.params['render'], self.params['explore_env'], continuing=True, terminal_goal_index=terminal_goal_index)
         self.actions = 5
+        self.state_dims = 4
         self.gamma = self.params['gamma']
         self.terminal_goal_index = terminal_goal_index
 

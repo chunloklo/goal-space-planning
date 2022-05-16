@@ -159,7 +159,6 @@ class QLearner_NN():
     def oci_target_update(self, data):
         self.params, self.target_params, self.opt_state, delta = self._oci_target_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, self.beta, data)
         return delta
-
     
     def _option_value_loss(self, params, target_params, data):
         x = data['x']
@@ -184,4 +183,79 @@ class QLearner_NN():
 
     def option_value_update(self, data):
         self.params, self.target_params, self.opt_state, delta = self._option_value_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, self.beta, data)
+        return delta
+
+
+# dyna with options
+
+    def _dyno_loss(self, params, target_params, data):
+        r = data['r']
+        x = data['x']
+        a = data['a']
+        o = data['o']
+        xp = data['xp']
+        gamma = data['gamma']
+        target = data['target']
+
+        x_pred = self.network.apply(params, x)
+        xp_action_values = jax.lax.stop_gradient(self.network.apply(target_params, xp))
+        op = jnp.argmax(self.network.apply(params, xp), axis=1) # get the index of the highest valued option
+
+        xp_pred = self._take_action_index(xp_action_values, op)
+        prev_pred = self._take_action_index(x_pred, o)
+        #td_error = r + gamma * (beta * jnp.where(jnp.isnan(target), xp_pred, target) + (1 - beta) * xp_pred) - prev_pred
+        td_error = r + gamma * xp_pred - prev_pred
+        loss = 0.5 * td_error**2
+
+        return loss.mean()
+
+    
+    @partial(jax.jit, static_argnums=0)
+    def _dyno_update(self, params: hk.Params, target_params: hk.Params, opt_state, polyak_stepsize, beta, data):
+        delta, grad = jax.value_and_grad(self._dyno_loss)(params, target_params, data)
+
+        updates, opt_state = self.opt.update(grad, opt_state)
+        params = optax.apply_updates(params, updates)
+
+        target_params = optax.incremental_update(params, target_params, polyak_stepsize)
+
+        return params, target_params, opt_state, jnp.sqrt(delta)
+
+    def dyno_update(self, data): 
+        self.params, self.target_params, self.opt_state, delta = self._dyno_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, self.beta, data)
+        return delta
+
+    def _dyna_loss(self, params, target_params, data): # just for action values
+        r = data['r']
+        x = data['x']
+        a = data['a']
+        o = data['o']
+        xp = data['xp']
+        gamma = data['gamma']
+        target = data['target']
+
+        x_pred = self.network.apply(params, x)
+        xp_action_values = jax.lax.stop_gradient(self.network.apply(target_params, xp))
+        ap = jnp.argmax(self.network.apply(params, xp), axis=1) # get the index of the highest valued option
+        xp_pred = self._take_action_index(xp_action_values, ap)
+        prev_pred = self._take_action_index(x_pred, a)
+        #td_error = r + gamma * (beta * jnp.where(jnp.isnan(target), xp_pred, target) + (1 - beta) * xp_pred) - prev_pred
+        td_error = r + gamma * xp_pred - prev_pred
+        loss = 0.5 * td_error**2
+
+        return loss.mean()
+
+    @partial(jax.jit, static_argnums=0)
+    def _dyna_update(self, params: hk.Params, target_params: hk.Params, opt_state, polyak_stepsize, beta, data):
+        delta, grad = jax.value_and_grad(self._dyna_loss)(params, target_params, data)
+
+        updates, opt_state = self.opt.update(grad, opt_state)
+        params = optax.apply_updates(params, updates)
+
+        target_params = optax.incremental_update(params, target_params, polyak_stepsize)
+
+        return params, target_params, opt_state, jnp.sqrt(delta)
+
+    def dyna_update(self, data):
+        self.params, self.target_params, self.opt_state, delta = self._dyna_update(self.params, self.target_params, self.opt_state, self.polyak_stepsize, self.beta, data)
         return delta
