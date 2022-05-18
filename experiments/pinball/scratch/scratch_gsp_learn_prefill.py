@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_scratch"],
+        "db_folder": ["pinball_scratch_prefill"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": list(range(30)),
+        "seed": [400000],
         
         # Agent
         "agent": ["GSP_NN"],
@@ -41,7 +41,7 @@ def get_configuration_list():
         'batch_num': [4],
         'batch_size': [16],
         'epsilon': [0.1],
-        'min_buffer_size_before_update': [1000],
+        'min_buffer_size_before_update': [10000],
 
         # Arch flag
         'behaviour_arch_flag': ['pinball_simple'],
@@ -52,9 +52,9 @@ def get_configuration_list():
         'goal_estimate_update_interval': [32],
         'goal_estimate_step_size': [0.005],
 
-        # Goal space planning configs
+        # Goal space plansaning configs
         'use_goal_values': [True],
-        'goal_value_init_gamma_threshold': [0.1],
+        'goal_value_init_gamma_threshold': [0.0],
 
         # oci configs
         'use_oci_target_update': [True],
@@ -78,13 +78,13 @@ def get_configuration_list():
         # 'batch_buffer_add_size': [1024],
         
         # Model training
-        'save_model_name': ['pinball_scratch_model'],
-        # 'save_interim_model':[True],
+        'load_model_name': ['pinball_scratch_prefill'],
+        'save_interim_model':[True],
         'goal_learner_polyak_stepsize': [0.1],
         'goal_learner_step_size': [1e-3],
-        'goal_learner_batch_num': [4],
+        'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],
-        'goal_min_buffer_size_before_update': [1000],
+        'goal_min_buffer_size_before_update': [10000],
         'learn_model_mode': ['online'],
 
         # 'learn_select_goal_models': [(15,)]

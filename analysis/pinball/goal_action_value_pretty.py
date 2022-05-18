@@ -23,7 +23,7 @@ import numpy as np
 from src.utils.json_handling import get_sorted_dict , get_param_iterable_runs
 from src.utils.formatting import create_file_name, create_folder
 from src.utils import analysis_utils
-from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_file_name, get_text_location, prompt_user_for_file_name, get_action_offset, scale_value, _plot_init, prompt_episode_display_range
+from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_file_name, get_text_location, prompt_user_for_file_name, get_action_offset, scale_value, _plot_init, prompt_episode_display_range, _plot_init_states
 from src.analysis.plot_utils import get_x_range
 from src.environments.HMaze import HMaze
 
@@ -43,7 +43,7 @@ from src.utils.log_utils import get_last_pinball_action_value_map
 from src.experiment import ExperimentModel
 
 
-ROWS = 40
+ROWS = 80
 COLUMNS = ROWS
 
 def generatePlots(param, data, key):
@@ -68,13 +68,8 @@ def generatePlots(param, data, key):
 
     # Calculating the value at each state approximately
     num_goals = problem.goals.num_goals
-    initiation_map = np.zeros((num_goals, ROWS, COLUMNS))
-    for r, y in enumerate(np.linspace(0, 1, ROWS)):
-        for c, x in enumerate(np.linspace(0, 1, ROWS)):
-            init = problem.goals.goal_initiation([x, y, 0, 0])
-            initiation_map[:, r, c] = init
 
-    fig, axes = plt.subplots(3, 3, figsize=(90, 90))
+    fig, axes = plt.subplots(3, 3, figsize=(9, 9), dpi=600)
     axes = axes.flatten()
 
     save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
@@ -87,52 +82,49 @@ def generatePlots(param, data, key):
 
         # fig, axes = plt.subplots(1, figsize=(16, 16))
         ax = axes[g]
-        ax.set_title(g)
+        # ax.set_title(g)
 
         colormap = cm.get_cmap('viridis')
 
-        texts, patches = _plot_init(ax, columns = COLUMNS, rows = ROWS)
+        patches = _plot_init_states(ax, columns = COLUMNS, rows = ROWS)
 
-        min_val = np.min(data[g][initiation_map[g] == True])
-        max_val = np.max(data[g][initiation_map[g] == True])
+        # print(np.where(np.isfinite(data[g])))
+        # print(data[g])
+        min_val = np.nanmin(data[g][np.where(np.isfinite(data[g]))])
+        max_val = np.nanmax(data[g][np.where(np.isfinite(data[g]))])
         print(min_val, max_val)
         
         for r in range(ROWS):
             for c in range(COLUMNS):
                 try:
                     state_data = data[g, r, c]
-                    # print(state_data.shape)
 
-                    a_map = {
-                        0: 1,
-                        1: 0,
-                        2: 3,
-                        3: 2,
-                    }
+                    if np.isinf(state_data[0]):
+                            patches[r][c].set_facecolor('#404040')
+                            continue
 
-                    for a in range(4):
-                        scaled_value = scale_value(state_data[a_map[a]], min_val, max_val, post_process_func=lambda x: x)
+                    scaled_value = scale_value(np.nanmax(state_data), min_val, max_val, post_process_func=lambda x: x)
+                    
+                    patches[r][c].set_facecolor(colormap(scaled_value))
+                     
 
-                        if initiation_map[g, r, c] == True:
-                            patches[r][c][a].set_facecolor(colormap(scaled_value))
-                        else:
-                            patches[r][c][a].set_facecolor((1, 1, 1))
-                        # colors = ["red", "green", "blue", "orange"]
-                        # patches[i][j][a].set_facecolor(colors[a])
-                        texts[r][c][a].set_text(round(state_data[a_map[a]], 2))
                 except KeyError as e:
                     pass
+
+        ax.set_xticks([])
+        ax.set_yticks([])
 
     plt.savefig(save_file)
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/explore/goal_model_learn.py'
+    # parameter_path = 'experiments/pinball/refactor/gsp_learn.py'
+    parameter_path = 'experiments/pinball_hard/sweep/gsp_learn_beta_ddqn_value_model_refactor_30.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
 
-    model_name = config['save_model_name']
+    model_name = config['load_model_name']
     # model_name = 'pinball_scratch_model'
     goal_learners = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
@@ -152,10 +144,29 @@ if __name__ == "__main__":
 
     exp = ExperimentModel.load_from_params(exp_params)
     problem = getProblem(config['problem'])(exp, 0, 0)
-    print(problem.goals.num_goals)
+    initiation_map = np.zeros((problem.goals.num_goals, ROWS, COLUMNS))
+    for r, y in enumerate(np.linspace(0, 1, ROWS)):
+        for c, x in enumerate(np.linspace(0, 1, ROWS)):
+            init = problem.goals.goal_initiation([x, y, 0, 0])
+            initiation_map[:, r, c] = init
 
     def get_goal_outputs(s, g):
+            # Not plotting walls to see how it corresponds with terrain
+            problem.env.pinball.ball.position = s[:2]
+            colliding = False
+            for obs in problem.env.pinball.obstacles:
+                if obs.collision(problem.env.pinball.ball):
+                    colliding = True
+                    break
+            if colliding: 
+                return [np.full(5, np.NINF), np.full(5, np.NINF), np.full(5, np.NINF)]
+
+            if problem.goals.goal_initiation([s[0], s[1], 0, 0])[g] != True:
+                return [np.full(5, np.nan), np.full(5, np.nan), np.full(5, np.nan)]
+
+
             action_value, reward, gamma = goal_learners[g].get_goal_outputs(s)
+
             return np.vstack([action_value, reward, gamma])
 
     RESOLUTION = ROWS

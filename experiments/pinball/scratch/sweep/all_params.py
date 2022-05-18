@@ -9,14 +9,17 @@ from src.utils.run_utils import experiment_completed
 
 # get_configuration_list function is required for 
 def get_configuration_list():
-    root = 'experiments/pinball_hard/sweep/'
+    root = 'experiments/pinball/scratch/sweep/'
     files = [
         # 'baseline.py'
-        'gsp_learn_beta_ddqn_value_model_refactor_30.py',
-        'baseline_30.py',
+        # 'short_scratch_model_gsp_learn_10k.py',
+        # 'short_scratch_model_gsp_learn_25k.py',
+        # 'short_scratch_model_gsp_learn_50k.py',
+        # 'short_scratch_model_gsp_learn_75k.py',
+        'scratch_gsp_learn.py',
     ]
     
     parameter_list = [param  for file in files for param in get_configuration_list_from_file_path(root + file)]
-
+    # return parameter_list
     incomplete_parameter_list = get_incomplete_configuration_list(parameter_list)
     return incomplete_parameter_list

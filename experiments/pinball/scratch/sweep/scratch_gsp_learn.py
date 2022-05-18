@@ -41,7 +41,7 @@ def get_configuration_list():
         'batch_num': [4],
         'batch_size': [16],
         'epsilon': [0.1],
-        'min_buffer_size_before_update': [1000],
+        'min_buffer_size_before_update': [10000],
 
         # Arch flag
         'behaviour_arch_flag': ['pinball_simple'],
@@ -54,7 +54,7 @@ def get_configuration_list():
 
         # Goal space planning configs
         'use_goal_values': [True],
-        'goal_value_init_gamma_threshold': [0.1],
+        'goal_value_init_gamma_threshold': [0.0],
 
         # oci configs
         'use_oci_target_update': [True],
@@ -72,21 +72,25 @@ def get_configuration_list():
 
         # Pretrain goal values:
         'pretrain_goal_values': [False],
-        'save_goal_values_name': ['pinball_scratch_model'],
+        'save_goal_values_name': ['pinball_online'],
         # 'load_pretrain_goal_values': ['pinball_refactor_eps'],
         # 'use_pretrained_goal_values_optimization': [True],
         # 'batch_buffer_add_size': [1024],
         
         # Model training
-        'save_model_name': ['pinball_scratch_model'],
-        # 'save_interim_model':[True],
+        'save_model_name': ['pinball_online'],
         'goal_learner_polyak_stepsize': [0.1],
         'goal_learner_step_size': [1e-3],
-        'goal_learner_batch_num': [4],
+        'goal_learner_batch_num': [1],
         'goal_learner_batch_size': [16],
-        'goal_min_buffer_size_before_update': [1000],
+        'goal_min_buffer_size_before_update': [10000],
         'learn_model_mode': ['online'],
 
+        
+        'save_behaviour_name': ['pinball_online'],
+        'save_interim_model':[True],
+        'save_interim_behaviour':[True],
+        'save_object_seed': [True],
         # 'learn_select_goal_models': [(15,)]
     }
 

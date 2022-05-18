@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_scratch"],
+        "db_folder": ["pinball_scratch_sweep"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -18,7 +18,7 @@ def get_configuration_list():
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
-        'max_steps': [300000],
+        'max_steps': [250000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [False],
@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": list(range(30)),
+        "seed": list(range(4)),
         
         # Agent
         "agent": ["GSP_NN"],

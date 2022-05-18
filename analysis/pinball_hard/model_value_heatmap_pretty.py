@@ -21,7 +21,7 @@ import numpy as np
 from src.utils.json_handling import get_sorted_dict , get_param_iterable_runs
 from src.utils.formatting import create_file_name, create_folder
 from src.utils import analysis_utils
-from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_file_name, get_text_location, prompt_user_for_file_name, get_action_offset, scale_value, _plot_init, prompt_episode_display_range
+from src.analysis.gridworld_utils import _get_corner_loc, _get_q_value_patch_paths, get_file_name, get_text_location, prompt_user_for_file_name, get_action_offset, scale_value, _plot_init, prompt_episode_display_range, _plot_init_states
 from src.analysis.plot_utils import get_x_range
 from src.environments.HMaze import HMaze
 
@@ -59,7 +59,7 @@ def generatePlots(data, label):
 
     colormap = cm.get_cmap('viridis')
 
-    texts, patches = _plot_init(ax, columns = COLUMNS, rows = ROWS)
+    patches = _plot_init_states(ax, columns = COLUMNS, rows = ROWS)
 
     # focus = True
 
@@ -69,8 +69,13 @@ def generatePlots(data, label):
     # else:
     #     min_val = np.min(data[g])
     #     max_val = np.max(data[g])
-    min_val = np.nanmin(data)
-    max_val = np.nanmax(data)
+    min_val = np.nanmin(data[np.where(np.isfinite(data))])
+    # min_val = -800
+    max_val = np.nanmax(data[np.where(np.isfinite(data))])
+    print(min_val, max_val)
+
+    # min_val = 0
+    # max_val = 10000
     
     # min_val = -50
     # max_val = 0
@@ -90,29 +95,36 @@ def generatePlots(data, label):
                     3: 2,
                 }
 
-                for a in range(4):
-                    # scaled_value = scale_value(state_data[a_map[a]], min_val, max_val, post_process_func=lambda x: x)
+                # for a in range(4):
+                # scaled_value = scale_value(state_data[a_map[a]], min_val, max_val, post_process_func=lambda x: x)
 
-                    scaled_value = scale_value(state_data[a_map[a]], min_val, max_val)
+                # print(state_data)
 
+                if np.isinf(state_data[0]):
+                    patches[r][c].set_facecolor('#404040')
+                else:
+                    if np.isnan(np.max(state_data)):
+                        print(r, c)
+                        pass
+                    scaled_value = scale_value(np.max(state_data), min_val, max_val, lambda x: x**0.5)
+                    patches[r][c].set_facecolor(colormap(scaled_value))
 
-                    # if focus:
-                    #     if initiation_map[g, r, c] == True:
-                    #         patches[r][c][a].set_facecolor(colormap(scaled_value))
-                    #     else:
-                    #         patches[r][c][a].set_facecolor((1, 1, 1))
-                    # else:  
-                    patches[r][c][a].set_facecolor(colormap(scaled_value))
-
-                    texts[r][c][a].set_text(round(state_data[a_map[a]], 2))
+                        # texts[r][c][a].set_text('')
+                    # texts[r][c][a].set_text(round(state_data[a_map[a]], 2))
             except KeyError as e:
                 pass
+
+    ax.set_xticks([])
+    ax.set_yticks([])
 
     plt.savefig(save_file)
     plt.close()
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/refactor/beta_gsp_learn_scratch_model_30.py'
+    # parameter_path = 'experiments/pinball/refactor/beta_gsp_learn_scratch_model_30.py'
+    # parameter_path = 'experiments/pinball/refactor/gsp_learn.py'
+    parameter_path = 'experiments/pinball_hard/sweep/gsp_learn_beta_ddqn_value_model_refactor_30.py'
+
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
@@ -127,11 +139,16 @@ if __name__ == "__main__":
 
     print(f'num goal learner {len(goal_learner)}')
 
-    behaviour_goal_value = 'pinballhard_baseline'
-    agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value}_agent.pkl', 'rb'))
+    # behaviour_goal_value = 'q_learn'
+    # [11000, 13000, 15000, 20000, 30000, 40000, 50000, 60000]:
+    behaviour_goal_value_name = 'pinball_scratch_model_display_60000'
+    # [15000, 20000, 30000, 50000, 100000, 125000]:
+    # behaviour_goal_value_name = 'pinball_scratch_model_baseline_display_125000'
+    agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value_name}_agent.pkl', 'rb'))
     behaviour_goal_value = agent.behaviour_learner
 
     goal_value_name = config['load_goal_values_name']
+    # goal_value_name = config['load_pretrain_goal_values']
     # goal_value_name = 'pinball_hard_ddqn_value_policy_8_goals'
     goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
     goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_value_learner.pkl', 'rb'))
@@ -164,11 +181,11 @@ if __name__ == "__main__":
         batch_size = xs.shape[0]
         targets = np.array(behaviour_goal_value.get_action_values(xs))
 
-        # Masking out invalid goals based on the initiation func
-        for i in range(batch_size):
-            x_goal_init = goal_initiation_func(xs[i])
-            if np.all(~x_goal_init):
-                targets[i] = np.nan
+        # # Masking out invalid goals based on the initiation func
+        # for i in range(batch_size):
+        #     x_goal_init = goal_initiation_func(xs[i])
+        #     if np.all(~x_goal_init):
+        #         targets[i] = np.nan
 
         return np.max(targets, axis=1)
 
@@ -194,7 +211,9 @@ if __name__ == "__main__":
                     colliding = True
                     break
 
-            if colliding: oracle_goal_values[:] = np.nan
+            if colliding: 
+                oracle_goal_values[:] = np.NINF
+
             return oracle_goal_values
 
         batch_size = 1
@@ -250,7 +269,9 @@ if __name__ == "__main__":
                 colliding = True
                 break
 
-        if colliding: goal_values[:] = np.nan
+        if colliding: 
+            goal_values[:] = np.NINF
+
 
         targets = np.nanmax(goal_values, axis=1)
 
@@ -272,6 +293,6 @@ if __name__ == "__main__":
     data = last_goal_q_map
     # print(data.shape)
 
-    generatePlots(data, plot_value)
+    generatePlots(data, plot_value + behaviour_goal_value_name)
 
     exit()

@@ -17,6 +17,16 @@ def _get_corner_loc(offsetx: int, offsety: int, loc_type: str):
     if (loc_type == 'bottom_right'):
         return [1.0 + offsetx, 1.0 + offsety]
 
+def _get_value_patch_path(offsetx: int, offsety: int) -> list:
+    center = _get_corner_loc(offsetx, offsety, 'center')
+    top_left = _get_corner_loc(offsetx, offsety, 'top_left')
+    top_right = _get_corner_loc(offsetx, offsety, 'top_right')
+    bottom_left = _get_corner_loc(offsetx, offsety, 'bottom_left')
+    bottom_right = _get_corner_loc(offsetx, offsety, 'bottom_right')
+
+    action_path_map = [top_left, top_right, bottom_right, bottom_left]
+    return action_path_map
+
 # Returns a list of patch paths corresponding to each action in the q value
 def _get_q_value_patch_paths(offsetx: int, offsety: int) -> list:
     center = _get_corner_loc(offsetx, offsety, 'center')
@@ -78,6 +88,34 @@ def prompt_user_for_file_name(folder: str, prefix: str, suffix: str, extension: 
     else:
         return f'{folder}/{prefix}{experiment_name}{suffix}.{extension}'
 
+
+def _plot_init_states(ax, columns: int, rows: int):
+    ax.set_xlim(0, columns)
+    ax.set_ylim(0, rows)
+    ax.invert_yaxis()
+
+    texts = []
+    patches = []
+    arrows = []
+    for r in range(rows):
+        texts.append([])
+        patches.append([])
+        arrows.append([])
+        for c in range(columns):
+            # Getting action triangle patches
+            action_path_map = _get_value_patch_path(c, r)
+
+            font = {
+                'size': 8
+            }
+            
+            # placeholder color
+            color = "blue"
+            path = action_path_map
+            patch = ax.add_patch(PathPatch(Path(path), facecolor=color, ec='None', linewidth=0))
+            patches[r].append(patch)
+    return patches
+
 def _plot_init(ax, columns: int, rows: int, center_arrows: bool = False):
     ax.set_xlim(0, columns)
     ax.set_ylim(0, rows)
@@ -108,7 +146,7 @@ def _plot_init(ax, columns: int, rows: int, center_arrows: bool = False):
                 # placeholder color
                 color = "blue"
                 path = action_path_map[a]
-                patch = ax.add_patch(PathPatch(Path(path), facecolor=color, ec='None'))
+                patch = ax.add_patch(PathPatch(Path(path), facecolor=color, ec='None', linewidth=0))
                 patches[r][c].append(patch)
 
             # Getting default arrow. Making sure that this gets put on top of the patches

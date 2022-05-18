@@ -16,9 +16,9 @@ def get_configuration_list():
         #Environment/Experiment
         "problem": ["PinballSuboptimalExploreProblem"],
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single_explore.cfg.txt'],
-        'explore_env': [False],
+        'explore_env': [True],
         "episodes": [0],
-        'max_steps': [600000],
+        'max_steps': [300000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [False],

@@ -16,6 +16,7 @@ class GoalLearner_DQN_NN():
         self.adam_eps = adam_eps
         self.use_reward_for_policy = use_reward_for_policy
         self.double_dqn = double_dqn
+        self.polyak_stepsize = polyak_stepsize
 
         assert arch_flag in [
             'pinball_simple',
@@ -151,7 +152,8 @@ class GoalLearner_DQN_NN():
             grads, reward_loss = jax.grad(_loss, has_aux=True)(params, target_params, data)
             updates, opt_state = self.f_opt.update(grads, opt_state)
             params = optax.apply_updates(params, updates)
-            return params, opt_state, reward_loss
+            target_params = optax.incremental_update(params, target_params, self.polyak_stepsize)
+            return params, target_params, opt_state, reward_loss
             
         self.f_get_goal_output = jax.jit(_get_goal_output)
         self.f_update = jax.jit(_update)
@@ -169,13 +171,12 @@ class GoalLearner_DQN_NN():
         policy_output, v_output, gamma_output = self.f_get_goal_output(self.params, x)
         return policy_output, v_output, gamma_output
 
-    def update(self, data, polyak_stepsize:float=0.005):
-        self.params, self.opt_state, (policy_loss, reward_loss) = self.f_update(self.params, self.target_params, self.opt_state, data)
+    def update(self, data):
+        self.params, self.target_params, self.opt_state, (policy_loss, reward_loss) = self.f_update(self.params, self.target_params, self.opt_state, data)
         
         def log():
             globals.collector.collect('reward_loss', reward_loss)
             globals.collector.collect('policy_loss', policy_loss)
         run_if_should_log(log)
 
-        self.target_params = optax.incremental_update(self.params, self.target_params, polyak_stepsize)
         # return self.params

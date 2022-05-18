@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_scratch"],
+        "db_folder": ["pinball_refactor"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": list(range(30)),
+        "seed": list(range(8)),
         
         # Agent
         "agent": ["GSP_NN"],
@@ -41,7 +41,7 @@ def get_configuration_list():
         'batch_num': [4],
         'batch_size': [16],
         'epsilon': [0.1],
-        'min_buffer_size_before_update': [1000],
+        'min_buffer_size_before_update': [10000],
 
         # Arch flag
         'behaviour_arch_flag': ['pinball_simple'],
@@ -54,7 +54,7 @@ def get_configuration_list():
 
         # Goal space planning configs
         'use_goal_values': [True],
-        'goal_value_init_gamma_threshold': [0.1],
+        'goal_value_init_gamma_threshold': [0.0],
 
         # oci configs
         'use_oci_target_update': [True],
@@ -82,9 +82,9 @@ def get_configuration_list():
         # 'save_interim_model':[True],
         'goal_learner_polyak_stepsize': [0.1],
         'goal_learner_step_size': [1e-3],
-        'goal_learner_batch_num': [4],
+        'goal_learner_batch_num': [2],
         'goal_learner_batch_size': [16],
-        'goal_min_buffer_size_before_update': [1000],
+        'goal_min_buffer_size_before_update': [100],
         'learn_model_mode': ['online'],
 
         # 'learn_select_goal_models': [(15,)]

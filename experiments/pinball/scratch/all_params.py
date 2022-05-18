@@ -12,11 +12,10 @@ def get_configuration_list():
     root = 'experiments/pinball/scratch/'
     files = [
         # 'baseline.py'
-        'short_scratch_model_gsp_learn_10k.py',
-        'short_scratch_model_gsp_learn_25k.py',
-        'short_scratch_model_gsp_learn_50k.py',
-        'short_scratch_model_gsp_learn_75k.py',
-        'short_scratch_model_gsp_learn_final.py',
+        'scratch_gsp_learn_model_ddqn_sweep_more_long.py',
+        # 'scratch_gsp_learn_model_dqn_sweep_more_1.py',
+        # 'scratch_gsp_learn_model_dqn_sweep_more_2.py',
+        # 'scratch_gsp_learn_model_dqn_sweep.py'
     ]
     
     parameter_list = [param  for file in files for param in get_configuration_list_from_file_path(root + file)]

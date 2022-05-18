@@ -539,10 +539,11 @@ class PinballView:
         self.BALL_COLOR = [0, 0, 255]
         self.TARGET_COLOR = [255, 0, 0]
         self.GOAL_COLOR = [0, 255, 0]
+        self.WHITE = [255, 255, 255]
 
         # Draw the background
         self.background_surface = pygame.Surface(screen.get_size())
-        self.background_surface.fill(self.LIGHT_GRAY)
+        self.background_surface.fill(self.WHITE)
         for obs in model.obstacles:
             pygame.draw.polygon(self.background_surface, self.DARK_GRAY, list(map(self._to_pixels, obs.points)), 0)
 
@@ -556,8 +557,9 @@ class PinballView:
                 initiation_radius = self.goals.initiation_radius
                 pygame.draw.circle(
                     self.background_surface, self.GOAL_COLOR, self._to_pixels(goal), int(radius*self.screen.get_width()))
-                pygame.draw.circle(
-                    self.background_surface, self.GOAL_COLOR, self._to_pixels(goal), int(initiation_radius*self.screen.get_width()), width=1)
+                # [2022-05-17 chunlok] Removing drawing of goal init radius to make the paper's view of te environment cleaner.
+                # pygame.draw.circle(
+                #     self.background_surface, self.GOAL_COLOR, self._to_pixels(goal), int(initiation_radius*self.screen.get_width()), width=1)
 
         if self.goals and self.terminal_goal_index is not None:
             goal = self.goals.goals[self.terminal_goal_index]

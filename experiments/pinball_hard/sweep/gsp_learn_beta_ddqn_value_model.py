@@ -62,7 +62,7 @@ def get_configuration_list():
 
         # oci configs
         'use_oci_target_update': [True],
-        'oci_beta': [1.0, 0.5, 0.3, 0.2, 0.1, 1e-3, 1e-5, 1e-7],
+        'oci_beta': [1.0, 0.5, 0.3, 0.2, 0.1, 1e-2, 1e-3, 1e-5, 1e-7],
 
         # Exploration
         'use_exploration_bonus': [False],

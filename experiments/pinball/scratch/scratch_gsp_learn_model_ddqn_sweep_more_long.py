@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_scratch"],
+        "db_folder": ["pinball_scratch_sweep_fixed_hope"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -80,8 +80,11 @@ def get_configuration_list():
         # Model training
         'save_model_name': ['pinball_scratch_model'],
         # 'save_interim_model':[True],
-        'goal_learner_polyak_stepsize': [0.1],
-        'goal_learner_step_size': [1e-3],
+        'goal_learner_alg': ['DDQN'],
+        'use_reward_for_model_policy': [True],
+        'leave_init_value': [-100.0],
+        'goal_learner_polyak_stepsize': [0.4],
+        'goal_learner_step_size': [5e-4],
         'goal_learner_batch_num': [4],
         'goal_learner_batch_size': [16],
         'goal_min_buffer_size_before_update': [1000],
