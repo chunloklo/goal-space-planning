@@ -23,7 +23,7 @@ from analysis.common import get_best_grouped_param, load_data, load_reward_rate,
 from  experiment_utils.analysis_common.cache import cache_local_file
 from pathlib import Path
 
-STEP_SIZE = 200
+STEP_SIZE = 100
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    ax.set_xlim([0,3000])
+    ax.set_xlim([-100,3000])
     ax.set_ylim([-10, 160])
     ax.set_xlabel('number of steps x100')
     ax.set_ylabel('reward rate')

@@ -366,9 +366,9 @@ class DynO_FromGSP_NN:
 
         # epsilon greedy
         policy = np.zeros(self.num_actions)
-        #policy += (self.epsilon / (sum_valid_aos))*valid_ao_1s
-        policy += self.epsilon / self.num_actions
+        policy += (self.epsilon / (sum_valid_aos))*valid_ao_1s
         policy[o] += 1 - self.epsilon
+
         return policy, o
 
     # public method for rlglue
@@ -381,6 +381,7 @@ class DynO_FromGSP_NN:
         a = self.get_option_and_action(s,o)
 
         a = np.array(a, dtype=np.int64).item()
+
         return o,a
 
     def _get_behaviour_goal_values(self, xs):
@@ -603,8 +604,64 @@ class DynO_FromGSP_NN:
 
     def _add_to_buffer(self, s, o,a, sp, r, gamma,  terminal, goal_inits, goal_terms):
 
-        if self.learn_model_mode != 'only':          
-            self.buffer.update({'x': s, 'o': o, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_inits': goal_inits, 'goal_terms': goal_terms}) # Gabor: dyno: for direct experience
+        if self.learn_model_mode != 'only':
+            if self.use_pretrained_goal_values_optimization:
+                self.intermediate_buffer.update({'x': s, 'o': o, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_inits': goal_inits, 'goal_terms': goal_terms})
+
+                if self.num_updates % self.batch_buffer_add_size == self.batch_buffer_add_size - 1:
+                    _x = self.intermediate_buffer.buffer['x']
+                    _o = self.intermediate_buffer.buffer['o']
+                    _a = self.intermediate_buffer.buffer['a']
+                    
+                    _xp = self.intermediate_buffer.buffer['xp']
+                    _r = self.intermediate_buffer.buffer['r']
+                    _gamma = self.intermediate_buffer.buffer['gamma']
+                    _goal_inits = self.intermediate_buffer.buffer['goal_inits']
+                    _goal_terms = self.intermediate_buffer.buffer['goal_terms']
+
+                    if self.use_goal_values:
+                        if self.oci_beta > 0.0:
+                            _targets = self._get_best_goal_values(_xp)
+                        else:
+                            _targets = np.full((self.batch_buffer_add_size, ), np.nan)
+                        
+                        for i in range(self.batch_buffer_add_size):
+                            self.buffer.update({'x': _x[i], 'o':_o[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'target': _targets[i]})
+                    else: # gabor: not checked from here
+                        goal_r = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions))
+                        goal_gammas = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions))
+                        # The goal policy is not used right now
+                        goal_policy_q = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions)) 
+
+                        for g in range(self.num_goals):
+                            goal_policy_q[:, g, :], goal_r[:, g, :], goal_gammas[:, g, :] = self.goal_learners[g].get_goal_outputs(_xp)
+                        pass
+
+                        # Getting one-hot policies for the goal policies
+                        goal_policies = np.zeros((self.batch_buffer_add_size, self.num_goals, self.num_actions))
+                        np.put_along_axis(goal_policies, np.expand_dims(np.argmax(goal_policy_q, axis=2), -1), 1, axis=2)
+
+                        goal_r = np.sum(goal_r * goal_policies, axis=2)
+                        goal_gammas = np.sum(goal_gammas * goal_policies, axis=2)
+                        goal_gammas = np.clip(goal_gammas, 0, 1)
+
+
+                        # nan-ing the reward here so that these nans propagate to the next stage when its retrieved to avoid needing to do it online
+                        for i in range(self.batch_buffer_add_size):
+                            x_goal_init = self.goal_initiation_func(_xp[i])
+                            invalid_goals = np.where(x_goal_init == False)[0]
+                            goal_r[i, invalid_goals] = np.nan
+
+                            # Making it so it doesn't bootstrap to anything other than the final state if at terminal goal
+                            x_goal_term = self.goal_termination_func(None, None, _xp[i])
+                            if x_goal_term[self.problem.terminal_goal_index]:
+                                goal_r[i, :] = np.nan
+
+                        for i in range(self.batch_buffer_add_size):
+                            self.buffer.update({'x': _x[i], 'o':_o[i] , 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'goal_gammas': goal_gammas[i], 'goal_rewards': goal_r[i]})
+                    
+            else:
+                self.buffer.update({'x': s, 'o': o, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_inits': goal_inits, 'goal_terms': goal_terms}) # Gabor: dyno: for direct experience
 
         if np.any(goal_terms):
             self.goal_estimate_buffer.update({'xp': sp, 'goal_inits': goal_inits, 'goal_terms': goal_terms})
@@ -621,24 +678,40 @@ class DynO_FromGSP_NN:
 
         zeros = np.zeros(goal_terms.shape)
 
+
+        zeros = np.zeros(goal_terms.shape)
+
         for g in range(self.num_goals):
             if self.use_goal_boundaries_for_model_learning:
                 # If the experience takes you outside the initiation zone, then the policy definitely doesn't want to go that way.
                 if goal_inits[g]:
                     if goal_terms[g] or sp_goal_init[g] != False:
+                        #print("self.goal_buffers",o,a)
                         self.goal_buffers[g].update({'x': s, 'o': o, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_policy_cumulant': goal_policy_cumulant[g], 'goal_discount': goal_discount[g]})
                     else:
                         self.goal_buffers[g].update({'x': s, 'o': o, 'a': a, 'xp': sp, 'r': 0, 'gamma': 0, 'goal_policy_cumulant': zeros[g], 'goal_discount': zeros[g]})
 
         # gabor: dyno: this part is for the estimated stuff
-        for g in range(self.num_goals):
-            if goal_inits[g]:
-                policy_sao, r_sao, gamma_sao = self.goal_learners[g].get_goal_outputs(np.array(s)) 
-                r_so, gamma_so = np.sum(policy_sao * r_sao), np.sum(policy_sao * gamma_sao)
-                xp_so = self.goal_estimate_learner.goal_xp[g]
-                xp_so = xp_so.tolist()
 
-                self.planning_buffers[g].update({'x': s, 'o': o, 'a': a, 'xp_so': xp_so, 'r_so': r_so ,'gamma_so': gamma_so})
+        for g in range(self.num_goals):
+            if self.use_goal_boundaries_for_model_learning:
+                # If the experience takes you outside the initiation zone, then the policy definitely doesn't want to go that way.
+                if goal_inits[g]:
+                    policy_sao, r_sao, gamma_sao =  self.goal_learners[g].get_goal_outputs(np.array(s)) 
+                    r_so, gamma_so = np.sum(policy_sao * r_sao), np.sum(policy_sao * gamma_sao)
+                    xp_so = self.goal_estimate_learner.goal_xp[g]
+                    xp_so = xp_so.tolist()
+
+                    # r_so = np.array(r_so, dtype=np.float64).item()                    
+                    # gamma_so = np.array(gamma_so, dtype=np.float64).item()
+
+                    # r_so = np.array(r_so, dtype=np.float64).item()
+                    # print("r_so", r_so)
+                    # print("gamma_so", gamma_so)
+
+                    if goal_terms[g] or sp_goal_init[g]:
+                        #print("self.goal_buffers",o,a)
+                        self.planning_buffers[g].update({'x': s, 'o': o, 'a': a, 'xp_so': xp_so, 'r_so': r_so ,'gamma_so': gamma_so})
 
 
     def _behaviour_update(self):
@@ -720,7 +793,7 @@ class DynO_FromGSP_NN:
 
 
 # Gabor: target part needs to be fixed: target = r(s, o) + gamma(s, o) * max_a' Q(s', a')
-# target needs to be saved for the behaviour learner update. 
+# target needs to be saved for the behaviour learner update. question: how.
     def _dyno_update(self): # gabor: check this next
         if self.buffer.num_in_buffer < self.min_buffer_size_before_update:
             # Not enough samples in buffer to update yet
@@ -731,16 +804,35 @@ class DynO_FromGSP_NN:
             data = self.buffer.sample(self.batch_size)
             self.behaviour_learner.dyno_update(data) 
 
-    def _dyno_planning_update(self):
+            if self.use_pretrained_goal_values_optimization:
+                if self.use_goal_values:
+                    bonus = self._get_exploration_bonus()
+                    if self.use_goal_values:
+                        goal_value_with_bonus = np.copy(self.goal_value_learner.goal_values) + bonus
+                    #self.behaviour_learner.dyna_update(data)
+                else: # Gabor: not working for now
+                    data['target'] = np.nanmax(data['goal_rewards'] + data['goal_gammas'] * goal_value_with_bonus, axis=1)
 
-        for g in range(self.num_goals):
-            if self.planning_buffers[g].num_in_buffer < self.min_buffer_size_before_update:
-                # Not enough samples in buffer to update yet
-                continue 
-            else:
-                for _ in range(self.batch_num):
-                    data = self.planning_buffers[g].sample(self.batch_size, copy=False)
-                    self.behaviour_learner.dyno_planning_update(data)
+                    self.behaviour_learner.dyno_update(data)
+                    # bonus = self._get_exploration_bonus()
+                    # goal_value_with_bonus = np.copy(self.goal_estimate_learner.goal_baseline) + bonus
+
+                    # No need to filter initiation func since its already done in the buffer
+                
+                # Just do this and ignore the rest
+                continue
+            
+    def _dyno_planning_update(self):
+        # for g in range(self.num_goals):
+        iter = self.learn_select_goal_models if self.learn_select_goal_models is not None else range(self.num_goals)
+        for g in iter:
+            if self.planning_buffers[g].num_in_buffer >= self.goal_min_buffer_size_before_update:
+                batch_num = self.goal_learner_batch_num
+                for _ in range(batch_num):
+                    data = self.planning_buffers[g].sample(self.goal_learner_batch_size, copy=False)
+                    self.behaviour_learner.dyno_planning_update(data) 
+
+
 
     def _state_to_goal_estimate_update(self): # check this for learning the model
         # for g in range(self.num_goals):
@@ -842,7 +934,7 @@ class DynO_FromGSP_NN:
 
                 print(f'goal buffer sizes: {[buffer.num_in_buffer for buffer in self.goal_buffers]}')
                 print(f'Num in goal estimate buffer: {self.goal_estimate_buffer.num_in_buffer}')
-                print(f'goal buffer sizes: {[buffer.num_in_buffer for buffer in self.planning_buffers]}')
+                pass
 
             globals.collector.collect('num_steps_in_ep', self.num_steps_in_ep)
             self.num_steps_in_ep = 0
@@ -850,6 +942,10 @@ class DynO_FromGSP_NN:
         # Exploration bonus:
         # self.tau += 1
         self.tau[np.where(goal_terms == True)] = 0
+        #dynomodel
+
+            # print("s,o, a, sp, r, gamma, r_so,gamma_so, sp_so", type(s),type(o), type(a), type(sp), type(r), type(gamma), type(r_so),type(gamma_so), type(sp_so))
+            # print("s,o, a, sp, r, gamma, r_so,gamma_so, sp_so", s.shape,o.shape, a.shape, sp.shape, r.shape, gamma.shape, r_so.shape,gamma_so.shape, sp_so.shape)
 
         if info is not None and info['reset']:
             pass
@@ -867,14 +963,22 @@ class DynO_FromGSP_NN:
                     self._goal_estimate_update()
                     pass
 
-                if self.use_dyno_update:
+                if self.load_pretrain_goal_values is None: # maybe too
+                    #self._goal_value_update() 
+                    pass
+                    
+                if self.use_oci_target_update:
+                    #self._oci_target_update() # check this, running when model is loaded, no need for dyno though
+                    pass
+                elif self.use_dyno_update:
                     self._dyno_update()
                     self._dyno_planning_update()                    
 
+                    #self._behaviour_update() 
                 else: # no need for dyno i think
                     self._behaviour_update() 
                     self._oci(sp) 
-
+    
         # Logging
         self.cumulative_reward += r
         def log():
@@ -994,12 +1098,13 @@ class GoalEstimates:
             goal_xp = batch_goal_xp[i]
 
             for g in range(self.num_goals):
-                if goal_term[g]: 
+                if goal_term[g] == True: 
+
                     self.r[g] += alpha * (np.sum(option_pi_x * goal_r, axis=1) - self.r[g])
                     self.gamma[g] += alpha * (np.sum(option_pi_x * gamma, axis=1)- self.gamma[g])
                     self.goal_baseline[g] += alpha * (np.max(action_values) - self.goal_baseline[g])
                     self.goal_init[g] += alpha * (goal_init - self.goal_init[g])
-                    if self.problem.goals.goal_termination(None,None,goal_xp)[g]:
+                    if self.problem.goals.goal_termination(None,None,goal_xp).any():
                         self.goal_xp[g] += alpha * (goal_xp - self.goal_xp[g])
 
         def log():
