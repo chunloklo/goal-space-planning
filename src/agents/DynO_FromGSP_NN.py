@@ -635,8 +635,12 @@ class DynO_FromGSP_NN:
             if goal_inits[g]:
                 policy_sao, r_sao, gamma_sao = self.goal_learners[g].get_goal_outputs(np.array(s)) 
                 r_so, gamma_so = np.sum(policy_sao * r_sao), np.sum(policy_sao * gamma_sao)
-                xp_so = self.goal_estimate_learner.goal_xp[g]
-                xp_so = xp_so.tolist()
+                gamma_so = np.clip(gamma_so, 0, 1)
+                # xp_so = self.goal_estimate_learner.goal_xp[g]
+                # xp_so = xp_so.tolist()
+
+                goal_states = np.hstack((self.goals.goals, self.goals.goal_speeds))
+                xp_so = goal_states[g]
 
                 self.planning_buffers[g].update({'x': s, 'o': o, 'a': a, 'xp_so': xp_so, 'r_so': r_so ,'gamma_so': gamma_so})
 
@@ -859,13 +863,11 @@ class DynO_FromGSP_NN:
         if self.num_updates > self.prefill_buffer_time:
             if self.learn_model_mode == 'only': # this should be working now
                 self._state_to_goal_estimate_update()
+
             else:
                 if self.learn_model_mode == 'online': # not doing it for now
                     self._state_to_goal_estimate_update()
 
-                if not self.use_goal_values or self.load_pretrain_goal_values is None: # maybe check this out
-                    self._goal_estimate_update()
-                    pass
 
                 if self.use_dyno_update:
                     self._dyno_update()
