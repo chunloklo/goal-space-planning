@@ -116,14 +116,15 @@ def generatePlots(data, label):
 
 
 if __name__ == "__main__":
-    parameter_path = 'experiments/pinball/refactor/goal_model_learn_long.py'
+    # parameter_path = 'experiments/pinball/refactor/goal_model_learn_long.py'
+    parameter_path = 'experiments/pinball/scratch/short_scratch_model_gsp_learn_final.py'
     parameter_list = get_configuration_list_from_file_path(parameter_path)
 
     config = parameter_list[0]
     # Modifying configs
     config['explore_env'] = False
 
-    model_name = config['save_model_name']
+    model_name = config['load_model_name']
     # model_name = 'pinball_refactor_eps'
     print(f'model name: {model_name}')
     goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
@@ -162,7 +163,7 @@ if __name__ == "__main__":
         r_s = goal_r[0][goal_action]
         gamma_s = goal_gammas[0][goal_action]
 
-        return gamma_s
+        # return gamma_s
 
         # Rolling out in the env
         env.pinball.ball.position = np.copy(s[:2])
@@ -215,11 +216,13 @@ if __name__ == "__main__":
         # print(f's:{s}')
         # print(f'gamma: {gamma_s} discount {discount}, error {np.square(gamma_s - discount)}')
 
+        # return discount
         return np.abs(gamma_s - discount)
+        # return np.abs(r_s - discounted_reward)
 
     RESOLUTION = ROWS
     last_goal_q_map = np.zeros((RESOLUTION, RESOLUTION, num_actions))
-    g = 0
+    g = 2
     goal_action_value = get_last_pinball_action_value_map(1, partial(get_error, g=g), resolution=RESOLUTION, show_progress=True)
     last_goal_q_map = goal_action_value[0]
     data = last_goal_q_map

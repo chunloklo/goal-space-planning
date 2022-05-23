@@ -48,7 +48,7 @@ def plot_single_reward_rate(ax, param_file_name: str, label: str=None, color=Non
         x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
 
         # print(len(list(x_range)))
-        ax.plot(x_range, run_data, color=color, alpha=0.05)
+        ax.plot(x_range, run_data, color=color, alpha=0.01)
 
     all_data = np.vstack(all_data)
     print(all_data.shape)
@@ -68,7 +68,12 @@ def plot_reward_rate_group(ax, group, label, color=None):
     for i, param in enumerate(group):
         ############ STANDARD
         data = load_data(param, 'reward_rate')
-        # print(f'label: {label} seed: {param["seed"]}, {np.mean(data)}')
+        print(f'label: {label} seed: {param["seed"]}, {np.mean(data)}')
+
+        # if param["seed"] < 20 or param["seed"] > 30:
+        # if param['seed'] < 17:
+        # if param['seed'] not in [23]:
+            # continue
         all_data.append(data)
 
         run_data = mean_chunk_data(data, STEP_SIZE, 0)
@@ -77,11 +82,12 @@ def plot_reward_rate_group(ax, group, label, color=None):
         x_range = get_x_range(0, run_data.shape[0], STEP_SIZE)
 
         # print(len(list(x_range)))
+        # plot_color = None
         if line is None:
             plot_color = color
         else:
             plot_color = line[-1].get_color()
-        line = ax.plot(x_range, run_data, color=plot_color, alpha=0.1)
+        line = ax.plot(x_range, run_data, color=plot_color, alpha=0.5)
 
     all_data = np.vstack(all_data)
     print(all_data.shape)
@@ -333,8 +339,34 @@ if __name__ == "__main__":
     ###### SIMPLE PINBALL
     #######################################
     
-    param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_scratch_model_30.py')
-    # param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_scratch_model_display.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_scratch_model_30.py')
+    # # param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_scratch_model_display.py')
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
+
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
+
+    #     def plot_me(beta, step_size):
+    #         # if beta == 0.1 or beta == 0.05 or beta == 0.01: return True
+    #         if beta == 0.0: return True
+    #         return False
+    #         return True
+
+    #     if not plot_me(beta, step_size): continue
+    #     color=list(TOL_BRIGHT.values())[i]
+    #     # print(scale_value(polyak, 0, 0.1))
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}", color = color)
+    #     i += 1
+        
+
+    
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/short_scratch_model_gsp_learn_50k.py')
     complete_param_list = get_complete_configuration_list(param_list)
     groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
@@ -347,16 +379,55 @@ if __name__ == "__main__":
         polyak = group[0]['polyak_stepsize']
 
         def plot_me(beta, step_size):
-            # if beta == 0.1 or beta == 0.05 or beta == 0.01: return True
-            if beta == 0.0: return True
-            return False
-            return True
+            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+            return True 
+        color=list(TOL_BRIGHT.values())[i]
 
         if not plot_me(beta, step_size): continue
-        color=list(TOL_BRIGHT.values())[i]
-        # print(scale_value(polyak, 0, 0.1))
-        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}", color = color)
+        plot_reward_rate_group(ax, group[1], label=f"50k", color=color)
         i += 1
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/short_scratch_model_gsp_learn_75k.py')
+    complete_param_list = get_complete_configuration_list(param_list)
+    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+            return True 
+        color=list(TOL_BRIGHT.values())[i]
+
+        if not plot_me(beta, step_size): continue
+        plot_reward_rate_group(ax, group[1], label=f"75k", color=color)
+        i += 1
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/short_scratch_model_gsp_learn_final.py')
+    complete_param_list = get_complete_configuration_list(param_list)
+    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+            return True 
+        color=list(TOL_BRIGHT.values())[i]
+
+        if not plot_me(beta, step_size): continue
+        plot_reward_rate_group(ax, group[1], label=f"100k", color=color)
+    
+
 
     
     # param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/scratch_gsp_learn_model_dqn_sweep_more_1.py')
@@ -392,35 +463,35 @@ if __name__ == "__main__":
     #     i += 1
 
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/scratch_gsp_learn_model_ddqn_sweep_more.py')
-    complete_param_list = get_complete_configuration_list(param_list)
-    print(len(complete_param_list))
-    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/scratch_gsp_learn_model_ddqn_sweep_freeze_6.py')
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # print(len(complete_param_list))
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
-    filtered_groups = []
-    perfs = []
-    for group in groups:
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
 
-        beta = group[0]['oci_beta']
-        step_size = group[0]['goal_learner_step_size']
-        polyak = group[0]['goal_learner_polyak_stepsize']
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['goal_learner_step_size']
+    #     polyak = group[0]['goal_learner_polyak_stepsize']
 
-        use_reward = group[0]['use_reward_for_model_policy'] 
-        # print(step_size, polyak, use_reward)
+    #     use_reward = group[0]['use_reward_for_model_policy'] 
+    #     # print(step_size, polyak, use_reward)
 
 
-        def plot_me(beta, step_size):
-            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
-            # if step_size == 1e-3: return True
-            return True 
-            # if step_size == 0.001 and 
-            # if group[0]['use_reward_for_model_policy'] == True: return True
-            # return False
+    #     def plot_me(beta, step_size):
+    #         # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+    #         # if step_size == 1e-3: return True
+    #         return True 
+    #         # if step_size == 0.001 and 
+    #         # if group[0]['use_reward_for_model_policy'] == True: return True
+    #         # return False
 
-        color=list(TOL_BRIGHT.values())[i]
-        if not plot_me(beta, step_size): continue
-        plot_reward_rate_group(ax, group[1], label=f"ddqn step {step_size}, poly {polyak} reward{use_reward}", color=color)
-        i += 1
+    #     color=list(TOL_BRIGHT.values())[i]
+    #     if not plot_me(beta, step_size): continue
+    #     plot_reward_rate_group(ax, group[1], label=f"ddqn step {step_size}, poly {polyak} reward{use_reward}", color=color)
+    #     i += 1
 
 
 

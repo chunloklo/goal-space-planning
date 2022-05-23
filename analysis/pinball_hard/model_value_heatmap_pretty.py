@@ -41,7 +41,7 @@ from src.experiment import ExperimentModel
 import pickle
 
 
-ROWS = 80
+ROWS = 320
 COLUMNS = ROWS
 NUM_GOALS = 16
 

@@ -295,27 +295,48 @@ if __name__ == "__main__":
 
     #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}")
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_scratch_model_30.py')
-    complete_param_list = get_complete_configuration_list(param_list)
-    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/refactor/beta_gsp_learn_scratch_model_30.py')
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
-    filtered_groups = []
-    perfs = []
-    for group in groups:
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
 
-        beta = group[0]['oci_beta']
-        step_size = group[0]['step_size']
-        polyak = group[0]['polyak_stepsize']
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
 
-        def plot_me(beta, step_size):
-            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
-            if beta == 0.0: return True
-            return False 
+    #     def plot_me(beta, step_size):
+    #         # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+    #         if beta == 0.0: return True
+    #         return False 
 
-        if not plot_me(beta, step_size): continue
-        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}")
+    #     if not plot_me(beta, step_size): continue
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}")
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/scratch_gsp_learn_model_ddqn_sweep.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/scratch_gsp_learn_model_ddqn_sweep.py')
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
+
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
+
+    #     def plot_me(beta, step_size):
+    #         # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+    #         return True 
+
+    #     if not plot_me(beta, step_size): continue
+    #     plot_reward_rate_group(ax, group[1], label=f"scratch oci_beta: {'{:0.3e}'.format(beta)}")
+    
+    
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/short_scratch_model_gsp_learn_50k.py')
     complete_param_list = get_complete_configuration_list(param_list)
     groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
@@ -334,8 +355,6 @@ if __name__ == "__main__":
         if not plot_me(beta, step_size): continue
         plot_reward_rate_group(ax, group[1], label=f"scratch oci_beta: {'{:0.3e}'.format(beta)}")
     
-    
-
 
 
 

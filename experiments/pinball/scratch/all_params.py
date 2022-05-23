@@ -12,7 +12,9 @@ def get_configuration_list():
     root = 'experiments/pinball/scratch/'
     files = [
         # 'baseline.py'
-        'scratch_gsp_learn_model_ddqn_sweep_more_long.py',
+        'short_scratch_model_gsp_learn_final.py',
+        'short_scratch_model_gsp_learn_50k.py',
+        'short_scratch_model_gsp_learn_75k.py',
         # 'scratch_gsp_learn_model_dqn_sweep_more_1.py',
         # 'scratch_gsp_learn_model_dqn_sweep_more_2.py',
         # 'scratch_gsp_learn_model_dqn_sweep.py'

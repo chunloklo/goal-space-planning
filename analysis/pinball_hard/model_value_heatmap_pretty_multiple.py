@@ -141,13 +141,17 @@ if __name__ == "__main__":
     # for num_updates in [2000, 4000, 6000, 8000, 10000, 13000, 15000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]:
     # for num_updates in [2000]:
     for num_updates in [2000, 4000, 6000, 8000, 10000, 13000, 15000, 20000, 22000, 24000, 26000, 28000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]:
-        
+
+    # for num_updates in [100000]:  
         print(f'num goal learner {len(goal_learner)} num updates {num_updates}')
 
         # behaviour_goal_value = 'q_learn'
         # [11000, 13000, 15000, 20000, 30000, 40000, 50000, 60000]:
         behaviour_goal_value_name = f'pinball_hard_value_display_beta0.1_{num_updates}'
         # behaviour_goal_value_name = f'pinball_hard_value_display_baseline_short_{num_updates}'
+
+        # behaviour_goal_value_name = f'pinball_hard_value_display_beta0.1'
+        # behaviour_goal_value_name = f'pinball_hard_value_display_baseline_short'
 
         # [15000, 20000, 30000, 50000, 100000, 125000]:
         # behaviour_goal_value_name = 'pinball_scratch_model_baseline_display_125000'

@@ -155,6 +155,10 @@ class GSP_NN:
         # Whether we're running the adaptation experiment
         self.adaptation_experiment = parse_param(self.params, 'adaptation_experiment', lambda p: isinstance(p, bool), optional=True, default=False)
 
+        self.fix_model_step = parse_param(params, 'fix_model_step', lambda p : (isinstance(p, int) and p > 0) or p is None, optional=True, default=None)
+
+        if self.fix_model_step is not None:
+            self.batch_buffer_add_size = parse_param(params, 'batch_buffer_add_size', lambda p : isinstance(p, int) and p > 0)
         # Min buffer sizes for pinball
         # self.min_buffer_size_before_update = 10000
         # self.goal_min_buffer_size_before_update = 1000
@@ -640,31 +644,32 @@ class GSP_NN:
                 self.intermediate_buffer.update({'x': s, 'a': a, 'xp': sp, 'r': r, 'gamma': gamma, 'goal_inits': goal_inits, 'goal_terms': goal_terms})
 
                 if self.num_updates % self.batch_buffer_add_size == self.batch_buffer_add_size - 1:
-                    _x = self.intermediate_buffer.buffer['x']
-                    _a = self.intermediate_buffer.buffer['a']
-                    _xp = self.intermediate_buffer.buffer['xp']
-                    _r = self.intermediate_buffer.buffer['r']
-                    _gamma = self.intermediate_buffer.buffer['gamma']
-                    _goal_inits = self.intermediate_buffer.buffer['goal_inits']
-                    _goal_terms = self.intermediate_buffer.buffer['goal_terms']
+                    add_size = self.intermediate_buffer.num_in_buffer
+                    _x = self.intermediate_buffer.buffer['x'][:add_size]
+                    _a = self.intermediate_buffer.buffer['a'][:add_size]
+                    _xp = self.intermediate_buffer.buffer['xp'][:add_size]
+                    _r = self.intermediate_buffer.buffer['r'][:add_size]
+                    _gamma = self.intermediate_buffer.buffer['gamma'][:add_size]
+                    _goal_inits = self.intermediate_buffer.buffer['goal_inits'][:add_size]
+                    _goal_terms = self.intermediate_buffer.buffer['goal_terms'][:add_size]
 
                     if self.use_goal_values:
                         _targets = self._get_best_goal_values(_xp)
 
-                        for i in range(self.batch_buffer_add_size):
+                        for i in range(add_size):
                             self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'target': _targets[i]})
                     else:
-                        goal_r = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions))
-                        goal_gammas = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions))
+                        goal_r = np.empty((add_size, self.num_goals, self.num_actions))
+                        goal_gammas = np.empty((add_size, self.num_goals, self.num_actions))
                         # The goal policy is not used right now
-                        goal_policy_q = np.empty((self.batch_buffer_add_size, self.num_goals, self.num_actions)) 
+                        goal_policy_q = np.empty((add_size, self.num_goals, self.num_actions)) 
 
                         for g in range(self.num_goals):
                             goal_policy_q[:, g, :], goal_r[:, g, :], goal_gammas[:, g, :] = self.goal_learners[g].get_goal_outputs(_xp)
                         pass
 
                         # Getting one-hot policies for the goal policies
-                        goal_policies = np.zeros((self.batch_buffer_add_size, self.num_goals, self.num_actions))
+                        goal_policies = np.zeros((add_size, self.num_goals, self.num_actions))
                         np.put_along_axis(goal_policies, np.expand_dims(np.argmax(goal_policy_q, axis=2), -1), 1, axis=2)
 
                         goal_r = np.sum(goal_r * goal_policies, axis=2)
@@ -673,7 +678,7 @@ class GSP_NN:
 
 
                         # nan-ing the reward here so that these nans propagate to the next stage when its retrieved to avoid needing to do it online
-                        for i in range(self.batch_buffer_add_size):
+                        for i in range(add_size):
                             x_goal_init = self.goal_initiation_func(_xp[i])
                             invalid_goals = np.where(x_goal_init == False)[0]
                             goal_r[i, invalid_goals] = np.nan
@@ -683,7 +688,7 @@ class GSP_NN:
                             if x_goal_term[self.problem.terminal_goal_index]:
                                 goal_r[i, :] = np.nan
 
-                        for i in range(self.batch_buffer_add_size):
+                        for i in range(add_size):
                             self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'goal_gammas': goal_gammas[i], 'goal_rewards': goal_r[i]})
                     
             else:
@@ -743,12 +748,12 @@ class GSP_NN:
         print(f'r: {self.goal_estimate_learner.r}')
         
         # self.goal_estimate_learner.goal_baseline[self.problem.terminal_goal_index] = 10082.015 # optimal based on oracle q learner
-        if 'Penalty' in self.params['problem']:
-            print('Penalty Env')
-            terminal_reward = 0
-        else:
-            terminal_reward = 10000
-        self.goal_estimate_learner.one_step_reward_at_goal[self.problem.terminal_goal_index] = terminal_reward
+        # if 'Penalty' in self.params['problem']:
+        #     print('Penalty Env')
+        #     terminal_reward = 0
+        # else:
+        #     terminal_reward = 10000
+        # self.goal_estimate_learner.one_step_reward_at_goal[self.problem.terminal_goal_index] = terminal_reward
     
         for _ in range(1000):
             self._goal_value_update()
@@ -802,6 +807,7 @@ class GSP_NN:
 
     def _state_to_goal_estimate_update(self):
         # for g in range(self.num_goals):
+
         iter = self.learn_select_goal_models if self.learn_select_goal_models is not None else range(self.num_goals)
         for g in iter:
             if self.goal_buffers[g].num_in_buffer >= self.goal_min_buffer_size_before_update:
@@ -882,6 +888,52 @@ class GSP_NN:
         self.num_steps_in_ep += 1
 
         # while True: pass
+
+        if self.fix_model_step is not None:
+            if self.num_updates == self.fix_model_step:
+                self.learn_model_mode = 'fixed'
+                self.use_pretrained_goal_values_optimization = True
+
+                # Re-initializing buffer
+                assert self.use_goal_values
+                old_buffer = self.buffer
+                self.buffer = Buffer(self.buffer_size, {
+                    'x': self.obs_shape, 
+                    'a': (), 
+                    'xp': self.obs_shape, 
+                    'r': (), 
+                    'gamma': (), 
+                    'goal_inits': (self.num_goals, ), 
+                    'goal_terms': (self.num_goals, ), 
+                    'target': ()},
+                self.random.randint(0,2**31), 
+                type_map={'a': np.int64})
+              
+                self.intermediate_buffer = Buffer(self.batch_buffer_add_size, {
+                    'x': self.obs_shape, 
+                    'a': (), 
+                    'xp': self.obs_shape, 
+                    'r': (), 
+                    'gamma': (), 
+                    'goal_inits': (self.num_goals, ), 
+                    'goal_terms': (self.num_goals, )},
+                self.random.randint(0,2**31), 
+                type_map={'a': np.int64})
+
+
+                _x = old_buffer.buffer['x'][: old_buffer.num_in_buffer]
+                _a = old_buffer.buffer['a'][: old_buffer.num_in_buffer]
+                _xp = old_buffer.buffer['xp'][: old_buffer.num_in_buffer]
+                _r = old_buffer.buffer['r'][: old_buffer.num_in_buffer]
+                _gamma = old_buffer.buffer['gamma'][: old_buffer.num_in_buffer]
+                _goal_inits = old_buffer.buffer['goal_inits'][: old_buffer.num_in_buffer]
+                _goal_terms = old_buffer.buffer['goal_terms'][: old_buffer.num_in_buffer]
+
+                _targets = self._get_best_goal_values(_xp)
+
+                for i in range(old_buffer.num_in_buffer):
+                    self.buffer.update({'x': _x[i], 'a': _a[i], 'xp': _xp[i], 'r': _r[i], 'gamma': _gamma[i], 'goal_inits': _goal_inits[i], 'goal_terms': _goal_terms[i], 'target': _targets[i]})
+                pass
 
         if self.adaptation_experiment:
             assert self.use_pretrained_goal_values_optimization == False

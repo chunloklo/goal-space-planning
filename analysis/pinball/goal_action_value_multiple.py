@@ -46,7 +46,7 @@ from src.experiment import ExperimentModel
 ROWS = 40
 COLUMNS = ROWS
 
-def generatePlots(param, data, key):
+def generatePlots(param, data, key, seed):
     time_str = datetime.now().strftime("%m-%d-%Y--%H-%M-%S")
     # folder = f'./plots/{key}_{time_str}'
     # os.makedirs(folder)
@@ -74,10 +74,10 @@ def generatePlots(param, data, key):
             init = problem.goals.goal_initiation([x, y, 0, 0])
             initiation_map[:, r, c] = init
 
-    fig, axes = plt.subplots(3, 3, figsize=(90, 90))
+    fig, axes = plt.subplots(3, 3, figsize=(40, 40))
     axes = axes.flatten()
 
-    save_file = get_file_name('./plots/', f'{key}', 'png', timestamp=True)
+    save_file = get_file_name('./plots/', f'{seed}_{key}', 'png', timestamp=True)
 
     
     for g in tqdm(range(num_goals)):
@@ -134,52 +134,54 @@ if __name__ == "__main__":
     config = parameter_list[0]
 
     # model_name = config['save_model_name']
-    model_name = 'pinball_scratch_model_5_seed_13'
+    # for i in range(12, 20):
+    for i in [20]:
+        model_name = f'pinball_scratch_model_5_seed_{i}'
 
-    goal_learners = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
+        goal_learners = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
-    print(model_name)
-    print(f'num goal learners: {len(goal_learners)}')
-
-
-    # sdfsd
-    exp_params = {
-        'agent': config['agent'],
-        'problem': config['problem'],
-        'max_steps': 0,
-        'episodes': 0,
-        'metaParameters': config
-    }
+        print(model_name)
+        print(f'num goal learners: {len(goal_learners)}')
 
 
-    exp = ExperimentModel.load_from_params(exp_params)
-    problem = getProblem(config['problem'])(exp, 0, 0)
-    print(problem.goals.num_goals)
+        # sdfsd
+        exp_params = {
+            'agent': config['agent'],
+            'problem': config['problem'],
+            'max_steps': 0,
+            'episodes': 0,
+            'metaParameters': config
+        }
 
-    def get_goal_outputs(s, g):
-            action_value, reward, gamma = goal_learners[g].get_goal_outputs(s)
-            return np.vstack([action_value, reward, gamma])
 
-    RESOLUTION = ROWS
-    last_goal_q_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
-    last_reward_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
-    last_gamma_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
-    
-    for g in range(problem.goals.num_goals):
-        goal_action_value = get_last_pinball_action_value_map(3, partial(get_goal_outputs, g=g), resolution=RESOLUTION)
-        last_goal_q_map[g] = goal_action_value[0]
-        last_reward_map[g] = goal_action_value[1]
-        last_gamma_map[g] = goal_action_value[2]
+        exp = ExperimentModel.load_from_params(exp_params)
+        problem = getProblem(config['problem'])(exp, 0, 0)
+        print(problem.goals.num_goals)
 
-    all_data = {
-        'goal_r_map': last_reward_map,
-        'goal_gamma_map': last_gamma_map,
-    }
+        def get_goal_outputs(s, g):
+                action_value, reward, gamma = goal_learners[g].get_goal_outputs(s)
+                return np.vstack([action_value, reward, gamma])
 
-    key  = 'goal_gamma_map'
-    data = all_data[key]
-    print(f'data_shape: {data.shape}')
-    # sdfsd
-    generatePlots(config, data, key)
+        RESOLUTION = ROWS
+        last_goal_q_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
+        last_reward_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
+        last_gamma_map = np.zeros((problem.goals.num_goals, RESOLUTION, RESOLUTION, 5))
+        
+        for g in range(problem.goals.num_goals):
+            goal_action_value = get_last_pinball_action_value_map(3, partial(get_goal_outputs, g=g), resolution=RESOLUTION)
+            last_goal_q_map[g] = goal_action_value[0]
+            last_reward_map[g] = goal_action_value[1]
+            last_gamma_map[g] = goal_action_value[2]
+
+        all_data = {
+            'goal_r_map': last_reward_map,
+            'goal_gamma_map': last_gamma_map,
+        }
+
+        key  = 'goal_gamma_map'
+        data = all_data[key]
+        print(f'data_shape: {data.shape}')
+        # sdfsd
+        generatePlots(config, data, key, i)
 
     exit()

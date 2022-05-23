@@ -43,7 +43,7 @@ from src.utils.log_utils import get_last_pinball_action_value_map
 from src.experiment import ExperimentModel
 
 
-ROWS = 80
+ROWS = 160
 COLUMNS = ROWS
 
 def generatePlots(param, data, key, g):
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     print(model_name)
     print(f'num goal learners: {len(goal_learners)}')
 
-    goal = 6
+    goal = 2
 
 
     # sdfsd
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     key  = 'goal_gamma_map'
     data = all_data[key]
     print(f'data_shape: {data.shape}')
-    # sdfsd
+    # sdfsdx
     generatePlots(config, data, key, goal)
 
     exit()

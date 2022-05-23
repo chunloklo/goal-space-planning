@@ -142,12 +142,12 @@ def plot_reward_rate_group(ax, group, label, color=None):
         plot_color = cmap(cmap_val[i])
 
         # # print(len(list(x_range)))
-        # if line is None:
-        #     plot_color = color
-        # else:
-        #     plot_color = line[-1].get_color()
+        if line is None:
+            plot_color = color
+        else:
+            plot_color = line[-1].get_color()
         if i == round(0.0 * (len(ind) - 1)) or i == round(1.0 * (len(ind) - 1)):
-            alpha = 0.5
+            alpha = 0.33
         else:
             alpha = 0.05
         line = ax.plot(x_range, run_data, color=plot_color, alpha=alpha)
@@ -243,7 +243,8 @@ if __name__ == "__main__":
     # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_gpi_only_low_init_sweep.py', 'okay')
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
-    fig, ax = plt.subplots(figsize=(5, 5 / 3 * 2), dpi=600)
+    fig_size = 4.0
+    fig, ax = plt.subplots(figsize=(fig_size, fig_size / 3 * 2), dpi=300)
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)

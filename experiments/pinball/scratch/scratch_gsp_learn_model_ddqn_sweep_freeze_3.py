@@ -10,7 +10,7 @@ from experiment_utils.sweep_configs.generate_configs import get_sorted_configura
 def get_configuration_list():
     parameter_dict = {
         # Determines which folder the experiment gets saved in
-        "db_folder": ["pinball_refactor"],
+        "db_folder": ["pinball_scratch_sweep_fixed_hope"],
         'run_path': ['src/pinball_experiment.py'],
         
         #Environment/Experiment
@@ -18,7 +18,7 @@ def get_configuration_list():
         'pinball_configuration_file': ['src/environments/data/pinball/pinball_simple_single.cfg.txt'],
         'explore_env': [False],
         "episodes": [0],
-        'max_steps': [300000],
+        'max_steps': [50000],
         'exploration_phase': [0],
         'gamma': [0.95],
         'render': [False],
@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [300000] + list(range(30)),
+        "seed": list(range(12, 20)),
         
         # Agent
         "agent": ["GSP_NN"],
@@ -41,7 +41,7 @@ def get_configuration_list():
         'batch_num': [4],
         'batch_size': [16],
         'epsilon': [0.1],
-        'min_buffer_size_before_update': [10000],
+        'min_buffer_size_before_update': [1000],
 
         # Arch flag
         'behaviour_arch_flag': ['pinball_simple'],
@@ -54,7 +54,7 @@ def get_configuration_list():
 
         # Goal space planning configs
         'use_goal_values': [True],
-        'goal_value_init_gamma_threshold': [0.0],
+        'goal_value_init_gamma_threshold': [0.1],
 
         # oci configs
         'use_oci_target_update': [True],
@@ -71,21 +71,26 @@ def get_configuration_list():
         'use_exploration_bonus': [False],
 
         # Pretrain goal values:
-        # 'pretrain_goal_values': [True],
-        # 'save_pretrain_goal_values': ['oracle_goal_values'],
-        'load_goal_values_name': ['pinball_scratch_model_short'],
-        'use_pretrained_goal_values_optimization': [True],
+        'pretrain_goal_values': [False],
+        'save_goal_values_name': ['pinball_scratch_model_3'],
+        # 'load_pretrain_goal_values': ['pinball_refactor_eps'],
+        # 'use_pretrained_goal_values_optimization': [True],
         'batch_buffer_add_size': [1024],
         
         # Model training
-        'load_model_name': ['pinball_scratch_model_short'],
+        'save_model_name': ['pinball_scratch_model_3'],
+        'save_object_seed': [True],
         # 'save_interim_model':[True],
-        'goal_learner_polyak_stepsize': [0.1],
-        'goal_learner_step_size': [1e-3],
-        'goal_learner_batch_num': [1],
+        'goal_learner_alg': ['DDQN'],
+        'use_reward_for_model_policy': [True],
+        'leave_init_value': [-100.0],
+        'goal_learner_polyak_stepsize': [0.2],
+        'goal_learner_step_size': [5e-4],
+        'goal_learner_batch_num': [4],
         'goal_learner_batch_size': [16],
-        'goal_min_buffer_size_before_update': [10000],
-        'learn_model_mode': ['fixed'],
+        'goal_min_buffer_size_before_update': [5000],
+        'learn_model_mode': ['online'],
+        'fix_model_step': [50000],
 
         # 'learn_select_goal_models': [(15,)]
     }

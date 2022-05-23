@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
     model_name = config['save_model_name']
-    # model_name = 'pinball_hard_ddqn_value_policy_8_goals'
+    model_name = 'pinball_scratch_model_5_seed_23'
     goal_learner = pickle.load(open(f'./src/environments/data/pinball/{model_name}_goal_learner.pkl', 'rb'))
 
 
@@ -131,10 +131,9 @@ if __name__ == "__main__":
     agent = pickle.load(open(f'src/environments/data/pinball/{behaviour_goal_value}_agent.pkl', 'rb'))
     behaviour_goal_value = agent.behaviour_learner
 
-    goal_value_name = 'pinball_refactor_more_learning'
+    goal_value_name = 'pinball_scratch_model_5_seed_23'
     goal_estimate_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_estimate_learner.pkl', 'rb'))
     goal_value_learner = pickle.load(open(f'./src/environments/data/pinball/{goal_value_name}_pretrain_goal_value_learner.pkl', 'rb'))
-
 
     gamma_threshold = 0.1
 
@@ -158,6 +157,17 @@ if __name__ == "__main__":
 
     exp = ExperimentModel.load_from_params(exp_params)
     problem = getProblem(config['problem'])(exp, 0, 0)
+
+
+    print(goal_estimate_learner.r)
+    print(goal_estimate_learner.gamma)
+
+    
+
+    print(goal_learner[2].get_goal_outputs(np.array([0.64666667, 0.35333, 0.0, 0.0])))
+
+    print(problem.goals.goals[2])
+    sdfds
 
     def _get_behaviour_goal_values(xs, behaviour_goal_value, goal_initiation_func):
         batch_size = xs.shape[0]

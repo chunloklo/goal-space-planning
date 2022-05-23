@@ -28,7 +28,7 @@ def get_configuration_list():
         'step_logging_interval': [100],
 
         # Seed
-        "seed": [300000],
+        "seed": [300000] + list(range(8)),
         
         # Agent
         "agent": ["GSP_NN"],

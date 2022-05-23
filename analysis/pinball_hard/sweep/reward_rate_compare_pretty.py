@@ -27,7 +27,7 @@ from experiment_utils.analysis_common.colors import TOL_BRIGHT
 from experiment_utils.data_io.configs import check_config_completed, get_complete_configuration_list, get_folder_name, DB_FOLDER, get_incomplete_configuration_list
 from matplotlib import cm
 
-STEP_SIZE = 10
+STEP_SIZE = 100
 
 # Plots the reward rate for a single run. Mainly used for debugging
 
@@ -157,11 +157,12 @@ if __name__ == "__main__":
     # create_individual_plot('experiments/chunlok/mpi/extended/collective/dyna_gpi_only_low_init_sweep.py', 'okay')
 
     # parameter_path = 'experiments/chunlok/mpi/extended_half/collective/dyna_ourgpi_maxaction.py'
-    fig, ax = plt.subplots(figsize=(5, 5 / 3 * 2), dpi=300)
+    fig_size = 4.0
+    fig, ax = plt.subplots(figsize=(fig_size, fig_size / 3 * 2), dpi=300)
 
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    plt.rcParams.update({'font.size': 10})
+    plt.rcParams.update({'font.size': 14})
     plt.tight_layout()
 
     # Setting styles
@@ -265,78 +266,186 @@ if __name__ == "__main__":
 
     # ax.set_xticks(list(range(0, 3000, 500)) + [3000 - STEP_SIZE])
     # ax.set_xticklabels(list(range(0, 3000, 500)) + [''])
+
+
+    #######################
+    ###### PINBALL EASY MODELS
+    #######################
+
+    color_map = {
+        '50k': '#487eb0',
+        '75k': '#4cd137',
+        '100k': '#fbc531',
+        'online': '#000000',
+    }
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/scratch_gsp_learn_short.py')
+    complete_param_list = get_complete_configuration_list(param_list)
+    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+            return True 
+
+        if not plot_me(beta, step_size): continue
+        plot_reward_rate_group(ax, group[1], label=f"online", color=color_map['online'])
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/short_scratch_model_gsp_learn_75k.py')
+    complete_param_list = get_complete_configuration_list(param_list)
+    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+
+    
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/short_scratch_model_gsp_learn_50k.py')
+    complete_param_list = get_complete_configuration_list(param_list)
+    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+            return True 
+
+        if not plot_me(beta, step_size): continue
+        plot_reward_rate_group(ax, group[1], label=f"50k", color=color_map['50k'])
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/short_scratch_model_gsp_learn_75k.py')
+    complete_param_list = get_complete_configuration_list(param_list)
+    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+            return True 
+
+        if not plot_me(beta, step_size): continue
+        plot_reward_rate_group(ax, group[1], label=f"75k", color=color_map['75k'])
+
+    param_list = get_configuration_list_from_file_path('experiments/pinball/scratch/short_scratch_model_gsp_learn_final.py')
+    complete_param_list = get_complete_configuration_list(param_list)
+    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+
+    filtered_groups = []
+    perfs = []
+    for group in groups:
+
+        beta = group[0]['oci_beta']
+        step_size = group[0]['step_size']
+        polyak = group[0]['polyak_stepsize']
+
+        def plot_me(beta, step_size):
+            # if beta == 1.0 or beta == 0.5 or beta == 0.1 or beta == 0.05 or beta == 0.01 or beta==0.0: return True
+            return True 
+
+        if not plot_me(beta, step_size): continue
+        plot_reward_rate_group(ax, group[1], label=f"100k", color=color_map['100k'])
+
+    # Pinball hard styles
+
+    ax.set_xlim([0, 3000 - STEP_SIZE])
+    ax.set_ylim(-5, 160)
+
+    ax.set_yticks(list(range(0, 160, 40)) + [160])
+    ax.set_yticklabels(list(range(0, 160, 40)) + [160])
+
+    ax.set_xticks(list(range(0, 3000, 500)) + [3000 - STEP_SIZE])
+    ax.set_xticklabels(list(range(0, 3000, 500)) + [''])
+
+
+
     
     ####################################
     ##### Exploration Experiment
     ######################################
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/explore/baseline_30.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/explore/baseline_30.py')
 
-    complete_param_list = get_complete_configuration_list(param_list)
-    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
-    filtered_groups = []
-    perfs = []
-    for group in groups:
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
 
-        beta = group[0]['oci_beta']
-        step_size = group[0]['step_size']
-        polyak = group[0]['polyak_stepsize']
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
 
-        def plot_me(beta, step_size):
-            # if beta == 0.1 or beta == 0.05 or beta == 0.01: return True
-            if step_size == 0.001 and polyak == 0.05: return True
-            return False
-            # return True
-            # return True
+    #     def plot_me(beta, step_size):
+    #         # if beta == 0.1 or beta == 0.05 or beta == 0.01: return True
+    #         if step_size == 0.001 and polyak == 0.05: return True
+    #         return False
+    #         # return True
+    #         # return True
 
-        if not plot_me(beta, step_size): continue
-        # color=list(TOL_BRIGHT.values())[i]
-        # print(scale_value(polyak, 0, 0.1))
-        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}", color = '#34495e')
-        # i += 1
+    #     if not plot_me(beta, step_size): continue
+    #     # color=list(TOL_BRIGHT.values())[i]
+    #     # print(scale_value(polyak, 0, 0.1))
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}", color = '#34495e')
+    #     # i += 1
 
-    param_list = get_configuration_list_from_file_path('experiments/pinball/explore/gsp_learn_beta_switch.py')
+    # param_list = get_configuration_list_from_file_path('experiments/pinball/explore/gsp_learn_beta_switch.py')
 
-    complete_param_list = get_complete_configuration_list(param_list)
-    groups = group_configs(complete_param_list, ignore_keys=['seed'])
+    # complete_param_list = get_complete_configuration_list(param_list)
+    # groups = group_configs(complete_param_list, ignore_keys=['seed'])
 
-    filtered_groups = []
-    perfs = []
-    for group in groups:
+    # filtered_groups = []
+    # perfs = []
+    # for group in groups:
 
-        beta = group[0]['oci_beta']
-        step_size = group[0]['step_size']
-        polyak = group[0]['polyak_stepsize']
+    #     beta = group[0]['oci_beta']
+    #     step_size = group[0]['step_size']
+    #     polyak = group[0]['polyak_stepsize']
 
-        def plot_me(beta, step_size):
-            # if beta == 0.1 or beta == 0.05 or beta == 0.01: return True
-            # if step_size == 0.001 and polyak == 0.05: return True
-            # return False
-            return True
-            # return True
+    #     def plot_me(beta, step_size):
+    #         # if beta == 0.1 or beta == 0.05 or beta == 0.01: return True
+    #         # if step_size == 0.001 and polyak == 0.05: return True
+    #         # return False
+    #         return True
+    #         # return True
 
-        if not plot_me(beta, step_size): continue
-        # color=list(TOL_BRIGHT.values())[i]
-        # print(scale_value(polyak, 0, 0.1))
-        plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}", color = '#f39c12')
-        # i += 1
+    #     if not plot_me(beta, step_size): continue
+    #     # color=list(TOL_BRIGHT.values())[i]
+    #     # print(scale_value(polyak, 0, 0.1))
+    #     plot_reward_rate_group(ax, group[1], label=f"oci_beta: {'{:0.3e}'.format(beta)}", color = '#f39c12')
+    #     # i += 1
 
-    ax.set_xlim([0, 1000 - STEP_SIZE])
-    ax.set_ylim(-5, 200)
+    # ax.set_xlim([0, 1000 - STEP_SIZE])
+    # ax.set_ylim(-5, 200)
 
-    ax.set_yticks(list(range(0, 201, 50)))
-    # ax.set_yticklabels(list(range(0, 51, 10)) + [55])
+    # ax.set_yticks(list(range(0, 201, 50)))
+    # # ax.set_yticklabels(list(range(0, 51, 10)) + [55])
 
-    # # get all the labels of this axis
-    # labels = ax.get_yticklabels()
-    # # remove the first and the last labels
-    # labels[-1] = ""
-    # # set these new labels
-    # ax.set_yticklabels(labels)
+    # # # get all the labels of this axis
+    # # labels = ax.get_yticklabels()
+    # # # remove the first and the last labels
+    # # labels[-1] = ""
+    # # # set these new labels
+    # # ax.set_yticklabels(labels)
 
-    ax.set_xticks(list(range(0, 1000, 200)) + [1000 - STEP_SIZE])
-    ax.set_xticklabels(list(range(0, 1000, 200)) + [''])
+    # ax.set_xticks(list(range(0, 1000, 200)) + [1000 - STEP_SIZE])
+    # ax.set_xticklabels(list(range(0, 1000, 200)) + [''])
 
 
 
